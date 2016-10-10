@@ -16,50 +16,54 @@
                     <div style="height:0; overflow: hidden;"><input type="text" name="fakeusernameremembered" tabindex="-1" /><input type="password" name="fakepasswordremembered" tabindex="-1" /></div>
 
                     <div class="selectContainer">
-                        <select is="emby-select" id="selectUser" name="selectUser" onchange=" TraktConfigurationPage.loadConfiguration(this.value);" label="Configure Trakt for:"></select>
+                        <select is="emby-select" id="selectUser" name="selectUser" onchange="TraktConfigurationPage.loadConfiguration(this.value);" label="Configure Trakt for:"></select>
                     </div>
                     <div class="inputContainer">
                         <input is="emby-input" id="txtTraktUserName" name="txtTraktUserName" type="text" label="Trakt Username:" />
                     </div>
-                    <div>
-                        <label for="txtTraktPassword">
-                            Password:
-                        </label>
-                        <input id="txtTraktPassword" name="txtTraktPassword" type="password" />
+                    <div class="inputContainer">
+                        <input is="emby-input" id="txtTraktPassword" name="txtTraktPassword" type="password" label="Password:" />
                     </div>
                     <div>
-                        <div data-mini="true" data-role="collapsible">
-                            <h3>Locations Excluded:</h3>
-                            <div id="divTraktLocations">
-                            </div>
+                        <h3 class="checkboxListLabel">Exclude folders:</h3>
+                        <div id="divTraktLocations" class="paperList checkboxList checkboxList-paperList">
                         </div>
                     </div>
-                    <div>
-                        <input type="checkbox" id="chkSkipUnwatchedImportFromTrakt" name="chkSkipUnwatchedImportFromTrakt" />
-                        <label for="chkSkipUnwatchedImportFromTrakt">Skip unwatched import from trakt</label>
-                        <div class="fieldDescription">
+                    <br />
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="chkSkipUnwatchedImportFromTrakt" name="chkSkipUnwatchedImportFromTrakt" />
+                            <span>Skip unwatched import from Trakt</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">
                             By default, Import from Trakt task will overwrite any watched status if item is marked
                             as unwached on Trakt. When enabled only watched status will be imported.
                         </div>
                     </div>
-                    <div>
-                        <input type="checkbox" id="chkPostWatchedHistory" name="chkPostWatchedHistory" />
-                        <label for="chkPostWatchedHistory">Change watched history on trakt</label>
-                        <div class="fieldDescription">
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="chkPostWatchedHistory" name="chkPostWatchedHistory" />
+                            <span>Update watched history on Trakt</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">
                             By default, watched status will be synchronized. This changes it so that emby just copies the status of trakt, and the only time data watched status is changed on trakt is when a video just finished playing (just scrobbles, no history changes).
                         </div>
                     </div>
-                    <div>
-                        <input type="checkbox" id="chkExtraLogging" name="chkExtraLogging" />
-                        <label for="chkExtraLogging">Add Extra Logs</label>
-                        <div class="fieldDescription">
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="chkExtraLogging" name="chkExtraLogging" />
+                            <span>Enable debug logging</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">
                             When enabled, all data sent to trakt is logged.
                         </div>
                     </div>
-                    <div>
-                        <input type="checkbox" id="chkExportMediaInfo" name="chkExportMediaInfo" />
-                        <label for="chkExportMediaInfo">Export MediaInfo Metadata</label>
-                        <div class="fieldDescription">
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="chkExportMediaInfo" name="chkExportMediaInfo" />
+                            <span>Export MediaInfo Metadata</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">
                             Send audio and video metadata to Trakt.
                         </div>
                     </div>
@@ -149,8 +153,7 @@
                                 return current.toLowerCase() == location.toLowerCase();
                             }).length;
                             var checkedAttribute = isChecked ? 'checked="checked"' : "";
-                            html += '<label for="' + id + '">' + location + '</label>';
-                            html += '<input class="chkTraktLocation" type="checkbox" data-mini="true" id="' + id + '" name="' + id + '" data-location="' + location + '" ' + checkedAttribute + ' />';
+                            html += '<label><input is="emby-checkbox" class="chkTraktLocation" type="checkbox" data-mini="true" id="' + id + '" name="' + id + '" data-location="' + location + '" ' + checkedAttribute + ' /><span>' + location + '</span></label>';
                         }
                         return html;
                     }
