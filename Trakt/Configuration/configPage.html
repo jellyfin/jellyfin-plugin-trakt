@@ -5,69 +5,67 @@
 </head>
 <body>
     <!-- ReSharper disable UnknownCssClass -->
-    <div id="traktConfigurationPage" data-role="page" class="page type-interior pluginConfigurationPage">
+    <div id="traktConfigurationPage" data-role="page" class="page type-interior pluginConfigurationPage traktConfigurationPage" data-require="emby-input,emby-button,emby-select,emby-checkbox">
         <div data-role="content">
             <div class="content-primary">
 
+                <h1>Trakt</h1>
+
                 <form id="traktConfigurationForm">
-                    <ul class="ulForm" data-role="listview">
-                        <li>
-                            <label for="selectUser">Configure Trakt for:</label>
-                            <select id="selectUser" name="selectUser" onchange=" TraktConfigurationPage.loadConfiguration(this.value); "></select>
-                        </li>
-                        <li>
-                            <label for="txtTraktUserName">
-                                Trakt Username:
-                            </label>
-                            <input id="txtTraktUserName" name="txtTraktUserName" type="text" />
-                        </li>
-                        <li>
-                            <label for="txtTraktPassword">
-                                Password:
-                            </label>
-                            <input id="txtTraktPassword" name="txtTraktPassword" type="password" />
-                        </li>
-                        <li>
-                            <div data-mini="true" data-role="collapsible">
-                                <h3>Locations Excluded:</h3>
-                                <div id="divTraktLocations">
-                                </div>
+
+                    <div style="height:0; overflow: hidden;"><input type="text" name="fakeusernameremembered" tabindex="-1" /><input type="password" name="fakepasswordremembered" tabindex="-1" /></div>
+
+                    <div class="selectContainer">
+                        <select is="emby-select" id="selectUser" name="selectUser" onchange=" TraktConfigurationPage.loadConfiguration(this.value);" label="Configure Trakt for:"></select>
+                    </div>
+                    <div class="inputContainer">
+                        <input is="emby-input" id="txtTraktUserName" name="txtTraktUserName" type="text" label="Trakt Username:" />
+                    </div>
+                    <div>
+                        <label for="txtTraktPassword">
+                            Password:
+                        </label>
+                        <input id="txtTraktPassword" name="txtTraktPassword" type="password" />
+                    </div>
+                    <div>
+                        <div data-mini="true" data-role="collapsible">
+                            <h3>Locations Excluded:</h3>
+                            <div id="divTraktLocations">
                             </div>
-                        </li>
-                        <li>
-                            <input type="checkbox" id="chkSkipUnwatchedImportFromTrakt" name="chkSkipUnwatchedImportFromTrakt" />
-                            <label for="chkSkipUnwatchedImportFromTrakt">Skip unwatched import from trakt</label>
-                            <div class="fieldDescription">
-                                By default, Import from Trakt task will overwrite any watched status if item is marked
-                                as unwached on Trakt. When enabled only watched status will be imported.
-                            </div>
-                        </li>
-                        <li>
-                            <input type="checkbox" id="chkPostWatchedHistory" name="chkPostWatchedHistory" />
-                            <label for="chkPostWatchedHistory">Change watched history on trakt</label>
-                            <div class="fieldDescription">
-                                By default, watched status will be synchronized. This changes it so that emby just copies the status of trakt, and the only time data watched status is changed on trakt is when a video just finished playing (just scrobbles, no history changes).
-                            </div>
-                        </li>
-                        <li>
-                            <input type="checkbox" id="chkExtraLogging" name="chkExtraLogging" />
-                            <label for="chkExtraLogging">Add Extra Logs</label>
-                            <div class="fieldDescription">
-                                When enabled, all data sent to trakt is logged.
-                            </div>
-                        </li>
-                        <li>
-                            <input type="checkbox" id="chkExportMediaInfo" name="chkExportMediaInfo" />
-                            <label for="chkExportMediaInfo">Export MediaInfo Metadata</label>
-                            <div class="fieldDescription">
-                                Send audio and video metadata to Trakt.
-                            </div>
-                        </li>
-                        <li>
-                            <button type="submit" data-theme="b">Save</button>
-                            <button type="button" onclick=" history.back(); ">Cancel</button>
-                        </li>
-                    </ul>
+                        </div>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="chkSkipUnwatchedImportFromTrakt" name="chkSkipUnwatchedImportFromTrakt" />
+                        <label for="chkSkipUnwatchedImportFromTrakt">Skip unwatched import from trakt</label>
+                        <div class="fieldDescription">
+                            By default, Import from Trakt task will overwrite any watched status if item is marked
+                            as unwached on Trakt. When enabled only watched status will be imported.
+                        </div>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="chkPostWatchedHistory" name="chkPostWatchedHistory" />
+                        <label for="chkPostWatchedHistory">Change watched history on trakt</label>
+                        <div class="fieldDescription">
+                            By default, watched status will be synchronized. This changes it so that emby just copies the status of trakt, and the only time data watched status is changed on trakt is when a video just finished playing (just scrobbles, no history changes).
+                        </div>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="chkExtraLogging" name="chkExtraLogging" />
+                        <label for="chkExtraLogging">Add Extra Logs</label>
+                        <div class="fieldDescription">
+                            When enabled, all data sent to trakt is logged.
+                        </div>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="chkExportMediaInfo" name="chkExportMediaInfo" />
+                        <label for="chkExportMediaInfo">Export MediaInfo Metadata</label>
+                        <div class="fieldDescription">
+                            Send audio and video metadata to Trakt.
+                        </div>
+                    </div>
+                    <div>
+                        <button is="emby-button" type="submit" class="raised button-submit block"><span>${ButtonSave}</span></button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -89,14 +87,13 @@
             var TraktConfigurationPage =
                 {
                     pluginUniqueId: "8abc6789-fde2-4705-8592-4028806fa343",
-                    loadConfiguration: function (userId) {
+                    loadConfiguration: function (userId, page) {
                         Dashboard.showLoadingMsg();
                         ApiClient.getPluginConfiguration(TraktConfigurationPage.pluginUniqueId).then(function (config) {
                             var currentUserConfig = config.TraktUsers.filter(function (curr) {
                                 return curr.LinkedMbUserId == userId;
                                 //return true;
                             })[0];
-                            var page = $.mobile.activePage;
                             // User doesn't have a config, so create a default one.
                             if (!currentUserConfig) {
                                 // You don't have to put every property in here, just the ones the UI is expecting (below)
@@ -106,7 +103,7 @@
                                     SkipUnwatchedImportFromTrakt: false,
                                     PostWatchedHistory: true,
                                     ExtraLogging: false,
-									ExportMediaInfo: false
+                                    ExportMediaInfo: false
                                 };
                             }
                             // Default this to an empty array so the rendering code doesn't have to worry about it
@@ -158,52 +155,56 @@
                         return html;
                     }
                 };
-            $('#traktConfigurationPage').on('pageshow', function () {
+
+            $('.traktConfigurationPage').on('pageinit', function () {
                 Dashboard.showLoadingMsg();
-                var page = $.mobile.activePage;
+                var page = this;
+                $('#traktConfigurationForm', page).on('submit', function () {
+                    Dashboard.showLoadingMsg();
+                    var currentUserId = $('#selectUser', page).val();
+                    ApiClient.getPluginConfiguration(TraktConfigurationPage.pluginUniqueId).then(function (config) {
+                        var currentUserConfig = config.TraktUsers.filter(function (curr) {
+                            return curr.LinkedMbUserId == currentUserId;
+                        })[0];
+                        // User doesn't have a config, so create a default one.
+                        if (!currentUserConfig) {
+                            currentUserConfig = {};
+                            config.TraktUsers.push(currentUserConfig);
+                        }
+                        currentUserConfig.SkipUnwatchedImportFromTrakt = $('#chkSkipUnwatchedImportFromTrakt', page).checked();
+                        currentUserConfig.PostWatchedHistory = $('#chkPostWatchedHistory', page).checked();
+                        currentUserConfig.ExtraLogging = $('#chkExtraLogging', page).checked();
+                        currentUserConfig.ExportMediaInfo = $('#chkExportMediaInfo', page).checked();
+                        currentUserConfig.UserName = $('#txtTraktUserName', page).val();
+                        if (currentUserConfig.Password != $('#txtTraktPassword', page).val()) {
+                            currentUserConfig.Password = $('#txtTraktPassword', page).val();
+                        }
+                        currentUserConfig.LinkedMbUserId = currentUserId;
+                        currentUserConfig.LocationsExcluded = $('.chkTraktLocation:checked', page).map(function () {
+                            return this.getAttribute('data-location');
+                        }).get();
+                        if (currentUserConfig.UserName == '') {
+                            config.TraktUsers.remove(config.TraktUsers.indexOf(currentUserConfig));
+                        }
+                        ApiClient.updatePluginConfiguration(TraktConfigurationPage.pluginUniqueId, config).then(function (result) {
+                            Dashboard.processPluginConfigurationUpdateResult(result);
+                            ApiClient.getUsers().then(function (users) {
+                                TraktConfigurationPage.populateUsers(users);
+                                Dashboard.alert('Settings saved.');
+                            });
+                        });
+                    });
+                    return false;
+                });
+            });
+            $('.traktConfigurationPage').on('pageshow', function () {
+                Dashboard.showLoadingMsg();
+                var page = this;
                 ApiClient.getUsers().then(function (users) {
                     TraktConfigurationPage.populateUsers(users);
                     var currentUserId = $('#selectUser', page).val();
-                    TraktConfigurationPage.loadConfiguration(currentUserId);
+                    TraktConfigurationPage.loadConfiguration(currentUserId, page);
                 });
-            });
-            $('#traktConfigurationForm').on('submit', function () {
-                Dashboard.showLoadingMsg();
-                var page = $.mobile.activePage;
-                var currentUserId = $('#selectUser', page).val();
-                ApiClient.getPluginConfiguration(TraktConfigurationPage.pluginUniqueId).then(function (config) {
-                    var currentUserConfig = config.TraktUsers.filter(function (curr) {
-                        return curr.LinkedMbUserId == currentUserId;
-                    })[0];
-                    // User doesn't have a config, so create a default one.
-                    if (!currentUserConfig) {
-                        currentUserConfig = {};
-                        config.TraktUsers.push(currentUserConfig);
-                    }
-                    currentUserConfig.SkipUnwatchedImportFromTrakt = $('#chkSkipUnwatchedImportFromTrakt', page).checked();
-                    currentUserConfig.PostWatchedHistory = $('#chkPostWatchedHistory', page).checked();
-                    currentUserConfig.ExtraLogging = $('#chkExtraLogging', page).checked();
-                    currentUserConfig.ExportMediaInfo = $('#chkExportMediaInfo', page).checked();
-                    currentUserConfig.UserName = $('#txtTraktUserName', page).val();
-                    if (currentUserConfig.Password != $('#txtTraktPassword', page).val()) {
-                        currentUserConfig.Password = $('#txtTraktPassword', page).val();
-                    }
-                    currentUserConfig.LinkedMbUserId = currentUserId;
-                    currentUserConfig.LocationsExcluded = $('.chkTraktLocation:checked', page).map(function () {
-                        return this.getAttribute('data-location');
-                    }).get();
-                    if (currentUserConfig.UserName == '') {
-                        config.TraktUsers.remove(config.TraktUsers.indexOf(currentUserConfig));
-                    }
-                    ApiClient.updatePluginConfiguration(TraktConfigurationPage.pluginUniqueId, config).then(function (result) {
-                        Dashboard.processPluginConfigurationUpdateResult(result);
-                        ApiClient.getUsers().then(function (users) {
-                            TraktConfigurationPage.populateUsers(users);
-                            Dashboard.alert('Settings saved.');
-                        });
-                    });
-                });
-                return false;
             });
         </script>
         <!-- ReSharper restore UseOfImplicitGlobalInFunctionScope -->
