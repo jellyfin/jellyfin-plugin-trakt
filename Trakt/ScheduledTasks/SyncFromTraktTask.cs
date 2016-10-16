@@ -390,7 +390,7 @@
         /// <summary>
         /// 
         /// </summary>
-        public string Description => "Sync Watched/Unwatched status from Trakt.tv for each MB3 user that has a configured Trakt account";
+        public string Description => "Sync Watched/Unwatched status from Trakt.tv for each Emby user that has a configured Trakt account";
 
         /// <summary>
         /// 

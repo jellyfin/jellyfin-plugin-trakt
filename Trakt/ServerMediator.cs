@@ -146,7 +146,7 @@ namespace Trakt
                     return;
                 }
 
-                // Since MB3 is user profile friendly, I'm going to need to do a user lookup every time something starts
+                // Since Emby is user profile friendly, I'm going to need to do a user lookup every time something starts
                 var traktUser = UserHelper.GetTraktUser(e.Users.FirstOrDefault());
 
                 if (traktUser == null)

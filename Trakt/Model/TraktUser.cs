@@ -23,5 +23,10 @@ namespace Trakt.Model
         public bool ExportMediaInfo { get; set; }
 
         public String[] LocationsExcluded { get; set; }
+
+        public TraktUser()
+        {
+            SkipUnwatchedImportFromTrakt = true;
+        }
     }
 }
