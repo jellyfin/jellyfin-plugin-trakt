@@ -27,6 +27,7 @@ namespace Trakt.Model
         public TraktUser()
         {
             SkipUnwatchedImportFromTrakt = true;
+            PostWatchedHistory = true;
         }
     }
 }
