@@ -1,4 +1,6 @@
-﻿namespace Trakt.ScheduledTasks
+﻿using MediaBrowser.Model.Tasks;
+
+namespace Trakt.ScheduledTasks
 {
     using System;
     using System.Collections.Generic;
@@ -9,7 +11,6 @@
     using CommonIO;
 
     using MediaBrowser.Common.Net;
-    using MediaBrowser.Common.ScheduledTasks;
     using MediaBrowser.Controller;
     using MediaBrowser.Controller.Entities;
     using MediaBrowser.Controller.Entities.Movies;
@@ -48,9 +49,14 @@
             _traktApi = new TraktApi(jsonSerializer, _logger, httpClient, appHost, userDataManager, fileSystem);
         }
 
-        public IEnumerable<ITaskTrigger> GetDefaultTriggers()
+        public IEnumerable<TaskTriggerInfo> GetDefaultTriggers()
         {
-            return new List<ITaskTrigger>();
+            return new List<TaskTriggerInfo>();
+        }
+
+        public string Key
+        {
+            get { return "TraktSyncLibraryTask"; }
         }
 
         public async Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
