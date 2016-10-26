@@ -11,7 +11,6 @@ using MediaBrowser.Controller.Entities.TV;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using CommonIO;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
@@ -27,6 +26,7 @@ using MediaBrowser.Model.Entities;
 using TraktMovieCollected = Trakt.Api.DataContracts.Sync.Collection.TraktMovieCollected;
 using TraktEpisodeCollected = Trakt.Api.DataContracts.Sync.Collection.TraktEpisodeCollected;
 using TraktShowCollected = Trakt.Api.DataContracts.Sync.Collection.TraktShowCollected;
+using MediaBrowser.Model.IO;
 
 namespace Trakt.Api
 {

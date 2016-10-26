@@ -1,4 +1,4 @@
-﻿using MediaBrowser.Common.IO;
+﻿using MediaBrowser.Model.IO;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
@@ -12,7 +12,6 @@ using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using System;
 using System.Linq;
-using CommonIO;
 using Trakt.Api;
 using Trakt.Helpers;
 

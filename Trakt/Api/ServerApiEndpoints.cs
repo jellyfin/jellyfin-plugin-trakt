@@ -2,7 +2,7 @@
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Net;
 using MediaBrowser.Model.Logging;
-using ServiceStack;
+using MediaBrowser.Model.Services;
 using Trakt.Helpers;
 
 namespace Trakt.Api
@@ -11,7 +11,6 @@ namespace Trakt.Api
     /// 
     /// </summary>
     [Route("/Trakt/Users/{UserId}/Items/{Id}/Rate", "POST")]
-    [Api(Description = "Tell the Trakt server to send an item rating to trakt.tv")]
     public class RateItem
     {
         [ApiMember(Name = "UserId", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "POST")]
@@ -31,7 +30,6 @@ namespace Trakt.Api
     /// 
     /// </summary>
     [Route("/Trakt/Users/{UserId}/Items/{Id}/Comment", "POST")]
-    [Api(Description = "Tell the Trakt server to send an item comment to trakt.tv")]
     public class CommentItem
     {
         [ApiMember(Name = "UserId", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "POST")]
@@ -56,7 +54,6 @@ namespace Trakt.Api
     /// 
     /// </summary>
     [Route("/Trakt/Users/{UserId}/RecommendedMovies", "POST")]
-    [Api(Description = "Request a list of recommended Movies based on a users watch history")]
     public class RecommendedMovies
     {
         [ApiMember(Name = "UserId", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "POST")]
@@ -84,7 +81,6 @@ namespace Trakt.Api
     /// 
     /// </summary>
     [Route("/Trakt/Users/{UserId}/RecommendedShows", "POST")]
-    [Api(Description = "Request a list of recommended Shows based on a users watch history")]
     public class RecommendedShows
     {
         [ApiMember(Name = "UserId", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "POST")]

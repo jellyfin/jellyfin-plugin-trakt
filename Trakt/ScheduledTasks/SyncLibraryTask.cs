@@ -8,8 +8,6 @@ namespace Trakt.ScheduledTasks
     using System.Threading;
     using System.Threading.Tasks;
 
-    using CommonIO;
-
     using MediaBrowser.Common.Net;
     using MediaBrowser.Controller;
     using MediaBrowser.Controller.Entities;
@@ -24,6 +22,7 @@ namespace Trakt.ScheduledTasks
     using Trakt.Api.DataContracts.Sync;
     using Trakt.Helpers;
     using Trakt.Model;
+    using MediaBrowser.Model.IO;
 
     /// <summary>
     /// Task that will Sync each users local library with their respective trakt.tv profiles. This task will only include 
