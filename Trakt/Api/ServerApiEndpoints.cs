@@ -1,6 +1,5 @@
 ﻿using System;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.Net;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Services;
 using Trakt.Helpers;
@@ -107,7 +106,7 @@ namespace Trakt.Api
     /// <summary>
     /// 
     /// </summary>
-    public class TraktUriService : IRestfulService
+    public class TraktUriService : IService
     {
         private readonly TraktApi _traktApi;
         private readonly ILibraryManager _libraryManager;
