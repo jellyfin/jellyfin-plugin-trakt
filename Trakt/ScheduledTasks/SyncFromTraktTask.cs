@@ -187,8 +187,7 @@ namespace Trakt.ScheduledTasks
                     // Only process if there's a change
                     if (changed)
                     {
-                        await
-                            _userDataManager.SaveUserData(
+                        await _userDataManager.SaveUserData(
                                 user.Id,
                                 movie,
                                 userData,

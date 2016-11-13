@@ -199,11 +199,10 @@ namespace Trakt.ScheduledTasks
                         {
                             playedMovies.Add(libraryMovie);
                         }
-                        else
+                        else if (!traktUser.SkipUnwatchedImportFromTrakt)
                         {
                             userData.Played = false;
-                            await
-                                _userDataManager.SaveUserData(
+                            await _userDataManager.SaveUserData(
                                     user.Id,
                                     libraryMovie,
                                     userData,
@@ -361,11 +360,10 @@ namespace Trakt.ScheduledTasks
                     {
                         playedEpisodes.Add(episode);
                     }
-                    else
+                    else if (!traktUser.SkipUnwatchedImportFromTrakt)
                     {
                         userData.Played = false;
-                        await
-                            _userDataManager.SaveUserData(
+                        await _userDataManager.SaveUserData(
                                 user.Id,
                                 episode,
                                 userData,
