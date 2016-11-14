@@ -12,6 +12,7 @@ using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using System;
 using System.Linq;
+using MediaBrowser.Model.Threading;
 using Trakt.Api;
 using Trakt.Helpers;
 
@@ -43,7 +44,7 @@ namespace Trakt
         /// <param name="httpClient"></param>
         /// <param name="appHost"></param>
         /// <param name="fileSystem"></param>
-        public ServerMediator(IJsonSerializer jsonSerializer, ISessionManager sessionManager, IUserDataManager userDataManager, ILibraryManager libraryManager, ILogManager logger, IHttpClient httpClient, IServerApplicationHost appHost, IFileSystem fileSystem)
+        public ServerMediator(IJsonSerializer jsonSerializer, ISessionManager sessionManager, IUserDataManager userDataManager, ILibraryManager libraryManager, ILogManager logger, IHttpClient httpClient, IServerApplicationHost appHost, IFileSystem fileSystem, ITimerFactory timerFactory)
         {
             Instance = this;
             _sessionManager = sessionManager;
@@ -52,8 +53,8 @@ namespace Trakt
 
             _traktApi = new TraktApi(jsonSerializer, _logger, httpClient, appHost, userDataManager, fileSystem);
             _service = new TraktUriService(_traktApi, _logger, _libraryManager);
-            _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _traktApi);
-            _userDataManagerEventsHelper = new UserDataManagerEventsHelper(_logger, _traktApi);
+            _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _traktApi, timerFactory);
+            _userDataManagerEventsHelper = new UserDataManagerEventsHelper(_logger, _traktApi, timerFactory);
 
             userDataManager.UserDataSaved += _userDataManager_UserDataSaved;
         }

@@ -414,7 +414,11 @@ namespace Trakt.ScheduledTasks
                 {
                     var dataContracts =
                         await _traktApi.SendEpisodePlaystateUpdates(playedEpisodes, traktUser, seen, cancellationToken);
-                    dataContracts?.ForEach(LogTraktResponseDataContract);
+
+                    foreach (var con in dataContracts)
+                    {
+                        LogTraktResponseDataContract(con);
+                    }
                 }
                 catch (Exception e)
                 {

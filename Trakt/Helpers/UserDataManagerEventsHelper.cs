@@ -2,14 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Timers;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
+using MediaBrowser.Model.Threading;
 using Trakt.Api;
 using Trakt.Model;
-using Timer = System.Timers.Timer;
 
 namespace Trakt.Helpers
 {
@@ -22,19 +21,20 @@ namespace Trakt.Helpers
         private List<UserDataPackage> _userDataPackages;
         private readonly ILogger _logger;
         private readonly TraktApi _traktApi;
-        private Timer _timer;
- 
+        private ITimer _timer;
+        private readonly ITimerFactory _timerFactory;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="traktApi"></param>
-        public UserDataManagerEventsHelper(ILogger logger, TraktApi traktApi)
+        public UserDataManagerEventsHelper(ILogger logger, TraktApi traktApi, ITimerFactory timerFactory)
         {
             _userDataPackages = new List<UserDataPackage>();
             _logger = logger;
             _traktApi = traktApi;
+            _timerFactory = timerFactory;
         }
 
 
@@ -57,18 +57,12 @@ namespace Trakt.Helpers
 
             if (_timer == null)
             {
-                _timer = new Timer(5000);
-                _timer.Elapsed += TimerElapsed;
-            }
-
-            if (_timer.Enabled)
-            {
-                _timer.Stop();
-                _timer.Start();
+                _timer = _timerFactory.Create(OnTimerCallback, null, TimeSpan.FromMilliseconds(5000),
+                    Timeout.InfiniteTimeSpan);
             }
             else
             {
-                _timer.Start();
+                _timer.Change(TimeSpan.FromMilliseconds(5000), Timeout.InfiniteTimeSpan);
             }
 
             var movie = userDataSaveEventArgs.Item as Movie;
@@ -135,17 +129,8 @@ namespace Trakt.Helpers
             }
         }
 
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void TimerElapsed(object sender, ElapsedEventArgs e)
+        private void OnTimerCallback(object state)
         {
-            _timer.Enabled = false;
-
             foreach (var package in _userDataPackages)
             {
 

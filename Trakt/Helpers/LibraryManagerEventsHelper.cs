@@ -3,35 +3,36 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Logging;
+using MediaBrowser.Model.Threading;
 using Trakt.Api;
 using Trakt.Model;
-using Timer = System.Timers.Timer;
 
 namespace Trakt.Helpers
 {
     internal class LibraryManagerEventsHelper
     {
         private readonly List<LibraryEvent> _queuedEvents;
-        private Timer _queueTimer;
+        private ITimer _queueTimer;
         private readonly ILogger _logger ;
         private readonly TraktApi _traktApi;
+        private readonly ITimerFactory _timerFactory;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="traktApi"></param>
-        public LibraryManagerEventsHelper(ILogger logger, TraktApi traktApi)
+        public LibraryManagerEventsHelper(ILogger logger, TraktApi traktApi, ITimerFactory timerFactory)
         {
             _queuedEvents = new List<LibraryEvent>();
             _logger = logger;
             _traktApi = traktApi;
+            _timerFactory = timerFactory;
         }
 
         /// <summary>
@@ -46,21 +47,13 @@ namespace Trakt.Helpers
 
             if (_queueTimer == null)
             {
-                _queueTimer = new Timer(20000); // fire every 20 seconds
-                _queueTimer.Elapsed += QueueTimerElapsed;
+                _queueTimer = _timerFactory.Create(OnQueueTimerCallback, null, TimeSpan.FromMilliseconds(20000),
+                    Timeout.InfiniteTimeSpan);
             }
-            else if (_queueTimer.Enabled)
+            else
             {
-                // If enabled then multiple LibraryManager events are firing. Restart the timer
-                _queueTimer.Stop();
-                _queueTimer.Start();
+                _queueTimer.Change(TimeSpan.FromMilliseconds(20000), Timeout.InfiniteTimeSpan);
             }
-
-            if (!_queueTimer.Enabled)
-            {
-                _queueTimer.Enabled = true;
-            }
-
 
             var users = Plugin.Instance.PluginConfiguration.TraktUsers;
 
@@ -80,9 +73,7 @@ namespace Trakt.Helpers
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void QueueTimerElapsed(object sender, ElapsedEventArgs e)
+        private void OnQueueTimerCallback(object state)
         {
             _logger.Info("Timer elapsed - Processing queued items");
 
@@ -90,7 +81,6 @@ namespace Trakt.Helpers
             {
                 _logger.Info("No events... Stopping queue timer");
                 // This may need to go
-                _queueTimer.Enabled = false;
                 return;
             }
             var queue = _queuedEvents.ToList();
@@ -174,9 +164,7 @@ namespace Trakt.Helpers
             }
 
             // Everything is processed. Reset the event list.
-            _queueTimer.Enabled = false;
             _queuedEvents.Clear();
-
         }
 
         private async Task ProcessQueuedShowEvents(IEnumerable<LibraryEvent> events, TraktUser traktUser, EventType eventType)
