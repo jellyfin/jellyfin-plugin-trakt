@@ -58,6 +58,9 @@ namespace Trakt.ScheduledTasks
             get { return "TraktSyncLibraryTask"; }
         }
 
+        /// <summary>
+        /// Gather users and call <see cref="SyncUserLibrary"/>
+        /// </summary>
         public async Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
         {
             var users = _userManager.Users.Where(u => UserHelper.GetTraktUser(u) != null).ToList();
@@ -91,6 +94,10 @@ namespace Trakt.ScheduledTasks
             }
         }
 
+        /// <summary>
+        /// Count media items and call <see cref="SyncMovies"/> and <see cref="SyncShows"/>
+        /// </summary>
+        /// <returns></returns>
         private async Task SyncUserLibrary(
             User user,
             TraktUser traktUser,
@@ -124,27 +131,6 @@ namespace Trakt.ScheduledTasks
         /// <summary>
         /// Sync watched and collected status of <see cref="Movie"/>s with trakt.
         /// </summary>
-        /// <param name="user">
-        /// <see cref="User"/> to get <see cref="UserItemData"/> (e.g. watched status) from.
-        /// </param>
-        /// <param name="traktUser">
-        /// The <see cref="TraktUser"/> to sync with.
-        /// </param>
-        /// <param name="progress">
-        /// Progress reporter.
-        /// </param>
-        /// <param name="progPercent">
-        /// Initial progress value.
-        /// </param>
-        /// <param name="percentPerItem">
-        /// Progress percent per item.
-        /// </param>
-        /// <param name="cancellationToken">
-        /// The cancellation token.
-        /// </param>
-        /// <returns>
-        /// Awaitable <see cref="Task"/>.
-        /// </returns>
         private async Task SyncMovies(
             User user,
             TraktUser traktUser,
@@ -311,6 +297,9 @@ namespace Trakt.ScheduledTasks
             }
         }
 
+        /// <summary>
+        /// Sync watched and collected status of <see cref="Movie"/>s with trakt.
+        /// </summary>
         private async Task SyncShows(
             User user,
             TraktUser traktUser,
