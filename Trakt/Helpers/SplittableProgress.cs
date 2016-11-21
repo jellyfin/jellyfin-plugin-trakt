@@ -2,7 +2,10 @@
 {
     using System;
 
-    // Can't be generic, because it's impossible to do arithmetics on generics
+    /// <summary>
+    /// Similar to <see cref="Progress"/>, but report is relative, not absolute.
+    /// </summary>
+    /// Can't be generic, because it's impossible to do arithmetics on generics
     public class SplittableProgress : Progress<double>, ISplittableProgress<double>
     {
         public SplittableProgress(Action<double> handler)
@@ -10,7 +13,7 @@
         {
         }
 
-        public double Progress { get; private set; }
+        private double Progress { get; set; }
 
         ISplittableProgress<double> ISplittableProgress<double>.Split(int parts)
         {
