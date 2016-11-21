@@ -6,6 +6,7 @@ namespace Trakt.ScheduledTasks
     using System.Collections.Generic;
     using System.Globalization;
     using System.Linq;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -58,11 +59,8 @@ namespace Trakt.ScheduledTasks
         }
 
         /// <summary>
-        /// 
+        /// Gather users and call <see cref="SyncTraktDataForUser"/>
         /// </summary>
-        /// <param name="cancellationToken"></param>
-        /// <param name="progress"></param>
-        /// <returns></returns>
         public async Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
         {
             var users = _userManager.Users.Where(u => UserHelper.GetTraktUser(u) != null).ToList();
@@ -290,20 +288,21 @@ namespace Trakt.ScheduledTasks
             // _logger.Info(syncItemFailures + " items not parsed");
         }
 
-        private string GetVerboseEpisodeData(Episode episode)
+        private static string GetVerboseEpisodeData(Episode episode)
         {
-            string episodeString = string.Empty;
-            episodeString += "Episode: " + (episode.ParentIndexNumber != null ? episode.ParentIndexNumber.ToString() : "null");
-            episodeString += "x" + (episode.IndexNumber != null ? episode.IndexNumber.ToString() : "null");
-            episodeString += " '" + episode.Name + "' ";
-            episodeString += "Series: '" + (episode.Series != null
-                ? !string.IsNullOrWhiteSpace(episode.Series.Name)
-                    ? episode.Series.Name
-                    : "null property"
-                : "null class");
-            episodeString += "'";
-
-            return episodeString;
+            var episodeString = new StringBuilder();
+            episodeString.Append("Episode: ");
+            episodeString.Append(episode.ParentIndexNumber != null ? episode.ParentIndexNumber.ToString() : "null");
+            episodeString.Append("x");
+            episodeString.Append(episode.IndexNumber != null ? episode.IndexNumber.ToString() : "null");
+            episodeString.Append(" '").Append(episode.Name).Append("' ");
+            episodeString.Append("Series: '");
+            episodeString.Append(episode.Series != null
+                       ? !string.IsNullOrWhiteSpace(episode.Series.Name) ? episode.Series.Name : "null property"
+                       : "null class");
+            episodeString.Append("'");
+            
+            return episodeString.ToString();
         }
 
         public static TraktShowWatched FindMatch(Series item, IEnumerable<TraktShowWatched> results)
@@ -370,35 +369,15 @@ namespace Trakt.ScheduledTasks
             return false;
         }
 
+        public string Key => "TraktSyncFromTraktTask";
 
+        public IEnumerable<TaskTriggerInfo> GetDefaultTriggers() => new List<TaskTriggerInfo>();
+        
 
-        public string Key
-        {
-            get { return "TraktSyncFromTraktTask"; }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerable<TaskTriggerInfo> GetDefaultTriggers()
-        {
-            return new List<TaskTriggerInfo>();
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
         public string Name => "Import playstates from Trakt.tv";
 
-        /// <summary>
-        /// 
-        /// </summary>
         public string Description => "Sync Watched/Unwatched status from Trakt.tv for each Emby user that has a configured Trakt account";
 
-        /// <summary>
-        /// 
-        /// </summary>
         public string Category => "Trakt";
     }
 }

@@ -97,7 +97,9 @@
     <Compile Include="Configuration\PluginConfiguration.cs" />
     <Compile Include="Enums.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="Helpers\ISplittableProgress.cs" />
     <Compile Include="Helpers\LibraryManagerEventsHelper.cs" />
+    <Compile Include="Helpers\SplittableProgress.cs" />
     <Compile Include="Helpers\UserDataManagerEventsHelper.cs" />
     <Compile Include="Helpers\UserHelpers.cs" />
     <Compile Include="Model\TraktUser.cs" />

@@ -8,6 +8,8 @@ using Trakt.Api.DataContracts.Users.Collection;
 
 namespace Trakt
 {
+    using Trakt.Helpers;
+
     public static class Extensions
     {
         // Trakt.tv uses Unix timestamps, which are seconds past epoch.
@@ -189,6 +191,18 @@ namespace Trakt
             return chunks;
         }
 
+        public static ISplittableProgress<double> Split(this IProgress<double> parent, int parts)
+        {
+            var current = parent.ToSplittableProgress();
+            return current.Split(parts);
+        }
+
+        public static ISplittableProgress<double> ToSplittableProgress(this IProgress<double> progress)
+        {
+            var splittable = new SplittableProgress(progress.Report);
+            return splittable;
+        }
+
         public enum TraktAudio
         {
             lpcm,
@@ -204,5 +218,6 @@ namespace Trakt
             dolby_digital_plus,
             dolby_truehd
         }
+       
     }
 }
