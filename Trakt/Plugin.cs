@@ -10,7 +10,7 @@ namespace Trakt
 {
     public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
-        public SemaphoreSlim TraktResourcePool = new SemaphoreSlim(2, 2);
+        public SemaphoreSlim TraktResourcePool = new SemaphoreSlim(1, 1);
 
         public Plugin(IApplicationPaths appPaths, IXmlSerializer xmlSerializer)
             : base(appPaths, xmlSerializer)

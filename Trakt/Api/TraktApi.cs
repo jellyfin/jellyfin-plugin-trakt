@@ -477,7 +477,7 @@ namespace Trakt.Api
         /// <returns></returns>
         public async Task<TraktSyncResponse> SendItemRating(BaseItem item, int rating, TraktUser traktUser)
         {
-            object data = new {};
+            object data = new { };
             if (item is Movie)
             {
                 data = new
@@ -497,9 +497,9 @@ namespace Trakt.Api
                         }
                     }
                 };
-                
+
             }
-            else if (item is Episode )
+            else if (item is Episode)
             {
                 var episode = item as Episode;
 
@@ -601,68 +601,68 @@ namespace Trakt.Api
         {
             return null;
             //TODO: This functionallity is not available yet
-//            string url;
-//            var data = new Dictionary<string, string>
-//                           {
-//                               {"username", traktUser.UserName},
-//                               {"password", traktUser.Password}
-//                           };
-//
-//            if (item is Movie)
-//            {
-//                if (item.ProviderIds != null && item.ProviderIds.ContainsKey("Imdb"))
-//                    data.Add("imdb_id", item.ProviderIds["Imdb"]);
-//                
-//                data.Add("title", item.Name);
-//                data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
-//                url = TraktUris.CommentMovie;
-//            }
-//            else
-//            {
-//                var episode = item as Episode;
-//                if (episode != null)
-//                {
-//                    if (episode.Series.ProviderIds != null)
-//                    {
-//                        if (episode.Series.ProviderIds.ContainsKey("Imdb"))
-//                            data.Add("imdb_id", episode.Series.ProviderIds["Imdb"]);
-//
-//                        if (episode.Series.ProviderIds.ContainsKey("Tvdb"))
-//                            data.Add("tvdb_id", episode.Series.ProviderIds["Tvdb"]);
-//                    }
-//
-//                    data.Add("season", episode.AiredSeasonNumber.ToString());
-//                    data.Add("episode", episode.IndexNumber.ToString());
-//                    url = TraktUris.CommentEpisode;   
-//                }
-//                else // It's a Series
-//                {
-//                    data.Add("title", item.Name);
-//                    data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
-//
-//                    if (item.ProviderIds != null)
-//                    {
-//                        if (item.ProviderIds.ContainsKey("Imdb"))
-//                            data.Add("imdb_id", item.ProviderIds["Imdb"]);
-//
-//                        if (item.ProviderIds.ContainsKey("Tvdb"))
-//                            data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
-//                    }
-//                    
-//                    url = TraktUris.CommentShow;
-//                }
-//            }
-//
-//            data.Add("comment", comment);
-//            data.Add("spoiler", containsSpoilers.ToString());
-//            data.Add("review", isReview.ToString());
-//
-//            Stream response =
-//                await
-//                _httpClient.Post(url, data, Plugin.Instance.TraktResourcePool,
-//                                                 CancellationToken.None).ConfigureAwait(false);
-//
-//            return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
+            //            string url;
+            //            var data = new Dictionary<string, string>
+            //                           {
+            //                               {"username", traktUser.UserName},
+            //                               {"password", traktUser.Password}
+            //                           };
+            //
+            //            if (item is Movie)
+            //            {
+            //                if (item.ProviderIds != null && item.ProviderIds.ContainsKey("Imdb"))
+            //                    data.Add("imdb_id", item.ProviderIds["Imdb"]);
+            //                
+            //                data.Add("title", item.Name);
+            //                data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
+            //                url = TraktUris.CommentMovie;
+            //            }
+            //            else
+            //            {
+            //                var episode = item as Episode;
+            //                if (episode != null)
+            //                {
+            //                    if (episode.Series.ProviderIds != null)
+            //                    {
+            //                        if (episode.Series.ProviderIds.ContainsKey("Imdb"))
+            //                            data.Add("imdb_id", episode.Series.ProviderIds["Imdb"]);
+            //
+            //                        if (episode.Series.ProviderIds.ContainsKey("Tvdb"))
+            //                            data.Add("tvdb_id", episode.Series.ProviderIds["Tvdb"]);
+            //                    }
+            //
+            //                    data.Add("season", episode.AiredSeasonNumber.ToString());
+            //                    data.Add("episode", episode.IndexNumber.ToString());
+            //                    url = TraktUris.CommentEpisode;   
+            //                }
+            //                else // It's a Series
+            //                {
+            //                    data.Add("title", item.Name);
+            //                    data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
+            //
+            //                    if (item.ProviderIds != null)
+            //                    {
+            //                        if (item.ProviderIds.ContainsKey("Imdb"))
+            //                            data.Add("imdb_id", item.ProviderIds["Imdb"]);
+            //
+            //                        if (item.ProviderIds.ContainsKey("Tvdb"))
+            //                            data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
+            //                    }
+            //                    
+            //                    url = TraktUris.CommentShow;
+            //                }
+            //            }
+            //
+            //            data.Add("comment", comment);
+            //            data.Add("spoiler", containsSpoilers.ToString());
+            //            data.Add("review", isReview.ToString());
+            //
+            //            Stream response =
+            //                await
+            //                _httpClient.Post(url, data, Plugin.Instance.TraktResourcePool,
+            //                                                 CancellationToken.None).ConfigureAwait(false);
+            //
+            //            return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
         }
 
         /// <summary>
@@ -778,7 +778,7 @@ namespace Trakt.Api
                         Imdb = m.GetProviderId(MetadataProviders.Imdb),
                         Tmdb =
                             string.IsNullOrEmpty(m.GetProviderId(MetadataProviders.Tmdb))
-                                ? (int?) null
+                                ? (int?)null
                                 : int.Parse(m.GetProviderId(MetadataProviders.Tmdb))
                     },
                     Year = m.ProductionYear,
@@ -841,7 +841,7 @@ namespace Trakt.Api
 
         private async Task<TraktSyncResponse> SendEpisodePlaystateUpdatesInternalAsync(IEnumerable<Episode> episodeChunk, TraktUser traktUser, bool seen, CancellationToken cancellationToken)
         {
-            var data = new TraktSyncWatched{ Episodes = new List<TraktEpisodeWatched>(), Shows = new List<TraktShowWatched>() };
+            var data = new TraktSyncWatched { Episodes = new List<TraktEpisodeWatched>(), Shows = new List<TraktShowWatched>() };
             foreach (var episode in episodeChunk)
             {
                 var tvDbId = episode.GetProviderId(MetadataProviders.Tvdb);
@@ -882,7 +882,7 @@ namespace Trakt.Api
                         data.Shows.Add(syncShow);
                     }
                     var syncSeason = syncShow.Seasons.FirstOrDefault(ss => ss.Number == episode.GetSeasonNumber());
-                    if(syncSeason == null)
+                    if (syncSeason == null)
                     {
                         syncSeason = new TraktSeasonWatched
                         {
@@ -938,9 +938,12 @@ namespace Trakt.Api
                 RequestContentType = "application/json",
                 TimeoutMs = 120000,
                 LogErrorResponseBody = false,
-                LogRequest = true
+                LogRequest = true,
+                BufferContent = false,
+                EnableHttpCompression = false,
+                EnableKeepAlive = false
             };
-            await SetRequestHeaders(options, traktUser);
+            await SetRequestHeaders(options, traktUser).ConfigureAwait(false);
 
             try
             {
@@ -948,8 +951,19 @@ namespace Trakt.Api
             }
             catch
             {
-                
+
             }
+            await Task.Delay(500).ConfigureAwait(false);
+
+            try
+            {
+                return await _httpClient.Get(options).ConfigureAwait(false);
+            }
+            catch
+            {
+
+            }
+            await Task.Delay(500).ConfigureAwait(false);
 
             // Retry
             return await _httpClient.Get(options).ConfigureAwait(false);
@@ -962,7 +976,7 @@ namespace Trakt.Api
 
         private async Task<Stream> PostToTrakt(string url, object data, CancellationToken cancellationToken, TraktUser traktUser)
         {
-            var requestContent = data == null? string.Empty : _jsonSerializer.SerializeToString(data);
+            var requestContent = data == null ? string.Empty : _jsonSerializer.SerializeToString(data);
             if (traktUser != null && traktUser.ExtraLogging && url != TraktUris.Login)
             {
                 _logger.Debug(requestContent);
@@ -976,9 +990,12 @@ namespace Trakt.Api
                 RequestContent = requestContent,
                 TimeoutMs = 120000,
                 LogErrorResponseBody = false,
-                LogRequest = true
+                LogRequest = true,
+                BufferContent = false,
+                EnableHttpCompression = false,
+                EnableKeepAlive = false
             };
-            await SetRequestHeaders(options, traktUser);
+            await SetRequestHeaders(options, traktUser).ConfigureAwait(false);
 
             try
             {
@@ -987,8 +1004,22 @@ namespace Trakt.Api
             }
             catch
             {
-                
+
             }
+
+            await Task.Delay(500).ConfigureAwait(false);
+
+            try
+            {
+                var response = await _httpClient.Post(options).ConfigureAwait(false);
+                return response.Content;
+            }
+            catch
+            {
+
+            }
+
+            await Task.Delay(500).ConfigureAwait(false);
 
             // retry
             var retryResponse = await _httpClient.Post(options).ConfigureAwait(false);
