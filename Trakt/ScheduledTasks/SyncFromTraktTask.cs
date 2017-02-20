@@ -126,8 +126,8 @@ namespace Trakt.ScheduledTasks
                         new InternalItemsQuery
                             {
                                 IncludeItemTypes = new[] { typeof(Movie).Name, typeof(Episode).Name },
-                                ExcludeLocationTypes = new[] { LocationType.Virtual }
-                            })
+                                IsVirtualItem = false
+                        })
                     .Where(i => _traktApi.CanSync(i, traktUser))
                     .OrderBy(
                         i =>
@@ -216,7 +216,7 @@ namespace Trakt.ScheduledTasks
                                 tSeason.Number
                                 == (episode.ParentIndexNumber == 0
                                         ? 0
-                                        : ((episode.ParentIndexNumber ?? 1) + (episode.Series.AnimeSeriesIndex ?? 1) - 1)));
+                                        : ((episode.ParentIndexNumber ?? 1))));
 
                     // if it's not a match then it means trakt doesn't know about the season, leave the watched state alone and move on
                     if (matchedSeason != null)

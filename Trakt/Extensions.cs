@@ -12,34 +12,6 @@ namespace Trakt
 
     public static class Extensions
     {
-        // Trakt.tv uses Unix timestamps, which are seconds past epoch.
-        public static DateTime ConvertEpochToDateTime(this long unixTimeStamp)
-        {
-            var dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0);
-
-            dtDateTime = dtDateTime.AddSeconds(unixTimeStamp).ToLocalTime();
-
-            return dtDateTime;
-        }
-
-
-
-        public static long ConvertToUnixTimeStamp(this DateTime dateTime)
-        {
-            try
-            {
-                var dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0);
-
-                var ts = dateTime.Subtract(dtDateTime);
-
-                return Convert.ToInt64(ts.TotalSeconds);
-            }
-            catch
-            {
-                return 0;
-            }
-        }
-
         public static int? ConvertToInt(this string input)
         {
             int result;
@@ -137,15 +109,15 @@ namespace Trakt
             return null;
         }
         
-        public static string ToISO8601(this DateTime dt, double hourShift = 0)
+        public static string ToISO8601(this DateTime dt)
         {
-            return dt.AddHours(hourShift).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ");
+            return dt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ");
         }
 
 
         public static int GetSeasonNumber(this Episode episode)
         {
-            return (episode.ParentIndexNumber != 0 ? episode.ParentIndexNumber ?? 1 + (episode.Series.AnimeSeriesIndex ?? 1) - 1 : episode.ParentIndexNumber).Value;
+            return (episode.ParentIndexNumber != 0 ? episode.ParentIndexNumber ?? 1 : episode.ParentIndexNumber).Value;
         }
 
         public static string GetAudioChannels(this MediaStream audioStream)

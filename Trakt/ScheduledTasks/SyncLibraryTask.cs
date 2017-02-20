@@ -120,8 +120,8 @@
                         new InternalItemsQuery
                             {
                                 IncludeItemTypes = new[] { typeof(Movie).Name, typeof(Episode).Name },
-                                ExcludeLocationTypes = new[] { LocationType.Virtual }
-                            })
+                                IsVirtualItem = false
+                        })
                     .Count(i => _traktApi.CanSync(i, traktUser));
 
             if (mediaItemsCount == 0)
@@ -156,8 +156,8 @@
                         new InternalItemsQuery
                             {
                                 IncludeItemTypes = new[] { typeof(Movie).Name },
-                                ExcludeLocationTypes = new[] { LocationType.Virtual }
-                            })
+                                IsVirtualItem = false
+                        })
                     .Where(x => _traktApi.CanSync(x, traktUser))
                     .OrderBy(x => x.Name)
                     .ToList();
@@ -315,7 +315,7 @@
                         new InternalItemsQuery
                             {
                                 IncludeItemTypes = new[] { typeof(Episode).Name },
-                                ExcludeLocationTypes = new[] { LocationType.Virtual }
+                                IsVirtualItem = false
                             })
                     .Where(x => _traktApi.CanSync(x, traktUser))
                     .OrderBy(x => (x as Episode)?.SeriesName)

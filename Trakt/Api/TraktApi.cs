@@ -386,14 +386,19 @@ namespace Trakt.Api
                     }
                     for (var number = indexNumber; number <= finalNumber; number++)
                     {
+                        var ids = new TraktEpisodeId();
+
+                        if (number == indexNumber)
+                        {
+                            // Omit this from the rest because then we end up attaching the tvdb of the first episode to the subsequent ones
+                            ids.Tvdb = tvDbId.ConvertToInt();
+
+                        }
                         var traktEpisodeCollected = new TraktEpisodeCollected
                         {
                             Number = number,
                             CollectedAt = episode.DateCreated.ToISO8601(),
-                            Ids = new TraktEpisodeId
-                            {
-                                Tvdb = tvDbId.ConvertToInt()
-                            }
+                            Ids = ids
                         };
                         if (traktUser.ExportMediaInfo)
                         {
