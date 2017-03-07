@@ -9,13 +9,36 @@ namespace Trakt.Helpers
     {
         public static TraktUser GetTraktUser(User user)
         {
-            return Plugin.Instance.PluginConfiguration.TraktUsers != null ? Plugin.Instance.PluginConfiguration.TraktUsers.FirstOrDefault(tUser => new Guid(tUser.LinkedMbUserId).Equals(user.Id)) : null;
+            return GetTraktUser(user.Id);
         }
 
         public static TraktUser GetTraktUser(string userId)
         {
-            var userGuid = new Guid(userId);
-            return Plugin.Instance.PluginConfiguration.TraktUsers != null ? Plugin.Instance.PluginConfiguration.TraktUsers.FirstOrDefault(tUser => new Guid(tUser.LinkedMbUserId).Equals(userGuid)) : null;
+            return GetTraktUser(new Guid(userId));
+        }
+
+        public static TraktUser GetTraktUser(Guid userGuid)
+        {
+            if (Plugin.Instance.PluginConfiguration.TraktUsers == null)
+            {
+                return null;
+            }
+
+            return Plugin.Instance.PluginConfiguration.TraktUsers.FirstOrDefault(tUser =>
+            {
+                if (string.IsNullOrWhiteSpace(tUser.LinkedMbUserId))
+                {
+                    return false;
+                }
+
+                Guid traktUserGuid;
+                if (Guid.TryParse(tUser.LinkedMbUserId, out traktUserGuid) && traktUserGuid.Equals(userGuid))
+                {
+                    return true;
+                }
+
+                return false;
+            });
         }
     }
 }
