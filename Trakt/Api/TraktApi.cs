@@ -752,6 +752,17 @@ namespace Trakt.Api
             }
         }
 
+        private int? ParseId(string value)
+        {
+            int parsed;
+            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed))
+            {
+                return parsed;
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// Send a list of movies to trakt.tv that have been marked watched or unwatched
         /// </summary>
@@ -784,7 +795,7 @@ namespace Trakt.Api
                         Tmdb =
                             string.IsNullOrEmpty(m.GetProviderId(MetadataProviders.Tmdb))
                                 ? (int?)null
-                                : int.Parse(m.GetProviderId(MetadataProviders.Tmdb))
+                                : ParseId(m.GetProviderId(MetadataProviders.Tmdb))
                     },
                     Year = m.ProductionYear,
                     WatchedAt = lastPlayedDate.HasValue ? lastPlayedDate.Value.ToISO8601() : null
