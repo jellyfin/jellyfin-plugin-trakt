@@ -113,7 +113,7 @@ namespace Trakt.Helpers
                 {
                     _traktApi.SendEpisodePlaystateUpdates(userPackage.UnSeenEpisodes, userPackage.TraktUser, false,
                                                           CancellationToken.None).ConfigureAwait(false);
-                    userPackage.SeenEpisodes = new List<Episode>();
+                    userPackage.UnSeenEpisodes = new List<Episode>();
                 }
 
                 userPackage.CurrentSeriesId = episode.Series.Id;

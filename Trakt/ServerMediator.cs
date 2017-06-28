@@ -30,6 +30,7 @@ namespace Trakt
         private TraktUriService _service;
         private LibraryManagerEventsHelper _libraryManagerEventsHelper;
         private readonly UserDataManagerEventsHelper _userDataManagerEventsHelper;
+        private IUserDataManager _userDataManager;
 
         public static ServerMediator Instance { get; private set; }
 
@@ -49,6 +50,7 @@ namespace Trakt
             Instance = this;
             _sessionManager = sessionManager;
             _libraryManager = libraryManager;
+            _userDataManager = userDataManager;
             _logger = logger.GetLogger("Trakt");
 
             _traktApi = new TraktApi(jsonSerializer, _logger, httpClient, appHost, userDataManager, fileSystem);
@@ -56,7 +58,6 @@ namespace Trakt
             _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _traktApi, timerFactory);
             _userDataManagerEventsHelper = new UserDataManagerEventsHelper(_logger, _traktApi, timerFactory);
 
-            userDataManager.UserDataSaved += _userDataManager_UserDataSaved;
         }
 
         /// <summary>
@@ -74,7 +75,7 @@ namespace Trakt
             if (baseItem != null)
             {
                 // determine if user has trakt credentials
-                var traktUser = UserHelper.GetTraktUser(e.UserId.ToString());
+                var traktUser = UserHelper.GetTraktUser(e.UserId);
 
                 // Can't progress
                 if (traktUser == null || !_traktApi.CanSync(baseItem, traktUser))
@@ -92,6 +93,7 @@ namespace Trakt
         /// </summary>
         public void Run()
         {
+            _userDataManager.UserDataSaved += _userDataManager_UserDataSaved;
             _sessionManager.PlaybackStart += KernelPlaybackStart;
             _sessionManager.PlaybackStopped += KernelPlaybackStopped;
             _libraryManager.ItemAdded += LibraryManagerItemAdded;
@@ -286,6 +288,7 @@ namespace Trakt
         /// </summary>
         public void Dispose()
         {
+            _userDataManager.UserDataSaved -= _userDataManager_UserDataSaved;
             _sessionManager.PlaybackStart -= KernelPlaybackStart;
             _sessionManager.PlaybackStopped -= KernelPlaybackStopped;
             _libraryManager.ItemAdded -= LibraryManagerItemAdded;

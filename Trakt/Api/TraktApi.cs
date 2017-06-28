@@ -2,7 +2,6 @@
 using System.Globalization;
 using System.Linq;
 using System.Threading;
-using MediaBrowser.Common.IO;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
