@@ -1,4 +1,6 @@
-﻿namespace Trakt.ScheduledTasks
+﻿using MediaBrowser.Model.Querying;
+
+namespace Trakt.ScheduledTasks
 {
     using System;
     using System.Collections.Generic;
@@ -114,24 +116,6 @@
             ISplittableProgress<double> progress,
             CancellationToken cancellationToken)
         {
-            // purely for progress reporting
-            var mediaItemsCount =
-                _libraryManager.GetItemList(
-                        new InternalItemsQuery
-                            {
-                                IncludeItemTypes = new[] { typeof(Movie).Name, typeof(Episode).Name },
-                                IsVirtualItem = false
-                        })
-                    .Count(i => _traktApi.CanSync(i, traktUser));
-
-            if (mediaItemsCount == 0)
-            {
-                _logger.Info("No media found for '" + user.Name + "'.");
-                return;
-            }
-
-            _logger.Info(mediaItemsCount + " Items found for '" + user.Name + "'.");
-
             await SyncMovies(user, traktUser, progress.Split(2), cancellationToken);
             await SyncShows(user, traktUser, progress.Split(2), cancellationToken);
         }
@@ -153,13 +137,13 @@
             var traktCollectedMovies = await _traktApi.SendGetAllCollectedMoviesRequest(traktUser).ConfigureAwait(false);
             var libraryMovies =
                 _libraryManager.GetItemList(
-                        new InternalItemsQuery
-                            {
-                                IncludeItemTypes = new[] { typeof(Movie).Name },
-                                IsVirtualItem = false
+                        new InternalItemsQuery(user)
+                        {
+                            IncludeItemTypes = new[] { typeof(Movie).Name },
+                            IsVirtualItem = false,
+                            SortBy = new[] { ItemSortBy.SortName }
                         })
                     .Where(x => _traktApi.CanSync(x, traktUser))
-                    .OrderBy(x => x.Name)
                     .ToList();
             var collectedMovies = new List<Movie>();
             var playedMovies = new List<Movie>();
@@ -195,14 +179,17 @@
                         }
                         else if (!traktUser.SkipUnwatchedImportFromTrakt)
                         {
-                            userData.Played = false;
-                            await
-                                _userDataManager.SaveUserData(
-                                    user.Id,
-                                    libraryMovie,
-                                    userData,
-                                    UserDataSaveReason.Import,
-                                    cancellationToken);
+                            if (userData.Played)
+                            {
+                                userData.Played = false;
+                                await
+                                    _userDataManager.SaveUserData(
+                                        user.Id,
+                                        libraryMovie,
+                                        userData,
+                                        UserDataSaveReason.Import,
+                                        cancellationToken);
+                            }
                         }
                     }
                 }
@@ -312,13 +299,13 @@
             var traktCollectedShows = await _traktApi.SendGetCollectedShowsRequest(traktUser).ConfigureAwait(false);
             var episodeItems =
                 _libraryManager.GetItemList(
-                        new InternalItemsQuery
-                            {
-                                IncludeItemTypes = new[] { typeof(Episode).Name },
-                                IsVirtualItem = false
-                            })
+                        new InternalItemsQuery(user)
+                        {
+                            IncludeItemTypes = new[] { typeof(Episode).Name },
+                            IsVirtualItem = false,
+                            SortBy = new[] { ItemSortBy.SeriesSortName }
+                        })
                     .Where(x => _traktApi.CanSync(x, traktUser))
-                    .OrderBy(x => (x as Episode)?.SeriesName)
                     .ToList();
 
             var collectedEpisodes = new List<Episode>();
@@ -352,14 +339,17 @@
                     }
                     else if (!traktUser.SkipUnwatchedImportFromTrakt)
                     {
-                        userData.Played = false;
-                        await
-                            _userDataManager.SaveUserData(
-                                user.Id,
-                                episode,
-                                userData,
-                                UserDataSaveReason.Import,
-                                cancellationToken);
+                        if (userData.Played)
+                        {
+                            userData.Played = false;
+                            await
+                                _userDataManager.SaveUserData(
+                                    user.Id,
+                                    episode,
+                                    userData,
+                                    UserDataSaveReason.Import,
+                                    cancellationToken);
+                        }
                     }
                 }
                 else if (userData != null && !userData.Played && isPlayedTraktTv)

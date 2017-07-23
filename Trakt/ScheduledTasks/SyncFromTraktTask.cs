@@ -1,4 +1,5 @@
-﻿using MediaBrowser.Model.Tasks;
+﻿using MediaBrowser.Model.Querying;
+using MediaBrowser.Model.Tasks;
 
 namespace Trakt.ScheduledTasks
 {
@@ -99,8 +100,8 @@ namespace Trakt.ScheduledTasks
             var libraryRoot = user.RootFolder;
             var traktUser = UserHelper.GetTraktUser(user);
 
-            IEnumerable<TraktMovieWatched> traktWatchedMovies;
-            IEnumerable<TraktShowWatched> traktWatchedShows;
+            List<TraktMovieWatched> traktWatchedMovies;
+            List<TraktShowWatched> traktWatchedShows;
 
             try
             {
@@ -118,24 +119,18 @@ namespace Trakt.ScheduledTasks
                 throw;
             }
 
-            _logger.Info("Trakt.tv watched Movies count = " + traktWatchedMovies.Count());
-            _logger.Info("Trakt.tv watched Shows count = " + traktWatchedShows.Count());
+            _logger.Info("Trakt.tv watched Movies count = " + traktWatchedMovies.Count);
+            _logger.Info("Trakt.tv watched Shows count = " + traktWatchedShows.Count);
 
             var mediaItems =
                 _libraryManager.GetItemList(
-                        new InternalItemsQuery
-                            {
-                                IncludeItemTypes = new[] { typeof(Movie).Name, typeof(Episode).Name },
-                                IsVirtualItem = false
+                        new InternalItemsQuery(user)
+                        {
+                            IncludeItemTypes = new[] { typeof(Movie).Name, typeof(Episode).Name },
+                            IsVirtualItem = false,
+                            SortBy = new[] { ItemSortBy.SeriesSortName, ItemSortBy.SortName }
                         })
-                    .Where(i => _traktApi.CanSync(i, traktUser))
-                    .OrderBy(
-                        i =>
-                            {
-                                var episode = i as Episode;
-
-                                return episode != null ? episode.Series.Id : i.Id;
-                            }).ToList();
+                    .Where(i => _traktApi.CanSync(i, traktUser)).ToList();
 
             // purely for progress reporting
             var percentPerItem = percentPerUser / mediaItems.Count;
@@ -301,7 +296,7 @@ namespace Trakt.ScheduledTasks
                        ? !string.IsNullOrWhiteSpace(episode.Series.Name) ? episode.Series.Name : "null property"
                        : "null class");
             episodeString.Append("'");
-            
+
             return episodeString.ToString();
         }
 
@@ -372,7 +367,7 @@ namespace Trakt.ScheduledTasks
         public string Key => "TraktSyncFromTraktTask";
 
         public IEnumerable<TaskTriggerInfo> GetDefaultTriggers() => new List<TaskTriggerInfo>();
-        
+
 
         public string Name => "Import playstates from Trakt.tv";
 
