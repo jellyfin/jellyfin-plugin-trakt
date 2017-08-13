@@ -86,7 +86,7 @@ namespace Trakt.Api
 
             var episode = item as Episode;
 
-            if (episode != null && episode.Series != null && !episode.IsVirtualUnaired && !episode.IsMissingEpisode && (episode.IndexNumber.HasValue || !string.IsNullOrEmpty(episode.GetProviderId(MetadataProviders.Tvdb))))
+            if (episode != null && episode.Series != null && !episode.IsMissingEpisode && (episode.IndexNumber.HasValue || !string.IsNullOrEmpty(episode.GetProviderId(MetadataProviders.Tvdb))))
             {
                 var series = episode.Series;
 
