@@ -182,13 +182,13 @@ namespace Trakt.ScheduledTasks
                             if (userData.Played)
                             {
                                 userData.Played = false;
-                                await
-                                    _userDataManager.SaveUserData(
-                                        user.Id,
-                                        libraryMovie,
-                                        userData,
-                                        UserDataSaveReason.Import,
-                                        cancellationToken);
+
+                                _userDataManager.SaveUserData(
+                                    user.Id,
+                                    libraryMovie,
+                                    userData,
+                                    UserDataSaveReason.Import,
+                                    cancellationToken);
                             }
                         }
                     }
@@ -342,13 +342,13 @@ namespace Trakt.ScheduledTasks
                         if (userData.Played)
                         {
                             userData.Played = false;
-                            await
-                                _userDataManager.SaveUserData(
-                                    user.Id,
-                                    episode,
-                                    userData,
-                                    UserDataSaveReason.Import,
-                                    cancellationToken);
+
+                            _userDataManager.SaveUserData(
+                                user.Id,
+                                episode,
+                                userData,
+                                UserDataSaveReason.Import,
+                                cancellationToken);
                         }
                     }
                 }

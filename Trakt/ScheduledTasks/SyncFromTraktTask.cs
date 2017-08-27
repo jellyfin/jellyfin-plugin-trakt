@@ -180,12 +180,12 @@ namespace Trakt.ScheduledTasks
                     // Only process if there's a change
                     if (changed)
                     {
-                        await _userDataManager.SaveUserData(
-                                user.Id,
-                                movie,
-                                userData,
-                                UserDataSaveReason.Import,
-                                cancellationToken);
+                        _userDataManager.SaveUserData(
+                               user.Id,
+                               movie,
+                               userData,
+                               UserDataSaveReason.Import,
+                               cancellationToken);
                     }
                 }
                 else
@@ -256,13 +256,13 @@ namespace Trakt.ScheduledTasks
                         // only process if changed
                         if (changed)
                         {
-                            await
-                                _userDataManager.SaveUserData(
-                                    user.Id,
-                                    episode,
-                                    userData,
-                                    UserDataSaveReason.Import,
-                                    cancellationToken);
+
+                            _userDataManager.SaveUserData(
+                                user.Id,
+                                episode,
+                                userData,
+                                UserDataSaveReason.Import,
+                                cancellationToken);
                         }
                     }
                     else
