@@ -1,18 +1,15 @@
-﻿using System.Runtime.Serialization;
+﻿
 using Trakt.Api.DataContracts.BaseModel;
 
 namespace Trakt.Api.DataContracts.Users.Watched
 {
-    [DataContract]
+    
     public class TraktMovieWatched
     {
-        [DataMember(Name = "plays")]
-        public int Plays { get; set; }
+        public int plays { get; set; }
 
-        [DataMember(Name = "last_watched_at")]
-        public string LastWatchedAt { get; set; }
+        public string last_watched_at { get; set; }
 
-        [DataMember(Name = "movie")]
-        public TraktMovie Movie { get; set; }
+        public TraktMovie movie { get; set; }
     }
 }

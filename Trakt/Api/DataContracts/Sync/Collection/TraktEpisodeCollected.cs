@@ -1,27 +1,19 @@
-﻿using System.Runtime.Serialization;
-using Trakt.Api.DataContracts.BaseModel;
+﻿using Trakt.Api.DataContracts.BaseModel;
 
 namespace Trakt.Api.DataContracts.Sync.Collection
 {
-    [DataContract]
     public class TraktEpisodeCollected : TraktEpisode
     {
-        [DataMember(Name = "collected_at", EmitDefaultValue = false)]
-        public string CollectedAt { get; set; }
+        public string collected_at { get; set; }
 
-        [DataMember(Name = "media_type", EmitDefaultValue = false)]
-        public string MediaType { get; set; }
+        public string media_type { get; set; }
 
-        [DataMember(Name = "resolution", EmitDefaultValue = false)]
-        public string Resolution { get; set; }
+        public string resolution { get; set; }
 
-        [DataMember(Name = "audio", EmitDefaultValue = false)]
-        public string Audio { get; set; }
+        public string audio { get; set; }
 
-        [DataMember(Name = "audio_channels", EmitDefaultValue = false)]
-        public string AudioChannels { get; set; }
+        public string audio_channels { get; set; }
 
-        [DataMember(Name = "3d", EmitDefaultValue = false)]
-        public bool Is3D { get; set; }
+        //public bool 3d { get; set; }
     }
 }

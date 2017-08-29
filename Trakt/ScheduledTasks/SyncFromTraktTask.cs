@@ -156,7 +156,7 @@ namespace Trakt.ScheduledTasks
                     }
 
                     // keep the highest play count
-                    int playcount = Math.Max(matchedMovie.Plays, userData.PlayCount);
+                    int playcount = Math.Max(matchedMovie.plays, userData.PlayCount);
 
                     // set movie playcount
                     if (userData.PlayCount != playcount)
@@ -166,9 +166,9 @@ namespace Trakt.ScheduledTasks
                     }
 
                     // Set last played to whichever is most recent, remote or local time...
-                    if (!string.IsNullOrEmpty(matchedMovie.LastWatchedAt))
+                    if (!string.IsNullOrEmpty(matchedMovie.last_watched_at))
                     {
-                        var tLastPlayed = DateTime.Parse(matchedMovie.LastWatchedAt);
+                        var tLastPlayed = DateTime.Parse(matchedMovie.last_watched_at);
                         var latestPlayed = tLastPlayed > userData.LastPlayedDate ? tLastPlayed : userData.LastPlayedDate;
                         if (userData.LastPlayedDate != latestPlayed)
                         {
@@ -206,9 +206,9 @@ namespace Trakt.ScheduledTasks
                 if (matchedShow != null)
                 {
                     var matchedSeason =
-                        matchedShow.Seasons.FirstOrDefault(
+                        matchedShow.seasons.FirstOrDefault(
                             tSeason =>
-                                tSeason.Number
+                                tSeason.number
                                 == (episode.ParentIndexNumber == 0
                                         ? 0
                                         : ((episode.ParentIndexNumber ?? 1))));
@@ -221,7 +221,7 @@ namespace Trakt.ScheduledTasks
                         bool changed = false;
 
                         var matchedEpisode =
-                            matchedSeason.Episodes.FirstOrDefault(x => x.Number == (episode.IndexNumber ?? -1));
+                            matchedSeason.episodes.FirstOrDefault(x => x.number == (episode.IndexNumber ?? -1));
 
                         if (matchedEpisode != null)
                         {
@@ -236,7 +236,7 @@ namespace Trakt.ScheduledTasks
                             }
 
                             // keep the highest play count
-                            int playcount = Math.Max(matchedEpisode.Plays, userData.PlayCount);
+                            int playcount = Math.Max(matchedEpisode.plays, userData.PlayCount);
 
                             // set episode playcount
                             if (userData.PlayCount != playcount)
@@ -302,22 +302,22 @@ namespace Trakt.ScheduledTasks
 
         public static TraktShowWatched FindMatch(Series item, IEnumerable<TraktShowWatched> results)
         {
-            return results.FirstOrDefault(i => IsMatch(item, i.Show));
+            return results.FirstOrDefault(i => IsMatch(item, i.show));
         }
 
         public static TraktShowCollected FindMatch(Series item, IEnumerable<TraktShowCollected> results)
         {
-            return results.FirstOrDefault(i => IsMatch(item, i.Show));
+            return results.FirstOrDefault(i => IsMatch(item, i.show));
         }
 
         public static TraktMovieWatched FindMatch(BaseItem item, IEnumerable<TraktMovieWatched> results)
         {
-            return results.FirstOrDefault(i => IsMatch(item, i.Movie));
+            return results.FirstOrDefault(i => IsMatch(item, i.movie));
         }
 
         public static IEnumerable<TraktMovieCollected> FindMatches(BaseItem item, IEnumerable<TraktMovieCollected> results)
         {
-            return results.Where(i => IsMatch(item, i.Movie)).ToList();
+            return results.Where(i => IsMatch(item, i.movie)).ToList();
         }
 
         public static bool IsMatch(BaseItem item, TraktMovie movie)
@@ -325,19 +325,19 @@ namespace Trakt.ScheduledTasks
             var imdb = item.GetProviderId(MetadataProviders.Imdb);
 
             if (!string.IsNullOrWhiteSpace(imdb) &&
-                string.Equals(imdb, movie.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
+                string.Equals(imdb, movie.ids.imdb, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
             var tmdb = item.GetProviderId(MetadataProviders.Tmdb);
 
-            if (movie.Ids.Tmdb.HasValue && string.Equals(tmdb, movie.Ids.Tmdb.Value.ToString(CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase))
+            if (movie.ids.tmdb.HasValue && string.Equals(tmdb, movie.ids.tmdb.Value.ToString(CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
-            if (item.Name == movie.Title && item.ProductionYear == movie.Year)
+            if (item.Name == movie.title && item.ProductionYear == movie.year)
             {
                 return true;
             }
@@ -349,14 +349,14 @@ namespace Trakt.ScheduledTasks
         {
             var tvdb = item.GetProviderId(MetadataProviders.Tvdb);
             if (!string.IsNullOrWhiteSpace(tvdb) &&
-                string.Equals(tvdb, show.Ids.Tvdb.ToString(), StringComparison.OrdinalIgnoreCase))
+                string.Equals(tvdb, show.ids.tvdb.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
             var imdb = item.GetProviderId(MetadataProviders.Imdb);
             if (!string.IsNullOrWhiteSpace(imdb) &&
-                string.Equals(imdb, show.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
+                string.Equals(imdb, show.ids.imdb, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }

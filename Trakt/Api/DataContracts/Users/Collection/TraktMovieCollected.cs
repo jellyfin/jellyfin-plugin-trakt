@@ -1,18 +1,15 @@
-﻿using System.Runtime.Serialization;
+﻿
 using Trakt.Api.DataContracts.BaseModel;
 
 namespace Trakt.Api.DataContracts.Users.Collection
 {
-    [DataContract]
+    
     public class TraktMovieCollected
     {
-        [DataMember(Name = "collected_at")]
-        public string CollectedAt { get; set; }
+        public string collected_at { get; set; }
 
-        [DataMember(Name = "metadata")]
-        public TraktMetadata Metadata { get; set; }
+        public TraktMetadata metadata { get; set; }
 
-        [DataMember(Name = "movie")]
-        public TraktMovie Movie { get; set; }
+        public TraktMovie movie { get; set; }
     }
 }

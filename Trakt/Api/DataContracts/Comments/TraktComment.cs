@@ -1,39 +1,27 @@
-﻿using System.Runtime.Serialization;
-using Trakt.Api.DataContracts.BaseModel;
+﻿using Trakt.Api.DataContracts.BaseModel;
 
 namespace Trakt.Api.DataContracts.Comments
 {
-    [DataContract]
     public class TraktComment
     {
-        [DataMember(Name = "id")]
-        public int Id { get; set; }
+        public int id { get; set; }
 
-        [DataMember(Name = "parent_id")]
-        public int? ParentId { get; set; }
+        public int? parent_id { get; set; }
 
-        [DataMember(Name = "created_at")]
-        public string CreatedAt { get; set; }
+        public string created_at { get; set; }
 
-        [DataMember(Name = "comment")]
-        public string Comment { get; set; }
+        public string comment { get; set; }
 
-        [DataMember(Name = "spoiler")]
-        public bool IsSpoiler { get; set; }
+        public bool spoiler { get; set; }
 
-        [DataMember(Name = "review")]
-        public bool IsReview { get; set; }
+        public bool review { get; set; }
 
-        [DataMember(Name = "replies")]
-        public int Replies { get; set; }
+        public int replies { get; set; }
 
-        [DataMember(Name = "likes")]
-        public int Likes { get; set; }
+        public int likes { get; set; }
 
-        [DataMember(Name = "user_rating")]
-        public int? UserRating { get; set; }
+        public int? user_rating { get; set; }
 
-        [DataMember(Name = "user")]
-        public TraktUserSummary User { get; set; }
+        public TraktUserSummary user { get; set; }
     }
 }

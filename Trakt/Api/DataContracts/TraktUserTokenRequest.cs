@@ -1,14 +1,12 @@
-using System.Runtime.Serialization;
+
 
 namespace Trakt.Api.DataContracts
 {
-    [DataContract]
+    
     public class TraktUserTokenRequest
     {
-        [DataMember(Name = "login")]
-        public string Login { get; set; }
+        public string login { get; set; }
 
-        [DataMember(Name = "password")]
-        public string Password { get; set; }
+        public string password { get; set; }
     }
 }

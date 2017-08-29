@@ -1,20 +1,14 @@
-﻿using System.Runtime.Serialization;
-
+﻿
 namespace Trakt.Api.DataContracts.BaseModel
 {
-    [DataContract]
     public class TraktShowId : TraktId
     {
-        [DataMember(Name = "imdb", EmitDefaultValue = false)]
-        public string Imdb { get; set; }
+        public string imdb { get; set; }
 
-        [DataMember(Name = "tmdb", EmitDefaultValue = false)]
-        public int? Tmdb { get; set; }
+        public int? tmdb { get; set; }
 
-        [DataMember(Name = "tvdb", EmitDefaultValue = false)]
-        public int? Tvdb { get; set; }
+        public int? tvdb { get; set; }
 
-        [DataMember(Name = "tvrage", EmitDefaultValue = false)]
-        public int? TvRage { get; set; }
+        public int? tvrage { get; set; }
     }
 }

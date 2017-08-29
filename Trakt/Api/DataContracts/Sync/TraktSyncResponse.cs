@@ -1,60 +1,42 @@
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 using Trakt.Api.DataContracts.BaseModel;
 
 namespace Trakt.Api.DataContracts.Sync
 {
-    [DataContract]
     public class TraktSyncResponse
     {
-        [DataMember(Name = "added")]
-        public Items Added { get; set; }
+        public Items added { get; set; }
 
-        [DataMember(Name = "deleted")]
-        public Items Deleted { get; set; }
+        public Items deleted { get; set; }
 
-        [DataMember(Name = "existing")]
-        public Items Existing { get; set; }
+        public Items existing { get; set; }
 
-        [DataContract]
         public class Items
         {
-            [DataMember(Name = "movies")]
-            public int Movies { get; set; }
+            public int movies { get; set; }
 
-            [DataMember(Name = "shows")]
-            public int Shows { get; set; }
+            public int shows { get; set; }
 
-            [DataMember(Name = "seasons")]
-            public int Seasons { get; set; }
+            public int seasons { get; set; }
 
-            [DataMember(Name = "episodes")]
-            public int Episodes { get; set; }
+            public int episodes { get; set; }
 
-            [DataMember(Name = "people")]
-            public int People { get; set; }
+            public int people { get; set; }
         }
 
-        [DataMember(Name = "not_found")]
-        public NotFoundObjects NotFound { get; set; }
+        public NotFoundObjects not_found { get; set; }
 
-        [DataContract]
         public class NotFoundObjects
         {
-            [DataMember(Name = "movies")]
-            public List<TraktMovie> Movies { get; set; }
+            public List<TraktMovie> movies { get; set; }
 
-            [DataMember(Name = "shows")]
-            public List<TraktShow> Shows { get; set; }
+            public List<TraktShow> shows { get; set; }
 
-            [DataMember(Name = "episodes")]
-            public List<TraktEpisode> Episodes { get; set; }
+            public List<TraktEpisode> episodes { get; set; }
 
-            [DataMember(Name = "seasons")]
-            public List<TraktSeason> Seasons { get; set; }
+            public List<TraktSeason> seasons { get; set; }
 
-            [DataMember(Name = "people")]
-            public List<TraktPerson> People { get; set; }
+            public List<TraktPerson> people { get; set; }
         }
     }
 }

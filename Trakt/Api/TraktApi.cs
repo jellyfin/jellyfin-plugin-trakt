@@ -109,17 +109,17 @@ namespace Trakt.Api
         {
             var movieData = new TraktScrobbleMovie
             {
-                AppDate = DateTime.Today.ToString("yyyy-MM-dd"),
-                AppVersion = _appHost.ApplicationVersion.ToString(),
-                Progress = progressPercent,
-                Movie = new TraktMovie
+                app_date = DateTime.Today.ToString("yyyy-MM-dd"),
+                app_version = _appHost.ApplicationVersion.ToString(),
+                progress = progressPercent,
+                movie = new TraktMovie
                 {
-                    Title = movie.Name,
-                    Year = movie.ProductionYear,
-                    Ids = new TraktMovieId
+                    title = movie.Name,
+                    year = movie.ProductionYear,
+                    ids = new TraktMovieId
                     {
-                        Imdb = movie.GetProviderId(MetadataProviders.Imdb),
-                        Tmdb = movie.GetProviderId(MetadataProviders.Tmdb).ConvertToInt()
+                        imdb = movie.GetProviderId(MetadataProviders.Imdb),
+                        tmdb = movie.GetProviderId(MetadataProviders.Tmdb).ConvertToInt()
                     }
                 }
             };
@@ -162,14 +162,14 @@ namespace Trakt.Api
             {
                 episodeDatas.Add(new TraktScrobbleEpisode
                 {
-                    AppDate = DateTime.Today.ToString("yyyy-MM-dd"),
-                    AppVersion = _appHost.ApplicationVersion.ToString(),
-                    Progress = progressPercent,
-                    Episode = new TraktEpisode
+                    app_date = DateTime.Today.ToString("yyyy-MM-dd"),
+                    app_version = _appHost.ApplicationVersion.ToString(),
+                    progress = progressPercent,
+                    episode = new TraktEpisode
                     {
-                        Ids = new TraktEpisodeId
+                        ids = new TraktEpisodeId
                         {
-                            Tvdb = tvDbId.ConvertToInt()
+                            tvdb = tvDbId.ConvertToInt()
                         },
                     }
                 });
@@ -183,23 +183,23 @@ namespace Trakt.Api
                 {
                     episodeDatas.Add(new TraktScrobbleEpisode
                     {
-                        AppDate = DateTime.Today.ToString("yyyy-MM-dd"),
-                        AppVersion = _appHost.ApplicationVersion.ToString(),
-                        Progress = progressPercent,
-                        Episode = new TraktEpisode
+                        app_date = DateTime.Today.ToString("yyyy-MM-dd"),
+                        app_version = _appHost.ApplicationVersion.ToString(),
+                        progress = progressPercent,
+                        episode = new TraktEpisode
                         {
-                            Season = episode.GetSeasonNumber(),
-                            Number = number
+                            season = episode.GetSeasonNumber(),
+                            number = number
                         },
-                        Show = new TraktShow
+                        show = new TraktShow
                         {
-                            Title = episode.Series.Name,
-                            Year = episode.Series.ProductionYear,
-                            Ids = new TraktShowId
+                            title = episode.Series.Name,
+                            year = episode.Series.ProductionYear,
+                            ids = new TraktShowId
                             {
-                                Tvdb = episode.Series.GetProviderId(MetadataProviders.Tvdb).ConvertToInt(),
-                                Imdb = episode.Series.GetProviderId(MetadataProviders.Imdb),
-                                TvRage = episode.Series.GetProviderId(MetadataProviders.TvRage).ConvertToInt()
+                                tvdb = episode.Series.GetProviderId(MetadataProviders.Tvdb).ConvertToInt(),
+                                imdb = episode.Series.GetProviderId(MetadataProviders.Imdb),
+                                tvrage = episode.Series.GetProviderId(MetadataProviders.TvRage).ConvertToInt()
                             }
                         }
                     });
@@ -253,21 +253,21 @@ namespace Trakt.Api
                 var audioStream = m.GetMediaStreams().FirstOrDefault(x => x.Type == MediaStreamType.Audio);
                 var traktMovieCollected = new TraktMovieCollected
                 {
-                    CollectedAt = m.DateCreated.ToISO8601(),
-                    Title = m.Name,
-                    Year = m.ProductionYear,
-                    Ids = new TraktMovieId
+                    collected_at = m.DateCreated.ToISO8601(),
+                    title = m.Name,
+                    year = m.ProductionYear,
+                    ids = new TraktMovieId
                     {
-                        Imdb = m.GetProviderId(MetadataProviders.Imdb),
-                        Tmdb = m.GetProviderId(MetadataProviders.Tmdb).ConvertToInt()
+                        imdb = m.GetProviderId(MetadataProviders.Imdb),
+                        tmdb = m.GetProviderId(MetadataProviders.Tmdb).ConvertToInt()
                     }
                 };
                 if (traktUser.ExportMediaInfo)
                 {
-                    traktMovieCollected.Is3D = m.Is3D;
-                    traktMovieCollected.AudioChannels = audioStream.GetAudioChannels();
-                    traktMovieCollected.Audio = audioStream.GetCodecRepresetation();
-                    traktMovieCollected.Resolution = m.GetDefaultVideoStream().GetResolution();
+                    //traktMovieCollected.Is3D = m.Is3D;
+                    traktMovieCollected.audio_channels = audioStream.GetAudioChannels();
+                    traktMovieCollected.audio = audioStream.GetCodecRepresetation();
+                    traktMovieCollected.resolution = m.GetDefaultVideoStream().GetResolution();
                 }
                 return traktMovieCollected;
             }).ToList();
@@ -279,7 +279,7 @@ namespace Trakt.Api
             {
                 var data = new TraktSyncCollected
                 {
-                    Movies = chunk.ToList()
+                    movies = chunk.ToList()
                 };
                 using (var response = await PostToTrakt(url, data, cancellationToken, traktUser))
                 {
@@ -334,18 +334,18 @@ namespace Trakt.Api
                 {
                     var traktEpisodeCollected = new TraktEpisodeCollected
                     {
-                        CollectedAt = episode.DateCreated.ToISO8601(),
-                        Ids = new TraktEpisodeId
+                        collected_at = episode.DateCreated.ToISO8601(),
+                        ids = new TraktEpisodeId
                         {
-                            Tvdb = tvDbId.ConvertToInt()
+                            tvdb = tvDbId.ConvertToInt()
                         }
                     };
                     if (traktUser.ExportMediaInfo)
                     {
-                        traktEpisodeCollected.Is3D = episode.Is3D;
-                        traktEpisodeCollected.AudioChannels = audioStream.GetAudioChannels();
-                        traktEpisodeCollected.Audio = audioStream.GetCodecRepresetation();
-                        traktEpisodeCollected.Resolution = episode.GetDefaultVideoStream().GetResolution();
+                        //traktEpisodeCollected.Is3D = episode.Is3D;
+                        traktEpisodeCollected.audio_channels = audioStream.GetAudioChannels();
+                        traktEpisodeCollected.audio = audioStream.GetCodecRepresetation();
+                        traktEpisodeCollected.resolution = episode.GetDefaultVideoStream().GetResolution();
                     }
                     episodesPayload.Add(traktEpisodeCollected);
                 }
@@ -356,32 +356,32 @@ namespace Trakt.Api
                     var syncShow =
                         showPayload.FirstOrDefault(
                             sre =>
-                                sre.Ids != null &&
-                                sre.Ids.Tvdb == episode.Series.GetProviderId(MetadataProviders.Tvdb).ConvertToInt());
+                                sre.ids != null &&
+                                sre.ids.tvdb == episode.Series.GetProviderId(MetadataProviders.Tvdb).ConvertToInt());
                     if (syncShow == null)
                     {
                         syncShow = new TraktShowCollected
                         {
-                            Ids = new TraktShowId
+                            ids = new TraktShowId
                             {
-                                Tvdb = episode.Series.GetProviderId(MetadataProviders.Tvdb).ConvertToInt(),
-                                Imdb = episode.Series.GetProviderId(MetadataProviders.Imdb),
-                                TvRage = episode.Series.GetProviderId(MetadataProviders.TvRage).ConvertToInt()
+                                tvdb = episode.Series.GetProviderId(MetadataProviders.Tvdb).ConvertToInt(),
+                                imdb = episode.Series.GetProviderId(MetadataProviders.Imdb),
+                                tvrage = episode.Series.GetProviderId(MetadataProviders.TvRage).ConvertToInt()
                             },
-                            Seasons = new List<TraktShowCollected.TraktSeasonCollected>()
+                            seasons = new List<TraktShowCollected.TraktSeasonCollected>()
                         };
                         showPayload.Add(syncShow);
                     }
                     var syncSeason =
-                        syncShow.Seasons.FirstOrDefault(ss => ss.Number == episode.GetSeasonNumber());
+                        syncShow.seasons.FirstOrDefault(ss => ss.number == episode.GetSeasonNumber());
                     if (syncSeason == null)
                     {
                         syncSeason = new TraktShowCollected.TraktSeasonCollected
                         {
-                            Number = episode.GetSeasonNumber(),
-                            Episodes = new List<TraktEpisodeCollected>()
+                            number = episode.GetSeasonNumber(),
+                            episodes = new List<TraktEpisodeCollected>()
                         };
-                        syncShow.Seasons.Add(syncSeason);
+                        syncShow.seasons.Add(syncSeason);
                     }
                     for (var number = indexNumber; number <= finalNumber; number++)
                     {
@@ -390,31 +390,31 @@ namespace Trakt.Api
                         if (number == indexNumber)
                         {
                             // Omit this from the rest because then we end up attaching the tvdb of the first episode to the subsequent ones
-                            ids.Tvdb = tvDbId.ConvertToInt();
+                            ids.tvdb = tvDbId.ConvertToInt();
 
                         }
                         var traktEpisodeCollected = new TraktEpisodeCollected
                         {
-                            Number = number,
-                            CollectedAt = episode.DateCreated.ToISO8601(),
-                            Ids = ids
+                            number = number,
+                            collected_at = episode.DateCreated.ToISO8601(),
+                            ids = ids
                         };
                         if (traktUser.ExportMediaInfo)
                         {
-                            traktEpisodeCollected.Is3D = episode.Is3D;
-                            traktEpisodeCollected.AudioChannels = audioStream.GetAudioChannels();
-                            traktEpisodeCollected.Audio = audioStream.GetCodecRepresetation();
-                            traktEpisodeCollected.Resolution = episode.GetDefaultVideoStream().GetResolution();
+                            //traktEpisodeCollected.Is3D = episode.Is3D;
+                            traktEpisodeCollected.audio_channels = audioStream.GetAudioChannels();
+                            traktEpisodeCollected.audio = audioStream.GetCodecRepresetation();
+                            traktEpisodeCollected.resolution = episode.GetDefaultVideoStream().GetResolution();
                         }
-                        syncSeason.Episodes.Add(traktEpisodeCollected);
+                        syncSeason.episodes.Add(traktEpisodeCollected);
                     }
                 }
             }
 
             var data = new TraktSyncCollected
             {
-                Episodes = episodesPayload.ToList(),
-                Shows = showPayload.ToList()
+                episodes = episodesPayload.ToList(),
+                shows = showPayload.ToList()
             };
 
             var url = eventType == EventType.Add ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
@@ -447,20 +447,20 @@ namespace Trakt.Api
             {
                 new TraktShowCollected
                 {
-                    Title = show.Name,
-                    Year = show.ProductionYear,
-                    Ids = new TraktShowId
+                    title = show.Name,
+                    year = show.ProductionYear,
+                    ids = new TraktShowId
                     {
-                        Tvdb = show.GetProviderId(MetadataProviders.Tvdb).ConvertToInt(),
-                        Imdb = show.GetProviderId(MetadataProviders.Imdb),
-                        TvRage = show.GetProviderId(MetadataProviders.TvRage).ConvertToInt()
+                        tvdb = show.GetProviderId(MetadataProviders.Tvdb).ConvertToInt(),
+                        imdb = show.GetProviderId(MetadataProviders.Imdb),
+                        tvrage = show.GetProviderId(MetadataProviders.TvRage).ConvertToInt()
                     },
                 }
             };
 
             var data = new TraktSyncCollected
             {
-                Shows = showPayload.ToList()
+                shows = showPayload.ToList()
             };
 
             var url = eventType == EventType.Add ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
@@ -490,14 +490,14 @@ namespace Trakt.Api
                     {
                         new TraktMovieRated
                         {
-                            Title = item.Name,
-                            Year = item.ProductionYear,
-                            Ids = new TraktMovieId
+                            title = item.Name,
+                            year = item.ProductionYear,
+                            ids = new TraktMovieId
                             {
-                                Imdb = item.GetProviderId(MetadataProviders.Imdb),
-                                Tmdb = item.GetProviderId(MetadataProviders.Tmdb).ConvertToInt()
+                                imdb = item.GetProviderId(MetadataProviders.Imdb),
+                                tmdb = item.GetProviderId(MetadataProviders.Tmdb).ConvertToInt()
                             },
-                            Rating = rating
+                            rating = rating
                         }
                     }
                 };
@@ -514,23 +514,23 @@ namespace Trakt.Api
                         var indexNumber = episode.IndexNumber.Value;
                         var show = new TraktShowRated
                         {
-                            Ids = new TraktShowId
+                            ids = new TraktShowId
                             {
-                                Tvdb = episode.Series.GetProviderId(MetadataProviders.Tvdb).ConvertToInt(),
-                                Imdb = episode.Series.GetProviderId(MetadataProviders.Imdb),
-                                TvRage = episode.Series.GetProviderId(MetadataProviders.TvRage).ConvertToInt()
+                                tvdb = episode.Series.GetProviderId(MetadataProviders.Tvdb).ConvertToInt(),
+                                imdb = episode.Series.GetProviderId(MetadataProviders.Imdb),
+                                tvrage = episode.Series.GetProviderId(MetadataProviders.TvRage).ConvertToInt()
                             },
-                            Seasons = new List<TraktShowRated.TraktSeasonRated>
+                            seasons = new List<TraktShowRated.TraktSeasonRated>
                             {
                                 new TraktShowRated.TraktSeasonRated
                                 {
-                                    Number = episode.GetSeasonNumber(),
-                                    Episodes = new List<TraktEpisodeRated>
+                                    number = episode.GetSeasonNumber(),
+                                    episodes = new List<TraktEpisodeRated>
                                     {
                                         new TraktEpisodeRated
                                         {
-                                            Number = indexNumber,
-                                            Rating = rating
+                                            number = indexNumber,
+                                            rating = rating
                                         }
                                     }
                                 }
@@ -553,10 +553,10 @@ namespace Trakt.Api
                         {
                             new TraktEpisodeRated
                             {
-                                Rating = rating,
-                                Ids = new TraktEpisodeId
+                                rating = rating,
+                                ids = new TraktEpisodeId
                                 {
-                                    Tvdb = episode.GetProviderId(MetadataProviders.Tvdb).ConvertToInt()
+                                    tvdb = episode.GetProviderId(MetadataProviders.Tvdb).ConvertToInt()
                                 }
                             }
                         }
@@ -571,13 +571,13 @@ namespace Trakt.Api
                     {
                         new TraktShowRated
                         {
-                            Rating = rating,
-                            Title = item.Name,
-                            Year = item.ProductionYear,
-                            Ids = new TraktShowId
+                            rating = rating,
+                            title = item.Name,
+                            year = item.ProductionYear,
+                            ids = new TraktShowId
                             {
-                                Imdb = item.GetProviderId(MetadataProviders.Imdb),
-                                Tvdb = item.GetProviderId(MetadataProviders.Tvdb).ConvertToInt()
+                                imdb = item.GetProviderId(MetadataProviders.Imdb),
+                                tvdb = item.GetProviderId(MetadataProviders.Tvdb).ConvertToInt()
                             }
                         }
                     }
@@ -787,17 +787,17 @@ namespace Trakt.Api
                     : null;
                 return new TraktMovieWatched
                 {
-                    Title = m.Name,
-                    Ids = new TraktMovieId
+                    title = m.Name,
+                    ids = new TraktMovieId
                     {
-                        Imdb = m.GetProviderId(MetadataProviders.Imdb),
-                        Tmdb =
+                        imdb = m.GetProviderId(MetadataProviders.Imdb),
+                        tmdb =
                             string.IsNullOrEmpty(m.GetProviderId(MetadataProviders.Tmdb))
                                 ? (int?)null
                                 : ParseId(m.GetProviderId(MetadataProviders.Tmdb))
                     },
-                    Year = m.ProductionYear,
-                    WatchedAt = lastPlayedDate.HasValue ? lastPlayedDate.Value.ToISO8601() : null
+                    year = m.ProductionYear,
+                    watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.ToISO8601() : null
                 };
             }).ToList();
             var chunks = moviesPayload.ToChunks(100).ToList();
@@ -807,7 +807,7 @@ namespace Trakt.Api
             {
                 var data = new TraktSyncWatched
                 {
-                    Movies = chunk.ToList()
+                    movies = chunk.ToList()
                 };
                 var url = seen ? TraktUris.SyncWatchedHistoryAdd : TraktUris.SyncWatchedHistoryRemove;
 
@@ -856,7 +856,7 @@ namespace Trakt.Api
 
         private async Task<TraktSyncResponse> SendEpisodePlaystateUpdatesInternalAsync(IEnumerable<Episode> episodeChunk, TraktUser traktUser, bool seen, CancellationToken cancellationToken)
         {
-            var data = new TraktSyncWatched { Episodes = new List<TraktEpisodeWatched>(), Shows = new List<TraktShowWatched>() };
+            var data = new TraktSyncWatched { episodes = new List<TraktEpisodeWatched>(), shows = new List<TraktShowWatched>() };
             foreach (var episode in episodeChunk)
             {
                 var tvDbId = episode.GetProviderId(MetadataProviders.Tvdb);
@@ -867,13 +867,13 @@ namespace Trakt.Api
                 if (!string.IsNullOrEmpty(tvDbId) && (!episode.IndexNumber.HasValue || !episode.IndexNumberEnd.HasValue || episode.IndexNumberEnd <= episode.IndexNumber))
                 {
 
-                    data.Episodes.Add(new TraktEpisodeWatched
+                    data.episodes.Add(new TraktEpisodeWatched
                     {
-                        Ids = new TraktEpisodeId
+                        ids = new TraktEpisodeId
                         {
-                            Tvdb = int.Parse(tvDbId)
+                            tvdb = int.Parse(tvDbId)
                         },
-                        WatchedAt = lastPlayedDate.HasValue ? lastPlayedDate.Value.ToISO8601() : null
+                        watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.ToISO8601() : null
                     });
                 }
                 else if (episode.IndexNumber != null)
@@ -881,37 +881,37 @@ namespace Trakt.Api
                     var indexNumber = episode.IndexNumber.Value;
                     var finalNumber = (episode.IndexNumberEnd ?? episode.IndexNumber).Value;
 
-                    var syncShow = data.Shows.FirstOrDefault(sre => sre.Ids != null && sre.Ids.Tvdb == episode.Series.GetProviderId(MetadataProviders.Tvdb).ConvertToInt());
+                    var syncShow = data.shows.FirstOrDefault(sre => sre.ids != null && sre.ids.tvdb == episode.Series.GetProviderId(MetadataProviders.Tvdb).ConvertToInt());
                     if (syncShow == null)
                     {
                         syncShow = new TraktShowWatched
                         {
-                            Ids = new TraktShowId
+                            ids = new TraktShowId
                             {
-                                Tvdb = episode.Series.GetProviderId(MetadataProviders.Tvdb).ConvertToInt(),
-                                Imdb = episode.Series.GetProviderId(MetadataProviders.Imdb),
-                                TvRage = episode.Series.GetProviderId(MetadataProviders.TvRage).ConvertToInt()
+                                tvdb = episode.Series.GetProviderId(MetadataProviders.Tvdb).ConvertToInt(),
+                                imdb = episode.Series.GetProviderId(MetadataProviders.Imdb),
+                                tvrage = episode.Series.GetProviderId(MetadataProviders.TvRage).ConvertToInt()
                             },
-                            Seasons = new List<TraktSeasonWatched>()
+                            seasons = new List<TraktSeasonWatched>()
                         };
-                        data.Shows.Add(syncShow);
+                        data.shows.Add(syncShow);
                     }
-                    var syncSeason = syncShow.Seasons.FirstOrDefault(ss => ss.Number == episode.GetSeasonNumber());
+                    var syncSeason = syncShow.seasons.FirstOrDefault(ss => ss.number == episode.GetSeasonNumber());
                     if (syncSeason == null)
                     {
                         syncSeason = new TraktSeasonWatched
                         {
-                            Number = episode.GetSeasonNumber(),
-                            Episodes = new List<TraktEpisodeWatched>()
+                            number = episode.GetSeasonNumber(),
+                            episodes = new List<TraktEpisodeWatched>()
                         };
-                        syncShow.Seasons.Add(syncSeason);
+                        syncShow.seasons.Add(syncSeason);
                     }
                     for (var number = indexNumber; number <= finalNumber; number++)
                     {
-                        syncSeason.Episodes.Add(new TraktEpisodeWatched
+                        syncSeason.episodes.Add(new TraktEpisodeWatched
                         {
-                            Number = number,
-                            WatchedAt = lastPlayedDate.HasValue ? lastPlayedDate.Value.ToISO8601() : null
+                            number = number,
+                            watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.ToISO8601() : null
                         });
                     }
                 }
@@ -928,8 +928,8 @@ namespace Trakt.Api
         {
             var data = new TraktUserTokenRequest
             {
-                Login = traktUser.UserName,
-                Password = traktUser.Password
+                login = traktUser.UserName,
+                password = traktUser.Password
             };
 
             using (var response = await PostToTrakt(TraktUris.Login, data, null))
@@ -1053,7 +1053,7 @@ namespace Trakt.Api
 
                     if (userToken != null)
                     {
-                        traktUser.UserToken = userToken.Token;
+                        traktUser.UserToken = userToken.token;
                     }
                 }
                 if (!string.IsNullOrEmpty(traktUser.UserToken))

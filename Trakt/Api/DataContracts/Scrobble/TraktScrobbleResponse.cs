@@ -1,40 +1,28 @@
-﻿using System.Runtime.Serialization;
-using Trakt.Api.DataContracts.BaseModel;
+﻿using Trakt.Api.DataContracts.BaseModel;
 
 namespace Trakt.Api.DataContracts.Scrobble
 {
-    [DataContract]
     public class TraktScrobbleResponse
     {
-        [DataMember(Name = "action")]
-        public string Action { get; set; }
+        public string action { get; set; }
 
-        [DataMember(Name = "progress")]
-        public float Progress { get; set; }
+        public float progress { get; set; }
 
-        [DataMember(Name = "sharing")]
-        public SocialMedia Sharing { get; set; }
+        public SocialMedia sharing { get; set; }
 
-        [DataContract]
         public class SocialMedia
         {
-            [DataMember(Name = "facebook")]
-            public bool Facebook { get; set; }
+            public bool facebook { get; set; }
 
-            [DataMember(Name = "twitter")]
-            public bool Twitter { get; set; }
+            public bool twitter { get; set; }
 
-            [DataMember(Name = "tumblr")]
-            public bool Tumblr { get; set; }
+            public bool tumblr { get; set; }
         }
 
-        [DataMember(Name = "movie")]
-        public TraktMovie Movie { get; set; }
+        public TraktMovie movie { get; set; }
 
-        [DataMember(Name = "episode")]
-        public TraktEpisode Episode { get; set; }
+        public TraktEpisode episode { get; set; }
 
-        [DataMember(Name = "show")]
-        public TraktShow Show { get; set; }
+        public TraktShow show { get; set; }
     }
 }

@@ -321,13 +321,13 @@ namespace Trakt.ScheduledTasks
                 var isPlayedTraktTv = false;
                 var traktWatchedShow = SyncFromTraktTask.FindMatch(episode.Series, traktWatchedShows);
 
-                if (traktWatchedShow?.Seasons != null && traktWatchedShow.Seasons.Count > 0)
+                if (traktWatchedShow?.seasons != null && traktWatchedShow.seasons.Count > 0)
                 {
                     isPlayedTraktTv =
-                        traktWatchedShow.Seasons.Any(
+                        traktWatchedShow.seasons.Any(
                             season =>
-                                season.Number == episode.GetSeasonNumber() && season.Episodes != null
-                                && season.Episodes.Any(te => te.Number == episode.IndexNumber && te.Plays > 0));
+                                season.number == episode.GetSeasonNumber() && season.episodes != null
+                                && season.episodes.Any(te => te.number == episode.IndexNumber && te.plays > 0));
                 }
 
                 // if the show has been played locally and is unplayed on trakt.tv then add it to the list
@@ -359,10 +359,10 @@ namespace Trakt.ScheduledTasks
                 }
 
                 var traktCollectedShow = SyncFromTraktTask.FindMatch(episode.Series, traktCollectedShows);
-                if (traktCollectedShow?.Seasons == null
-                    || traktCollectedShow.Seasons.All(x => x.Number != episode.ParentIndexNumber)
-                    || traktCollectedShow.Seasons.First(x => x.Number == episode.ParentIndexNumber)
-                        .Episodes.All(e => e.Number != episode.IndexNumber))
+                if (traktCollectedShow?.seasons == null
+                    || traktCollectedShow.seasons.All(x => x.number != episode.ParentIndexNumber)
+                    || traktCollectedShow.seasons.First(x => x.number == episode.ParentIndexNumber)
+                        .episodes.All(e => e.number != episode.IndexNumber))
                 {
                     collectedEpisodes.Add(episode);
                 }
@@ -455,26 +455,26 @@ namespace Trakt.ScheduledTasks
 
         private void LogTraktResponseDataContract(TraktSyncResponse dataContract)
         {
-            _logger.Debug("TraktResponse Added Movies: " + dataContract.Added.Movies);
-            _logger.Debug("TraktResponse Added Shows: " + dataContract.Added.Shows);
-            _logger.Debug("TraktResponse Added Seasons: " + dataContract.Added.Seasons);
-            _logger.Debug("TraktResponse Added Episodes: " + dataContract.Added.Episodes);
-            foreach (var traktMovie in dataContract.NotFound.Movies)
+            _logger.Debug("TraktResponse Added Movies: " + dataContract.added.movies);
+            _logger.Debug("TraktResponse Added Shows: " + dataContract.added.shows);
+            _logger.Debug("TraktResponse Added Seasons: " + dataContract.added.seasons);
+            _logger.Debug("TraktResponse Added Episodes: " + dataContract.added.episodes);
+            foreach (var traktMovie in dataContract.not_found.movies)
             {
                 _logger.Error("TraktResponse not Found:" + _jsonSerializer.SerializeToString(traktMovie));
             }
 
-            foreach (var traktShow in dataContract.NotFound.Shows)
+            foreach (var traktShow in dataContract.not_found.shows)
             {
                 _logger.Error("TraktResponse not Found:" + _jsonSerializer.SerializeToString(traktShow));
             }
 
-            foreach (var traktSeason in dataContract.NotFound.Seasons)
+            foreach (var traktSeason in dataContract.not_found.seasons)
             {
                 _logger.Error("TraktResponse not Found:" + _jsonSerializer.SerializeToString(traktSeason));
             }
 
-            foreach (var traktEpisode in dataContract.NotFound.Episodes)
+            foreach (var traktEpisode in dataContract.not_found.episodes)
             {
                 _logger.Error("TraktResponse not Found:" + _jsonSerializer.SerializeToString(traktEpisode));
             }

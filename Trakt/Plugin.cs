@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
@@ -20,6 +21,11 @@ namespace Trakt
 
         public override string Name => "Trakt";
 
+        private Guid _id = new Guid("8abc6789-fde2-4705-8592-4028806fa343");
+        public override Guid Id
+        {
+            get { return _id; }
+        }
 
         public override string Description
             => "Watch, rate and discover media using Trakt. The htpc just got more social";

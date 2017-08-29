@@ -1,41 +1,33 @@
 ﻿using System.Collections.Generic;
-using System.Runtime.Serialization;
+
 using Trakt.Api.DataContracts.BaseModel;
 
 namespace Trakt.Api.DataContracts.Users.Collection
 {
-    [DataContract]
+    
     public class TraktShowCollected
     {
-        [DataMember(Name = "last_collected_at")]
-        public string LastCollectedAt { get; set; }
+        public string last_collected_at { get; set; }
 
-        [DataMember(Name = "show")]
-        public TraktShow Show { get; set; }
+        public TraktShow show { get; set; }
 
-        [DataMember(Name = "seasons")]
-        public List<TraktSeasonCollected> Seasons { get; set; }
+        public List<TraktSeasonCollected> seasons { get; set; }
 
-        [DataContract]
+        
         public class TraktSeasonCollected
         {
-            [DataMember(Name = "number")]
-            public int Number { get; set; }
+            public int number { get; set; }
 
-            [DataMember(Name = "episodes")]
-            public List<TraktEpisodeCollected> Episodes { get; set; }
+            public List<TraktEpisodeCollected> episodes { get; set; }
 
-            [DataContract]
+            
             public class TraktEpisodeCollected
             {
-                [DataMember(Name = "number")]
-                public int Number { get; set; }
+                public int number { get; set; }
 
-                [DataMember(Name = "collected_at")]
-                public string CollectedAt { get; set; }
+                public string collected_at { get; set; }
 
-                [DataMember(Name = "metadata")]
-                public TraktMetadata Metadata { get; set; }
+                public TraktMetadata metadata { get; set; }
             }
         }
     }

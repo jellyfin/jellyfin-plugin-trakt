@@ -1,20 +1,14 @@
-﻿using System.Runtime.Serialization;
-
+﻿
 namespace Trakt.Api.DataContracts.BaseModel
 {
-    [DataContract]
     public class TraktUserSummary
     {
-        [DataMember(Name = "username")]
-        public string Username { get; set; }
+        public string username { get; set; }
 
-        [DataMember(Name = "name")]
-        public string FullName { get; set; }
+        public string name { get; set; }
 
-        [DataMember(Name = "vip")]
-        public bool IsVip { get; set; }
+        public bool vip { get; set; }
 
-        [DataMember(Name = "private")]
-        public bool IsPrivate { get; set; }
+        public bool @private { get; set; }
     }
 }

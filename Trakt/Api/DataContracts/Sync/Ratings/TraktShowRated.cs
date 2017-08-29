@@ -1,31 +1,23 @@
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 using Trakt.Api.DataContracts.BaseModel;
 
 namespace Trakt.Api.DataContracts.Sync.Ratings
 {
-    [DataContract]
     public class TraktShowRated : TraktRated
     {
-        [DataMember(Name = "title", EmitDefaultValue = false)]
-        public string Title { get; set; }
+        public string title { get; set; }
 
-        [DataMember(Name = "year", EmitDefaultValue = false)]
-        public int? Year { get; set; }
+        public int? year { get; set; }
 
-        [DataMember(Name = "ids")]
-        public TraktShowId Ids { get; set; }
+        public TraktShowId ids { get; set; }
 
-        [DataMember(Name = "seasons")]
-        public List<TraktSeasonRated> Seasons { get; set; }
+        public List<TraktSeasonRated> seasons { get; set; }
 
         public class TraktSeasonRated : TraktRated
         {
-            [DataMember(Name = "number")]
-            public int? Number { get; set; }
+            public int? number { get; set; }
 
-            [DataMember(Name = "episodes")]
-            public List<TraktEpisodeRated> Episodes { get; set; }
+            public List<TraktEpisodeRated> episodes { get; set; }
         }
     }
 }

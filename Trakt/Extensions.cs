@@ -24,10 +24,10 @@ namespace Trakt
 
         public static bool IsEmpty(this TraktMetadata metadata)
         {
-            return string.IsNullOrEmpty(metadata.MediaType) &&
-                   string.IsNullOrEmpty(metadata.Resolution) &&
-                   string.IsNullOrEmpty(metadata.Audio) &&
-                   string.IsNullOrEmpty(metadata.AudioChannels);
+            return string.IsNullOrEmpty(metadata.media_type) &&
+                   string.IsNullOrEmpty(metadata.resolution) &&
+                   string.IsNullOrEmpty(metadata.audio) &&
+                   string.IsNullOrEmpty(metadata.audio_channels);
         }
 
         public static string GetCodecRepresetation(this MediaStream audioStream)
@@ -71,13 +71,13 @@ namespace Trakt
             var audio = GetCodecRepresetation(audioStream);
             var audioChannels = audioStream.GetAudioChannels();
 
-            if (collectedMovie.Metadata == null || collectedMovie.Metadata.IsEmpty())
+            if (collectedMovie.metadata == null || collectedMovie.metadata.IsEmpty())
             {
                 return !string.IsNullOrEmpty(resolution) || !string.IsNullOrEmpty(audio) || !string.IsNullOrEmpty(audioChannels);
             }
-            return collectedMovie.Metadata.Audio != audio ||
-                   collectedMovie.Metadata.AudioChannels != audioChannels ||
-                   collectedMovie.Metadata.Resolution != resolution;
+            return collectedMovie.metadata.audio != audio ||
+                   collectedMovie.metadata.audio_channels != audioChannels ||
+                   collectedMovie.metadata.resolution != resolution;
         }
 
         public static string GetResolution(this MediaStream videoStream)

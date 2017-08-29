@@ -1,17 +1,12 @@
-using System.Runtime.Serialization;
 
 namespace Trakt.Api.DataContracts.BaseModel
 {
-    [DataContract]
     public class TraktPersonId : TraktId
     {
-        [DataMember(Name = "imdb")]
-        public string ImdbId { get; set; }
+        public string imdb { get; set; }
 
-        [DataMember(Name = "tmdb")]
-        public int? TmdbId { get; set; }
+        public int? tmdb { get; set; }
 
-        [DataMember(Name = "tvrage")]
-        public int? TvRageId { get; set; }
+        public int? tvrage { get; set; }
     }
 }

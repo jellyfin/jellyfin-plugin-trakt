@@ -1,21 +1,15 @@
-﻿using System.Runtime.Serialization;
-using Trakt.Api.DataContracts.BaseModel;
+﻿using Trakt.Api.DataContracts.BaseModel;
 
 namespace Trakt.Api.DataContracts.Scrobble
 {
-    [DataContract]
     public class TraktScrobbleMovie
     {
-        [DataMember(Name = "movie")]
-        public TraktMovie Movie { get; set; }
+        public TraktMovie movie { get; set; }
 
-        [DataMember(Name = "progress")]
-        public float Progress { get; set; }
+        public float progress { get; set; }
 
-        [DataMember(Name = "app_version")]
-        public string AppVersion { get; set; }
+        public string app_version { get; set; }
 
-        [DataMember(Name = "app_date")]
-        public string AppDate { get; set; }
+        public string app_date { get; set; }
     }
 }
