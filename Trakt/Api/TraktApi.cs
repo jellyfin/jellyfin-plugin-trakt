@@ -924,17 +924,42 @@ namespace Trakt.Api
             }
         }
 
-        public async Task<TraktUserToken> GetUserToken(TraktUser traktUser)
+        public async Task RefreshUserAuth(TraktUser traktUser)
         {
             var data = new TraktUserTokenRequest
             {
-                login = traktUser.UserName,
-                password = traktUser.Password
+                client_id = TraktUris.Id,
+                client_secret = TraktUris.Secret,
+                redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
             };
 
-            using (var response = await PostToTrakt(TraktUris.Login, data, null))
+            if (!string.IsNullOrWhiteSpace(traktUser.PIN))
             {
-                return _jsonSerializer.DeserializeFromStream<TraktUserToken>(response);
+                data.code = traktUser.PIN;
+                data.grant_type = "authorization_code";
+            }
+            else if (!string.IsNullOrWhiteSpace(traktUser.RefreshToken))
+            {
+                data.code = traktUser.RefreshToken;
+                data.grant_type = "refresh_token";
+            }
+            else
+            {
+                _logger.Error("Tried to reauthenticate with Trakt, but neither PIN nor refreshToken was available");
+            }
+
+            TraktUserToken userToken;
+            using (var response = await PostToTrakt(TraktUris.Token, data, null))
+            {
+                userToken = _jsonSerializer.DeserializeFromStream<TraktUserToken>(response);
+            }
+
+            if (userToken != null)
+            {
+                traktUser.AccessToken = userToken.access_token;
+                traktUser.RefreshToken = userToken.refresh_token;
+                traktUser.PIN = null;
+                traktUser.AccessTokenExpiration = DateTime.Now.AddMonths(2);
             }
         }
 
@@ -992,7 +1017,7 @@ namespace Trakt.Api
         private async Task<Stream> PostToTrakt(string url, object data, CancellationToken cancellationToken, TraktUser traktUser)
         {
             var requestContent = data == null ? string.Empty : _jsonSerializer.SerializeToString(data);
-            if (traktUser != null && traktUser.ExtraLogging && url != TraktUris.Login)
+            if (traktUser != null && traktUser.ExtraLogging && url != TraktUris.Token)
             {
                 _logger.Debug(requestContent);
             }
@@ -1044,22 +1069,20 @@ namespace Trakt.Api
         private async Task SetRequestHeaders(HttpRequestOptions options, TraktUser traktUser)
         {
             options.RequestHeaders.Add("trakt-api-version", "2");
-            options.RequestHeaders.Add("trakt-api-key", TraktUris.Devkey);
+            options.RequestHeaders.Add("trakt-api-key", TraktUris.Id);
             if (traktUser != null)
             {
-                if (string.IsNullOrEmpty(traktUser.UserToken))
+                if (DateTime.Now > traktUser.AccessTokenExpiration)
                 {
-                    var userToken = await GetUserToken(traktUser);
-
-                    if (userToken != null)
-                    {
-                        traktUser.UserToken = userToken.token;
-                    }
+                    traktUser.AccessToken = "";
                 }
-                if (!string.IsNullOrEmpty(traktUser.UserToken))
+                if (string.IsNullOrEmpty(traktUser.AccessToken) || !string.IsNullOrEmpty(traktUser.PIN))
                 {
-                    options.RequestHeaders.Add("trakt-user-login", traktUser.UserName);
-                    options.RequestHeaders.Add("trakt-user-token", traktUser.UserToken);
+                    await RefreshUserAuth(traktUser);
+                }
+                if (!string.IsNullOrEmpty(traktUser.AccessToken))
+                {
+                    options.RequestHeaders.Add("Authorization", "Bearer " + traktUser.AccessToken);
                 }
             }
         }
