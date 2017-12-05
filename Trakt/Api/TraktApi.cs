@@ -960,6 +960,7 @@ namespace Trakt.Api
                 traktUser.RefreshToken = userToken.refresh_token;
                 traktUser.PIN = null;
                 traktUser.AccessTokenExpiration = DateTime.Now.AddMonths(2);
+                Plugin.Instance.SaveConfiguration();
             }
         }
 
