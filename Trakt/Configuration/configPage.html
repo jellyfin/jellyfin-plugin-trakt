@@ -36,17 +36,16 @@
                             <span>Skip unwatched import from Trakt</span>
                         </label>
                         <div class="fieldDescription checkboxFieldDescription">
-                            By default, Import from Trakt task will overwrite any watched status if item is marked
-                            as unwached on Trakt. When enabled only watched status will be imported.
+                            The Import from Trakt scheduled task will overwrite any watched status if item is marked as unwached on Trakt. If checked, only watched status will be imported.
                         </div>
                     </div>
                     <div class="checkboxContainer checkboxContainer-withDescription">
                         <label>
                             <input is="emby-checkbox" type="checkbox" id="chkPostWatchedHistory" name="chkPostWatchedHistory" />
-                            <span>Update watched history on Trakt</span>
+                            <span>Update Trakt watched history during Scheduled Task</span>
                         </label>
                         <div class="fieldDescription checkboxFieldDescription">
-                            By default, watched status will be synchronized. This changes it so that emby just copies the status of trakt, and the only time data watched status is changed on trakt is when a video just finished playing (just scrobbles, no history changes).
+                            If checked, Emby will only sync from Trakt during the Trakt scheduled tasks.
                         </div>
                     </div>
                     <div class="checkboxContainer checkboxContainer-withDescription">

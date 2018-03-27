@@ -271,7 +271,7 @@ namespace Trakt.ScheduledTasks
                 try
                 {
                     var dataContracts =
-                        await _traktApi.SendMoviePlaystateUpdates(playedMovies, traktUser, seen, cancellationToken);
+                        await _traktApi.SendMoviePlaystateUpdates(playedMovies, traktUser, false, seen, cancellationToken);
                     if (dataContracts != null)
                     {
                         foreach (var traktSyncResponse in dataContracts)
@@ -396,7 +396,7 @@ namespace Trakt.ScheduledTasks
                 try
                 {
                     var dataContracts =
-                        await _traktApi.SendEpisodePlaystateUpdates(playedEpisodes, traktUser, seen, cancellationToken);
+                        await _traktApi.SendEpisodePlaystateUpdates(playedEpisodes, traktUser, false, seen, cancellationToken);
 
                     foreach (var con in dataContracts)
                     {
