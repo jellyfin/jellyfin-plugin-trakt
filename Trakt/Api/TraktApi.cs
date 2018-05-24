@@ -939,7 +939,7 @@ namespace Trakt.Api
             }
             else if (!string.IsNullOrWhiteSpace(traktUser.RefreshToken))
             {
-                data.code = traktUser.RefreshToken;
+                data.refresh_token = traktUser.RefreshToken;
                 data.grant_type = "refresh_token";
             }
             else
@@ -970,43 +970,16 @@ namespace Trakt.Api
 
         private async Task<Stream> GetFromTrakt(string url, CancellationToken cancellationToken, TraktUser traktUser)
         {
-            var options = new HttpRequestOptions
-            {
-                Url = url,
-                ResourcePool = Plugin.Instance.TraktResourcePool,
-                CancellationToken = cancellationToken,
-                RequestContentType = "application/json",
-                TimeoutMs = 120000,
-                LogErrorResponseBody = false,
-                LogRequest = true,
-                BufferContent = false,
-                EnableHttpCompression = false,
-                EnableKeepAlive = false
-            };
-            await SetRequestHeaders(options, traktUser).ConfigureAwait(false);
+            var options = GetHttpRequestOptions();
+            options.Url = url;
+            options.CancellationToken = cancellationToken;
 
-            try
+            if (traktUser != null)
             {
-                return await _httpClient.Get(options).ConfigureAwait(false);
+                await SetRequestHeaders(options, traktUser).ConfigureAwait(false);
             }
-            catch
-            {
 
-            }
-            await Task.Delay(500).ConfigureAwait(false);
-
-            try
-            {
-                return await _httpClient.Get(options).ConfigureAwait(false);
-            }
-            catch
-            {
-
-            }
-            await Task.Delay(500).ConfigureAwait(false);
-
-            // Retry
-            return await _httpClient.Get(options).ConfigureAwait(false);
+            return await Retry(async () => await _httpClient.Get(options).ConfigureAwait(false));
         }
 
         private Task<Stream> PostToTrakt(string url, object data, TraktUser traktUser)
@@ -1014,20 +987,52 @@ namespace Trakt.Api
             return PostToTrakt(url, data, CancellationToken.None, traktUser);
         }
 
-        private async Task<Stream> PostToTrakt(string url, object data, CancellationToken cancellationToken, TraktUser traktUser)
+        /// <summary>
+        ///     Posts data to url, authenticating with <see cref="TraktUser"/>.
+        /// </summary>
+        /// <param name="traktUser">If null, authentication headers not added.</param>
+        private async Task<Stream> PostToTrakt(string url, object data, CancellationToken cancellationToken,
+            TraktUser traktUser)
         {
             var requestContent = data == null ? string.Empty : _jsonSerializer.SerializeToString(data);
-            if (traktUser != null && traktUser.ExtraLogging && url != TraktUris.Token)
+            if (traktUser != null && traktUser.ExtraLogging) _logger.Debug(requestContent);
+            var options = GetHttpRequestOptions();
+            options.Url = url;
+            options.CancellationToken = cancellationToken;
+            options.RequestContent = requestContent;
+
+            if (traktUser != null)
             {
-                _logger.Debug(requestContent);
+                await SetRequestHeaders(options, traktUser).ConfigureAwait(false);
             }
+            
+            var retryResponse = await Retry(async ()=> await _httpClient.Post(options).ConfigureAwait(false));
+            return retryResponse.Content;
+        }
+
+        private async Task<T> Retry<T>(Func<Task<T>> function)
+        {
+            try
+            {
+                return await function();
+            }
+            catch{}
+            await Task.Delay(500).ConfigureAwait(false);
+            try
+            {
+                return await function();
+            }
+            catch { }
+            await Task.Delay(500).ConfigureAwait(false);
+            return await function();
+        }
+
+        private HttpRequestOptions GetHttpRequestOptions()
+        {
             var options = new HttpRequestOptions
             {
-                Url = url,
                 ResourcePool = Plugin.Instance.TraktResourcePool,
-                CancellationToken = cancellationToken,
                 RequestContentType = "application/json",
-                RequestContent = requestContent,
                 TimeoutMs = 120000,
                 LogErrorResponseBody = false,
                 LogRequest = true,
@@ -1035,56 +1040,27 @@ namespace Trakt.Api
                 EnableHttpCompression = false,
                 EnableKeepAlive = false
             };
-            await SetRequestHeaders(options, traktUser).ConfigureAwait(false);
-
-            try
-            {
-                var response = await _httpClient.Post(options).ConfigureAwait(false);
-                return response.Content;
-            }
-            catch
-            {
-
-            }
-
-            await Task.Delay(500).ConfigureAwait(false);
-
-            try
-            {
-                var response = await _httpClient.Post(options).ConfigureAwait(false);
-                return response.Content;
-            }
-            catch
-            {
-
-            }
-
-            await Task.Delay(500).ConfigureAwait(false);
-
-            // retry
-            var retryResponse = await _httpClient.Post(options).ConfigureAwait(false);
-            return retryResponse.Content;
+            options.RequestHeaders.Add("trakt-api-version", "2");
+            options.RequestHeaders.Add("trakt-api-key", TraktUris.Id);
+            return options;
         }
 
         private async Task SetRequestHeaders(HttpRequestOptions options, TraktUser traktUser)
         {
-            options.RequestHeaders.Add("trakt-api-version", "2");
-            options.RequestHeaders.Add("trakt-api-key", TraktUris.Id);
-            if (traktUser != null)
+
+            if (DateTime.Now > traktUser.AccessTokenExpiration)
             {
-                if (DateTime.Now > traktUser.AccessTokenExpiration)
-                {
-                    traktUser.AccessToken = "";
-                }
-                if (string.IsNullOrEmpty(traktUser.AccessToken) || !string.IsNullOrEmpty(traktUser.PIN))
-                {
-                    await RefreshUserAuth(traktUser);
-                }
-                if (!string.IsNullOrEmpty(traktUser.AccessToken))
-                {
-                    options.RequestHeaders.Add("Authorization", "Bearer " + traktUser.AccessToken);
-                }
+                traktUser.AccessToken = "";
             }
+            if (string.IsNullOrEmpty(traktUser.AccessToken) || !string.IsNullOrEmpty(traktUser.PIN))
+            {
+                await RefreshUserAuth(traktUser);
+            }
+            if (!string.IsNullOrEmpty(traktUser.AccessToken))
+            {
+                options.RequestHeaders.Add("Authorization", "Bearer " + traktUser.AccessToken);
+            }
+
         }
     }
 }

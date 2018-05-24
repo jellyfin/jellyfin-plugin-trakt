@@ -186,7 +186,10 @@
                         ApiClient.updatePluginConfiguration(TraktConfigurationPage.pluginUniqueId, config).then(function (result) {
                             Dashboard.processPluginConfigurationUpdateResult(result);
                             ApiClient.getUsers().then(function (users) {
+                                var currentUserId = $('#selectUser', page).val();
                                 TraktConfigurationPage.populateUsers(users);
+                                $('#selectUser', page).val(currentUserId);
+                                TraktConfigurationPage.loadConfiguration(currentUserId, page);
                                 Dashboard.alert('Settings saved.');
                             });
                         });
