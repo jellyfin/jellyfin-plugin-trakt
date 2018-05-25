@@ -116,8 +116,8 @@ namespace Trakt.ScheduledTasks
             ISplittableProgress<double> progress,
             CancellationToken cancellationToken)
         {
-            await SyncMovies(user, traktUser, progress.Split(2), cancellationToken);
-            await SyncShows(user, traktUser, progress.Split(2), cancellationToken);
+            await SyncMovies(user, traktUser, progress.Split(2), cancellationToken).ConfigureAwait(false);
+            await SyncShows(user, traktUser, progress.Split(2), cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -209,13 +209,13 @@ namespace Trakt.ScheduledTasks
             }
 
             // send movies to mark collected
-            await SendMovieCollectionUpdates(true, traktUser, collectedMovies, progress.Split(4), cancellationToken);
+            await SendMovieCollectionUpdates(true, traktUser, collectedMovies, progress.Split(4), cancellationToken).ConfigureAwait(false);
 
             // send movies to mark watched
-            await SendMoviePlaystateUpdates(true, traktUser, playedMovies, progress.Split(4), cancellationToken);
+            await SendMoviePlaystateUpdates(true, traktUser, playedMovies, progress.Split(4), cancellationToken).ConfigureAwait(false);
 
             // send movies to mark unwatched
-            await SendMoviePlaystateUpdates(false, traktUser, unplayedMovies, progress.Split(4), cancellationToken);
+            await SendMoviePlaystateUpdates(false, traktUser, unplayedMovies, progress.Split(4), cancellationToken).ConfigureAwait(false);
         }
 
         private async Task SendMovieCollectionUpdates(
@@ -271,7 +271,7 @@ namespace Trakt.ScheduledTasks
                 try
                 {
                     var dataContracts =
-                        await _traktApi.SendMoviePlaystateUpdates(playedMovies, traktUser, false, seen, cancellationToken);
+                        await _traktApi.SendMoviePlaystateUpdates(playedMovies, traktUser, false, seen, cancellationToken).ConfigureAwait(false);
                     if (dataContracts != null)
                     {
                         foreach (var traktSyncResponse in dataContracts)
@@ -376,11 +376,11 @@ namespace Trakt.ScheduledTasks
                 decisionProgress.Report(100);
             }
 
-            await SendEpisodeCollectionUpdates(true, traktUser, collectedEpisodes, progress.Split(4), cancellationToken);
+            await SendEpisodeCollectionUpdates(true, traktUser, collectedEpisodes, progress.Split(4), cancellationToken).ConfigureAwait(false);
 
-            await SendEpisodePlaystateUpdates(true, traktUser, playedEpisodes, progress.Split(4), cancellationToken);
+            await SendEpisodePlaystateUpdates(true, traktUser, playedEpisodes, progress.Split(4), cancellationToken).ConfigureAwait(false);
 
-            await SendEpisodePlaystateUpdates(false, traktUser, unplayedEpisodes, progress.Split(4), cancellationToken);
+            await SendEpisodePlaystateUpdates(false, traktUser, unplayedEpisodes, progress.Split(4), cancellationToken).ConfigureAwait(false);
         }
 
         private async Task SendEpisodePlaystateUpdates(
@@ -396,7 +396,7 @@ namespace Trakt.ScheduledTasks
                 try
                 {
                     var dataContracts =
-                        await _traktApi.SendEpisodePlaystateUpdates(playedEpisodes, traktUser, false, seen, cancellationToken);
+                        await _traktApi.SendEpisodePlaystateUpdates(playedEpisodes, traktUser, false, seen, cancellationToken).ConfigureAwait(false);
 
                     foreach (var con in dataContracts)
                     {

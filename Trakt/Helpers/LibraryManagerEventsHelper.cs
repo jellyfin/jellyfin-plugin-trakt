@@ -73,7 +73,7 @@ namespace Trakt.Helpers
         /// <summary>
         /// 
         /// </summary>
-        private void OnQueueTimerCallback(object state)
+        private async void OnQueueTimerCallback(object state)
         {
             _logger.Info("Timer elapsed - Processing queued items");
 
@@ -95,7 +95,7 @@ namespace Trakt.Helpers
                 if (queuedMovieDeletes.Any())
                 {
                     _logger.Info(queuedMovieDeletes.Count + " Movie Deletes to Process");
-                    ProcessQueuedMovieEvents(queuedMovieDeletes, traktUser, EventType.Remove);
+                    await ProcessQueuedMovieEvents(queuedMovieDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
                 }
                 else
                 {
@@ -110,7 +110,7 @@ namespace Trakt.Helpers
                 if (queuedMovieAdds.Any())
                 {
                     _logger.Info(queuedMovieAdds.Count + " Movie Adds to Process");
-                    ProcessQueuedMovieEvents(queuedMovieAdds, traktUser, EventType.Add);
+                    await ProcessQueuedMovieEvents(queuedMovieAdds, traktUser, EventType.Add).ConfigureAwait(false);
                 }
                 else
                 {
@@ -125,7 +125,7 @@ namespace Trakt.Helpers
                 if (queuedEpisodeDeletes.Any())
                 {
                     _logger.Info(queuedEpisodeDeletes.Count + " Episode Deletes to Process");
-                    ProcessQueuedEpisodeEvents(queuedEpisodeDeletes, traktUser, EventType.Remove);
+                    await ProcessQueuedEpisodeEvents(queuedEpisodeDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
                 }
                 else
                 {
@@ -140,7 +140,7 @@ namespace Trakt.Helpers
                 if (queuedEpisodeAdds.Any())
                 {
                     _logger.Info(queuedEpisodeAdds.Count + " Episode Adds to Process");
-                    ProcessQueuedEpisodeEvents(queuedEpisodeAdds, traktUser, EventType.Add);
+                    await ProcessQueuedEpisodeEvents(queuedEpisodeAdds, traktUser, EventType.Add).ConfigureAwait(false);
                 }
                 else
                 {
@@ -155,7 +155,7 @@ namespace Trakt.Helpers
                 if (queuedShowDeletes.Any())
                 {
                     _logger.Info(queuedMovieDeletes.Count + " Series Deletes to Process");
-                    ProcessQueuedShowEvents(queuedShowDeletes, traktUser, EventType.Remove);
+                    await ProcessQueuedShowEvents(queuedShowDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
                 }
                 else
                 {
@@ -176,7 +176,7 @@ namespace Trakt.Helpers
             {
                 // Should probably not be awaiting this, but it's unlikely a user will be deleting more than one or two shows at a time
                 foreach (var show in shows)
-                    await _traktApi.SendLibraryUpdateAsync(show, traktUser, CancellationToken.None, eventType);
+                    await _traktApi.SendLibraryUpdateAsync(show, traktUser, CancellationToken.None, eventType).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -198,7 +198,7 @@ namespace Trakt.Helpers
                 .ToList();
             try
             {
-                await _traktApi.SendLibraryUpdateAsync(movies, traktUser, CancellationToken.None, eventType);
+                await _traktApi.SendLibraryUpdateAsync(movies, traktUser, CancellationToken.None, eventType).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
