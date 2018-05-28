@@ -128,10 +128,10 @@ namespace Trakt.ScheduledTasks
                         {
                             IncludeItemTypes = new[] { typeof(Movie).Name, typeof(Episode).Name },
                             IsVirtualItem = false,
-                            OrderBy = new Tuple<string, SortOrder>[]
+                            OrderBy = new []
                             {
-                                new Tuple<string, SortOrder>(ItemSortBy.SeriesSortName, SortOrder.Ascending),
-                                new Tuple<string, SortOrder>(ItemSortBy.SortName, SortOrder.Ascending)
+                                new ValueTuple<string, SortOrder>(ItemSortBy.SeriesSortName, SortOrder.Ascending),
+                                new ValueTuple<string, SortOrder>(ItemSortBy.SortName, SortOrder.Ascending)
                             }
                         })
                     .Where(i => _traktApi.CanSync(i, traktUser)).ToList();
