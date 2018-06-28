@@ -18,7 +18,7 @@ namespace Trakt.Helpers
     {
         private readonly List<LibraryEvent> _queuedEvents;
         private ITimer _queueTimer;
-        private readonly ILogger _logger ;
+        private readonly ILogger _logger;
         private readonly TraktApi _traktApi;
         private readonly ITimerFactory _timerFactory;
 
@@ -64,7 +64,7 @@ namespace Trakt.Helpers
             {
                 // we have a match, this user is watching the folder the video is in. Add to queue and they
                 // will be processed when the next timer elapsed event fires.
-                var libraryEvent = new LibraryEvent {Item = item, TraktUser = user, EventType = eventType};
+                var libraryEvent = new LibraryEvent { Item = item, TraktUser = user, EventType = eventType };
                 _queuedEvents.Add(libraryEvent);
             }
 
@@ -74,6 +74,18 @@ namespace Trakt.Helpers
         /// 
         /// </summary>
         private async void OnQueueTimerCallback(object state)
+        {
+            try
+            {
+                await OnQueueTimerCallbackInternal().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.ErrorException("Error in OnQueueTimerCallbackInternal", ex);
+            }
+        }
+
+        private async Task OnQueueTimerCallbackInternal()
         {
             _logger.Info("Timer elapsed - Processing queued items");
 
@@ -88,7 +100,7 @@ namespace Trakt.Helpers
             foreach (var traktUser in Plugin.Instance.PluginConfiguration.TraktUsers)
             {
                 var queuedMovieDeletes = queue.Where(ev =>
-                    new Guid(ev.TraktUser.LinkedMbUserId).Equals(new Guid(traktUser.LinkedMbUserId)) && 
+                    new Guid(ev.TraktUser.LinkedMbUserId).Equals(new Guid(traktUser.LinkedMbUserId)) &&
                     ev.Item is Movie &&
                     ev.EventType == EventType.Remove).ToList();
 
@@ -193,7 +205,7 @@ namespace Trakt.Helpers
         /// <returns></returns>
         private async Task ProcessQueuedMovieEvents(IEnumerable<LibraryEvent> events, TraktUser traktUser, EventType eventType)
         {
-            var movies = events.Select(lev => (Movie) lev.Item)
+            var movies = events.Select(lev => (Movie)lev.Item)
                 .Where(lev => !string.IsNullOrEmpty(lev.Name) && !string.IsNullOrEmpty(lev.GetProviderId(MetadataProviders.Imdb)))
                 .ToList();
             try
@@ -204,7 +216,7 @@ namespace Trakt.Helpers
             {
                 _logger.ErrorException("Exception handled processing queued movie events", ex);
             }
-            
+
         }
 
         /// <summary>
@@ -216,7 +228,7 @@ namespace Trakt.Helpers
         /// <returns></returns>
         private async Task ProcessQueuedEpisodeEvents(IEnumerable<LibraryEvent> events, TraktUser traktUser, EventType eventType)
         {
-            var episodes = events.Select(lev => (Episode) lev.Item)
+            var episodes = events.Select(lev => (Episode)lev.Item)
                 .Where(lev => lev.Series != null && (!string.IsNullOrEmpty(lev.Series.Name) && !string.IsNullOrEmpty(lev.Series.GetProviderId(MetadataProviders.Tvdb))))
                 .OrderBy(i => i.Series.Id)
                 .ToList();
@@ -230,7 +242,7 @@ namespace Trakt.Helpers
             }
 
             var payload = new List<Episode>();
-            var currentSeriesId = episodes[0].Series.Id; 
+            var currentSeriesId = episodes[0].Series.Id;
 
             foreach (var ep in episodes)
             {
@@ -238,7 +250,7 @@ namespace Trakt.Helpers
                 {
                     // We're starting a new series. Time to send the current one to trakt.tv
                     await _traktApi.SendLibraryUpdateAsync(payload, traktUser, CancellationToken.None, eventType);
-                    
+
                     currentSeriesId = ep.Series.Id;
                     payload.Clear();
                 }
