@@ -111,7 +111,7 @@ namespace Trakt
         
         public static string ToISO8601(this DateTime dt)
         {
-            return dt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ");
+            return dt.ToString("yyyy-MM-ddTHH:mm:ssZ");
         }
 
 
