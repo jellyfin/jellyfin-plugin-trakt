@@ -999,7 +999,7 @@ namespace Trakt.Api
             var options = GetHttpRequestOptions();
             options.Url = url;
             options.CancellationToken = cancellationToken;
-            options.RequestContent = requestContent;
+            options.RequestContent = requestContent.AsMemory();
 
             if (traktUser != null)
             {

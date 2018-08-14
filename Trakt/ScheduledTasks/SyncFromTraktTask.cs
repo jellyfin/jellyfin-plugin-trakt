@@ -97,7 +97,6 @@ namespace Trakt.ScheduledTasks
 
         private async Task SyncTraktDataForUser(User user, double currentProgress, CancellationToken cancellationToken, IProgress<double> progress, double percentPerUser)
         {
-            var libraryRoot = user.RootFolder;
             var traktUser = UserHelper.GetTraktUser(user);
 
             List<TraktMovieWatched> traktWatchedMovies;
