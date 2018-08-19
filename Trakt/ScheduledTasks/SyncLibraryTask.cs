@@ -157,7 +157,7 @@ namespace Trakt.ScheduledTasks
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var libraryMovie = child as Movie;
-                var userData = _userDataManager.GetUserData(user.Id, child);
+                var userData = _userDataManager.GetUserData(user, child);
 
                 // if movie is not collected, or (export media info setting is enabled and every collected matching movie has different metadata), collect it
                 var collectedMathingMovies = SyncFromTraktTask.FindMatches(libraryMovie, traktCollectedMovies).ToList();
@@ -187,7 +187,7 @@ namespace Trakt.ScheduledTasks
                                 userData.Played = false;
 
                                 _userDataManager.SaveUserData(
-                                    user.Id,
+                                    user.InternalId,
                                     libraryMovie,
                                     userData,
                                     UserDataSaveReason.Import,
@@ -323,7 +323,7 @@ namespace Trakt.ScheduledTasks
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var episode = child as Episode;
-                var userData = _userDataManager.GetUserData(user.Id, episode);
+                var userData = _userDataManager.GetUserData(user, episode);
                 var isPlayedTraktTv = false;
                 var traktWatchedShow = SyncFromTraktTask.FindMatch(episode.Series, traktWatchedShows);
 
@@ -350,7 +350,7 @@ namespace Trakt.ScheduledTasks
                             userData.Played = false;
 
                             _userDataManager.SaveUserData(
-                                user.Id,
+                                user.InternalId,
                                 episode,
                                 userData,
                                 UserDataSaveReason.Import,

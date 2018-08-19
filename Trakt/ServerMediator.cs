@@ -75,7 +75,7 @@ namespace Trakt
             if (baseItem != null)
             {
                 // determine if user has trakt credentials
-                var traktUser = UserHelper.GetTraktUser(e.UserId);
+                var traktUser = UserHelper.GetTraktUser(e.User);
 
                 // Can't progress
                 if (traktUser == null || !_traktApi.CanSync(baseItem, traktUser))

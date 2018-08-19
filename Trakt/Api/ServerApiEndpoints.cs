@@ -136,7 +136,7 @@ namespace Trakt.Api
         {
             _logger.Info("RateItem request received");
 
-            var currentItem = _libraryManager.GetItemById(new Guid(request.Id));
+            var currentItem = _libraryManager.GetItemById(request.Id);
 
             if (currentItem == null)
             {
