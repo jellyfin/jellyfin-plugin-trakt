@@ -253,7 +253,7 @@ namespace Trakt.Api
                 var audioStream = m.GetMediaStreams().FirstOrDefault(x => x.Type == MediaStreamType.Audio);
                 var traktMovieCollected = new TraktMovieCollected
                 {
-                    collected_at = m.DateCreated.ToISO8601(),
+                    collected_at = m.DateCreated.UtcDateTime.ToISO8601(),
                     title = m.Name,
                     year = m.ProductionYear,
                     ids = new TraktMovieId
@@ -334,7 +334,7 @@ namespace Trakt.Api
                 {
                     var traktEpisodeCollected = new TraktEpisodeCollected
                     {
-                        collected_at = episode.DateCreated.ToISO8601(),
+                        collected_at = episode.DateCreated.UtcDateTime.ToISO8601(),
                         ids = new TraktEpisodeId
                         {
                             tvdb = tvDbId.ConvertToInt()
@@ -396,7 +396,7 @@ namespace Trakt.Api
                         var traktEpisodeCollected = new TraktEpisodeCollected
                         {
                             number = number,
-                            collected_at = episode.DateCreated.ToISO8601(),
+                            collected_at = episode.DateCreated.UtcDateTime.ToISO8601(),
                             ids = ids
                         };
                         if (traktUser.ExportMediaInfo)
@@ -796,7 +796,7 @@ namespace Trakt.Api
                                 : ParseId(m.GetProviderId(MetadataProviders.Tmdb))
                     },
                     year = m.ProductionYear,
-                    watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.ToISO8601() : null
+                    watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.UtcDateTime.ToISO8601() : null
                 };
             }).ToList();
             var chunks = moviesPayload.ToChunks(100).ToList();
@@ -872,7 +872,7 @@ namespace Trakt.Api
                         {
                             tvdb = int.Parse(tvDbId)
                         },
-                        watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.ToISO8601() : null
+                        watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.UtcDateTime.ToISO8601() : null
                     });
                 }
                 else if (episode.IndexNumber != null)
@@ -910,7 +910,7 @@ namespace Trakt.Api
                         syncSeason.episodes.Add(new TraktEpisodeWatched
                         {
                             number = number,
-                            watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.ToISO8601() : null
+                            watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.UtcDateTime.ToISO8601() : null
                         });
                     }
                 }
