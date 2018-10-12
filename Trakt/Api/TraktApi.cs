@@ -970,19 +970,19 @@ namespace Trakt.Api
 
         private async Task<Stream> GetFromTrakt(string url, CancellationToken cancellationToken, TraktUser traktUser)
         {
+            var options = GetHttpRequestOptions();
+            options.Url = url;
+            options.CancellationToken = cancellationToken;
+
+            if (traktUser != null)
+            {
+                await SetRequestHeaders(options, traktUser).ConfigureAwait(false);
+            }
+
             await Plugin.Instance.TraktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             try
             {
-                var options = GetHttpRequestOptions();
-                options.Url = url;
-                options.CancellationToken = cancellationToken;
-
-                if (traktUser != null)
-                {
-                    await SetRequestHeaders(options, traktUser).ConfigureAwait(false);
-                }
-
                 return await Retry(async () => await _httpClient.Get(options).ConfigureAwait(false)).ConfigureAwait(false);
             }
             finally
@@ -1003,22 +1003,22 @@ namespace Trakt.Api
         private async Task<Stream> PostToTrakt(string url, object data, CancellationToken cancellationToken,
             TraktUser traktUser)
         {
+            var requestContent = data == null ? string.Empty : _jsonSerializer.SerializeToString(data);
+            if (traktUser != null && traktUser.ExtraLogging) _logger.Debug(requestContent);
+            var options = GetHttpRequestOptions();
+            options.Url = url;
+            options.CancellationToken = cancellationToken;
+            options.RequestContent = requestContent.AsMemory();
+
+            if (traktUser != null)
+            {
+                await SetRequestHeaders(options, traktUser).ConfigureAwait(false);
+            }
+
             await Plugin.Instance.TraktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             try
             {
-                var requestContent = data == null ? string.Empty : _jsonSerializer.SerializeToString(data);
-                if (traktUser != null && traktUser.ExtraLogging) _logger.Debug(requestContent);
-                var options = GetHttpRequestOptions();
-                options.Url = url;
-                options.CancellationToken = cancellationToken;
-                options.RequestContent = requestContent.AsMemory();
-
-                if (traktUser != null)
-                {
-                    await SetRequestHeaders(options, traktUser).ConfigureAwait(false);
-                }
-
                 var retryResponse = await Retry(async () => await _httpClient.Post(options).ConfigureAwait(false)).ConfigureAwait(false);
                 return retryResponse.Content;
             }
