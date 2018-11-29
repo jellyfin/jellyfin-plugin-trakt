@@ -154,7 +154,7 @@ namespace Trakt.ScheduledTasks
                     if (!userData.Played)
                     {
                         userData.Played = true;
-                        userData.LastPlayedDate = DateTime.UtcNow;
+                        userData.LastPlayedDate = DateTimeOffset.UtcNow;
                         changed = true;
                     }
 
@@ -171,7 +171,7 @@ namespace Trakt.ScheduledTasks
                     // Set last played to whichever is most recent, remote or local time...
                     if (!string.IsNullOrEmpty(matchedMovie.last_watched_at))
                     {
-                        var tLastPlayed = DateTime.Parse(matchedMovie.last_watched_at);
+                        var tLastPlayed = DateTimeOffset.Parse(matchedMovie.last_watched_at).ToUniversalTime();
                         var latestPlayed = tLastPlayed > userData.LastPlayedDate ? tLastPlayed : userData.LastPlayedDate;
                         if (userData.LastPlayedDate != latestPlayed)
                         {
@@ -234,7 +234,7 @@ namespace Trakt.ScheduledTasks
                             if (!userData.Played)
                             {
                                 userData.Played = true;
-                                userData.LastPlayedDate = DateTime.UtcNow;
+                                userData.LastPlayedDate = DateTimeOffset.UtcNow;
                                 changed = true;
                             }
 

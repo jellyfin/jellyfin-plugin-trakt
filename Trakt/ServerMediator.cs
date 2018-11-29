@@ -194,7 +194,7 @@ namespace Trakt
                 {
                     UserId = e.Users.First().Id,
                     ItemId = e.Item.Id,
-                    LastApiAccess = DateTime.UtcNow
+                    LastApiAccess = DateTimeOffset.UtcNow
                 };
             }
             catch (Exception ex)
@@ -308,6 +308,6 @@ namespace Trakt
     {
         public Guid UserId;
         public Guid ItemId;
-        public DateTime LastApiAccess;
+        public DateTimeOffset LastApiAccess;
     }
 }

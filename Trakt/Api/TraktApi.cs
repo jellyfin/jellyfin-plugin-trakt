@@ -109,7 +109,7 @@ namespace Trakt.Api
         {
             var movieData = new TraktScrobbleMovie
             {
-                app_date = DateTime.Today.ToString("yyyy-MM-dd"),
+                app_date = DateTimeOffset.Now.Date.ToString("yyyy-MM-dd"),
                 app_version = _appHost.ApplicationVersion.ToString(),
                 progress = progressPercent,
                 movie = new TraktMovie
@@ -162,7 +162,7 @@ namespace Trakt.Api
             {
                 episodeDatas.Add(new TraktScrobbleEpisode
                 {
-                    app_date = DateTime.Today.ToString("yyyy-MM-dd"),
+                    app_date = DateTimeOffset.Now.Date.ToString("yyyy-MM-dd"),
                     app_version = _appHost.ApplicationVersion.ToString(),
                     progress = progressPercent,
                     episode = new TraktEpisode
@@ -183,7 +183,7 @@ namespace Trakt.Api
                 {
                     episodeDatas.Add(new TraktScrobbleEpisode
                     {
-                        app_date = DateTime.Today.ToString("yyyy-MM-dd"),
+                        app_date = DateTimeOffset.Now.Date.ToString("yyyy-MM-dd"),
                         app_version = _appHost.ApplicationVersion.ToString(),
                         progress = progressPercent,
                         episode = new TraktEpisode
@@ -253,7 +253,7 @@ namespace Trakt.Api
                 var audioStream = m.GetMediaStreams().FirstOrDefault(x => x.Type == MediaStreamType.Audio);
                 var traktMovieCollected = new TraktMovieCollected
                 {
-                    collected_at = m.DateCreated.UtcDateTime.ToISO8601(),
+                    collected_at = m.DateCreated.ToISO8601(),
                     title = m.Name,
                     year = m.ProductionYear,
                     ids = new TraktMovieId
@@ -334,7 +334,7 @@ namespace Trakt.Api
                 {
                     var traktEpisodeCollected = new TraktEpisodeCollected
                     {
-                        collected_at = episode.DateCreated.UtcDateTime.ToISO8601(),
+                        collected_at = episode.DateCreated.ToISO8601(),
                         ids = new TraktEpisodeId
                         {
                             tvdb = tvDbId.ConvertToInt()
@@ -396,7 +396,7 @@ namespace Trakt.Api
                         var traktEpisodeCollected = new TraktEpisodeCollected
                         {
                             number = number,
-                            collected_at = episode.DateCreated.UtcDateTime.ToISO8601(),
+                            collected_at = episode.DateCreated.ToISO8601(),
                             ids = ids
                         };
                         if (traktUser.ExportMediaInfo)
@@ -796,7 +796,7 @@ namespace Trakt.Api
                                 : ParseId(m.GetProviderId(MetadataProviders.Tmdb))
                     },
                     year = m.ProductionYear,
-                    watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.UtcDateTime.ToISO8601() : null
+                    watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.ToISO8601() : null
                 };
             }).ToList();
             var chunks = moviesPayload.ToChunks(100).ToList();
@@ -872,7 +872,7 @@ namespace Trakt.Api
                         {
                             tvdb = int.Parse(tvDbId)
                         },
-                        watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.UtcDateTime.ToISO8601() : null
+                        watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.ToISO8601() : null
                     });
                 }
                 else if (episode.IndexNumber != null)
@@ -910,7 +910,7 @@ namespace Trakt.Api
                         syncSeason.episodes.Add(new TraktEpisodeWatched
                         {
                             number = number,
-                            watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.UtcDateTime.ToISO8601() : null
+                            watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.ToISO8601() : null
                         });
                     }
                 }
@@ -958,7 +958,7 @@ namespace Trakt.Api
                 traktUser.AccessToken = userToken.access_token;
                 traktUser.RefreshToken = userToken.refresh_token;
                 traktUser.PIN = null;
-                traktUser.AccessTokenExpiration = DateTime.Now.AddMonths(2);
+                traktUser.AccessTokenExpiration = DateTimeOffset.Now.AddMonths(2);
                 Plugin.Instance.SaveConfiguration();
             }
         }
@@ -1065,7 +1065,7 @@ namespace Trakt.Api
         private async Task SetRequestHeaders(HttpRequestOptions options, TraktUser traktUser)
         {
 
-            if (DateTime.Now > traktUser.AccessTokenExpiration)
+            if (DateTimeOffset.Now > traktUser.AccessTokenExpiration)
             {
                 traktUser.AccessToken = "";
             }
