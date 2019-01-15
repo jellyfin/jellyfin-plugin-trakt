@@ -185,7 +185,7 @@ namespace Trakt.ScheduledTasks
                                 userData.Played = false;
 
                                 _userDataManager.SaveUserData(
-                                    user.InternalId,
+                                    user.Id,
                                     libraryMovie,
                                     userData,
                                     UserDataSaveReason.Import,
@@ -348,7 +348,7 @@ namespace Trakt.ScheduledTasks
                             userData.Played = false;
 
                             _userDataManager.SaveUserData(
-                                user.InternalId,
+                                user.Id,
                                 episode,
                                 userData,
                                 UserDataSaveReason.Import,
