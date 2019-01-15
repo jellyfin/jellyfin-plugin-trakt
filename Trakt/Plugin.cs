@@ -11,7 +11,7 @@ using MediaBrowser.Model.Drawing;
 
 namespace Trakt
 {
-    public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages, IHasThumbImage
+    public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
         public SemaphoreSlim TraktResourcePool = new SemaphoreSlim(1, 1);
 
@@ -46,20 +46,6 @@ namespace Trakt
                     EmbeddedResourcePath = GetType().Namespace + ".Configuration.configPage.html"
                 }
             };
-        }
-
-        public Stream GetThumbImage()
-        {
-            var type = GetType();
-            return type.Assembly.GetManifestResourceStream(type.Namespace + ".thumb.png");
-        }
-
-        public ImageFormat ThumbImageFormat
-        {
-            get
-            {
-                return ImageFormat.Png;
-            }
         }
     }
 }
