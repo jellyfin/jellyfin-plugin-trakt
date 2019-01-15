@@ -153,14 +153,14 @@ namespace Trakt.ScheduledTasks
                 {
                     _logger.LogDebug("Movie is in Watched list {name}", movie.Name);
 
-                    var userData = _userDataManager.GetUserData(user.InternalId, movie);
+                    var userData = _userDataManager.GetUserData(user.Id, movie);
                     bool changed = false;
 
                     // set movie as watched
                     if (!userData.Played)
                     {
                         userData.Played = true;
-                        userData.LastPlayedDate = DateTimeOffset.UtcNow;
+                        userData.LastPlayedDate = DateTime.UtcNow;
                         changed = true;
                     }
 
@@ -177,7 +177,7 @@ namespace Trakt.ScheduledTasks
                     // Set last played to whichever is most recent, remote or local time...
                     if (!string.IsNullOrEmpty(matchedMovie.last_watched_at))
                     {
-                        var tLastPlayed = DateTimeOffset.Parse(matchedMovie.last_watched_at).ToUniversalTime();
+                        var tLastPlayed = DateTime.Parse(matchedMovie.last_watched_at).ToUniversalTime();
                         var latestPlayed = tLastPlayed > userData.LastPlayedDate ? tLastPlayed : userData.LastPlayedDate;
                         if (userData.LastPlayedDate != latestPlayed)
                         {
@@ -190,7 +190,7 @@ namespace Trakt.ScheduledTasks
                     if (changed)
                     {
                         _userDataManager.SaveUserData(
-                               user.InternalId,
+                               user.Id,
                                movie,
                                userData,
                                UserDataSaveReason.Import,
@@ -240,7 +240,7 @@ namespace Trakt.ScheduledTasks
                             if (!userData.Played)
                             {
                                 userData.Played = true;
-                                userData.LastPlayedDate = DateTimeOffset.UtcNow;
+                                userData.LastPlayedDate = DateTime.UtcNow;
                                 changed = true;
                             }
 
@@ -267,7 +267,7 @@ namespace Trakt.ScheduledTasks
                         {
 
                             _userDataManager.SaveUserData(
-                                user.InternalId,
+                                user.Id,
                                 episode,
                                 userData,
                                 UserDataSaveReason.Import,
