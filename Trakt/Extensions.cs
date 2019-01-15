@@ -114,6 +114,10 @@ namespace Trakt
             return dt.ToString("yyyy-MM-ddTHH:mm:ssZ");
         }
 
+        public static string ToISO8601(this DateTime dt)
+        {
+            return dt.ToString("yyyy-MM-ddTHH:mm:ssZ");
+        }
 
         public static int GetSeasonNumber(this Episode episode)
         {
