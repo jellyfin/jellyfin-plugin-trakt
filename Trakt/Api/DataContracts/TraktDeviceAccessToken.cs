@@ -3,8 +3,7 @@
 namespace Trakt.Api.DataContracts
 {
     
-    // TODO DELETE
-    public class TraktUserToken
+    public class TraktDeviceAccessToken
     {
         public string access_token { get; set; }
         public string token_type { get; set; }

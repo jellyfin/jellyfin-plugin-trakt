@@ -9,6 +9,7 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Threading.Tasks;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Serialization;
@@ -25,6 +26,7 @@ using TraktMovieCollected = Trakt.Api.DataContracts.Sync.Collection.TraktMovieCo
 using TraktEpisodeCollected = Trakt.Api.DataContracts.Sync.Collection.TraktEpisodeCollected;
 using TraktShowCollected = Trakt.Api.DataContracts.Sync.Collection.TraktShowCollected;
 using MediaBrowser.Model.IO;
+using MediaBrowser.Model.Net;
 using Microsoft.Extensions.Logging;
 
 namespace Trakt.Api
@@ -923,46 +925,96 @@ namespace Trakt.Api
             }
         }
 
-        public async Task RefreshUserAuth(TraktUser traktUser)
+        public string AuthorizeDevice(TraktUser traktUser)
         {
-            var data = new TraktUserTokenRequest
+            if (traktUser == null)
             {
-                client_id = TraktUris.Id,
-                client_secret = TraktUris.Secret,
-                redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
+                
+            }
+            var deviceCodeRequest = new
+            {
+                client_id = TraktUris.ClientId
             };
-
-            if (!string.IsNullOrWhiteSpace(traktUser.PIN))
+            
+            TraktDeviceCode deviceCode;
+            using (var response = PostToTrakt(TraktUris.DeviceCode, deviceCodeRequest, null))
             {
-                data.code = traktUser.PIN;
-                data.grant_type = "authorization_code";
+                deviceCode = _jsonSerializer.DeserializeFromStream<TraktDeviceCode>(response.Result);
             }
-            else if (!string.IsNullOrWhiteSpace(traktUser.RefreshToken))
-            {
-                data.refresh_token = traktUser.RefreshToken;
-                data.grant_type = "refresh_token";
-            }
-            else
-            {
-                _logger.LogError("Tried to reauthenticate with Trakt, but neither PIN nor refreshToken was available");
-            }
-
-            TraktUserToken userToken;
-            using (var response = await PostToTrakt(TraktUris.Token, data, null).ConfigureAwait(false))
-            {
-                userToken = _jsonSerializer.DeserializeFromStream<TraktUserToken>(response);
-            }
-
-            if (userToken != null)
-            {
-                traktUser.AccessToken = userToken.access_token;
-                traktUser.RefreshToken = userToken.refresh_token;
-                traktUser.PIN = null;
-                traktUser.AccessTokenExpiration = DateTimeOffset.Now.AddMonths(2);
-                Plugin.Instance.SaveConfiguration();
-            }
+            
+            // Start polling in the background
+            Task.Run(() => PollForAccessToken(deviceCode, traktUser));
+            
+            return deviceCode.user_code;
         }
 
+        public async Task PollForAccessToken(TraktDeviceCode deviceCode, TraktUser traktUser)
+        {
+            var deviceAccessTokenRequest = new
+            {
+                code = deviceCode.device_code,
+                client_id = TraktUris.ClientId,
+                client_secret = TraktUris.ClientSecret
+            };
+
+            var pollingInterval = deviceCode.interval;
+            var expiresAt = DateTime.UtcNow.AddSeconds(deviceCode.expires_in);
+            _logger.LogInformation("Polling for access token every {PollingInterval}s. Expires at {ExpiresAt} UTC.", pollingInterval, expiresAt);
+            while (DateTime.UtcNow < expiresAt)
+            {
+                try
+                {
+                    using (var response = await PostToTrakt(TraktUris.DeviceToken, deviceAccessTokenRequest).ConfigureAwait(false))
+                    {
+                        _logger.LogInformation("Device successfully authorized");
+                        
+                        var deviceAccessToken = _jsonSerializer.DeserializeFromStream<TraktDeviceAccessToken>(response.Content);
+                        if (deviceAccessToken != null)
+                        {
+                            _logger.LogInformation($"{deviceAccessToken.access_token}");
+                            _logger.LogInformation($"{deviceAccessToken.refresh_token}");
+                            _logger.LogInformation($"{deviceAccessToken.expires_in}");
+
+                            traktUser.AccessToken = deviceAccessToken.access_token;
+                            traktUser.RefreshToken = deviceAccessToken.refresh_token;
+                            traktUser.AccessTokenExpiration = DateTimeOffset.Now.AddMonths(2);
+                            Plugin.Instance.SaveConfiguration();
+                        }
+                    }
+                }
+                catch (HttpException e)
+                {
+                    switch (e.StatusCode)
+                    {
+                        case HttpStatusCode.BadRequest:
+                            // Pending - waiting for the user to authorize your app
+                            break;
+                        case HttpStatusCode.NotFound:
+                            _logger.LogError("Not Found - invalid device_code");
+                            break;
+                        case HttpStatusCode.Conflict:
+                            _logger.LogWarning("Already Used - user already approved this code");
+                            return;
+                        case HttpStatusCode.Gone:
+                            _logger.LogError("Expired - the tokens have expired, restart the process");
+                            break;
+                        case (HttpStatusCode) 418:
+                            _logger.LogInformation("Denied - user explicitly denied this code");
+                            return;
+                        case (HttpStatusCode) 429:
+                            _logger.LogWarning("Polling too quickly. Slowing down");
+                            pollingInterval += 1;
+                            break;
+                        default:
+                            _logger.LogError(e, "Unexpected error when authorizing device");
+                            break;
+                    }
+                }
+
+                await Task.Delay(pollingInterval * 1000);
+            }
+        }
+        
         private Task<Stream> GetFromTrakt(string url, TraktUser traktUser)
         {
             return GetFromTrakt(url, CancellationToken.None, traktUser);
@@ -991,6 +1043,27 @@ namespace Trakt.Api
             }
         }
 
+        private async Task<HttpResponseInfo> PostToTrakt(string url, object data)
+        {
+            var requestContent = data == null ? string.Empty : _jsonSerializer.SerializeToString(data);
+            var options = GetHttpRequestOptions();
+            options.Url = url;
+            options.CancellationToken = CancellationToken.None;
+            options.RequestContent = requestContent;
+            options.LogErrors = true;
+
+            await Plugin.Instance.TraktResourcePool.WaitAsync(options.CancellationToken).ConfigureAwait(false);
+
+            try
+            {
+                return await _httpClient.Post(options).ConfigureAwait(false);
+            }
+            finally
+            {
+                Plugin.Instance.TraktResourcePool.Release();
+            }
+        }
+        
         private Task<Stream> PostToTrakt(string url, object data, TraktUser traktUser)
         {
             return PostToTrakt(url, data, CancellationToken.None, traktUser);
@@ -1058,7 +1131,7 @@ namespace Trakt.Api
                 EnableKeepAlive = false
             };
             options.RequestHeaders.Add("trakt-api-version", "2");
-            options.RequestHeaders.Add("trakt-api-key", TraktUris.Id);
+            options.RequestHeaders.Add("trakt-api-key", TraktUris.ClientId);
             return options;
         }
 
@@ -1069,10 +1142,11 @@ namespace Trakt.Api
             {
                 traktUser.AccessToken = "";
             }
-            if (string.IsNullOrEmpty(traktUser.AccessToken) || !string.IsNullOrEmpty(traktUser.PIN))
-            {
-                await RefreshUserAuth(traktUser).ConfigureAwait(false);
-            }
+            // TODO remove?
+//            if (string.IsNullOrEmpty(traktUser.AccessToken) || !string.IsNullOrEmpty(traktUser.PIN))
+//            {
+//                await RefreshUserAuth(traktUser).ConfigureAwait(false);
+//            }
             if (!string.IsNullOrEmpty(traktUser.AccessToken))
             {
                 options.RequestHeaders.Add("Authorization", "Bearer " + traktUser.AccessToken);

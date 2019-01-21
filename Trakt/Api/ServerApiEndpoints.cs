@@ -9,6 +9,16 @@ namespace Trakt.Api
     /// <summary>
     /// 
     /// </summary>
+    [Route("/Trakt/Users/{UserId}/Authorize", "POST")]
+    public class DeviceAuthorization
+    {
+        [ApiMember(Name = "UserId", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "POST")]
+        public string UserId { get; set; }
+    }
+    
+    /// <summary>
+    /// 
+    /// </summary>
     [Route("/Trakt/Users/{UserId}/Items/{Id}/Rate", "POST")]
     public class RateItem
     {
@@ -126,7 +136,18 @@ namespace Trakt.Api
         }
 
 
+        public object Post(DeviceAuthorization deviceAuthorizationRequest)
+        {
+            _logger.LogInformation("DeviceAuthorization request received");
 
+            string userCode = _traktApi.AuthorizeDevice(UserHelper.GetTraktUser(deviceAuthorizationRequest.UserId));
+
+            return new
+            {
+                userCode
+            };
+        }
+        
         /// <summary>
         /// 
         /// </summary>

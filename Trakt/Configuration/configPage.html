@@ -19,10 +19,7 @@
                         <select is="emby-select" id="selectUser" name="selectUser" onchange="TraktConfigurationPage.loadConfiguration(this.value);" label="Configure Trakt for:"></select>
                     </div>
                     <div class="inputContainer">
-                        <input is="emby-input" id="txtTraktPIN" name="txtTraktPIN" type="text" label="Authentication PIN:" />
-                        <div class="fieldDescription">
-                            <a href="https://trakt.tv/oauth/authorize?response_type=code&client_id=229219b2db18f433b5503358d7055e366e7ffb5f1dc1d6904d131d0ed806ccac&redirect_uri=urn:ietf:wg:oauth:2.0:oob" target="_blank">Get PIN.</a> On the next request to the Trakt API, this PIN will be exchanged for tokens, and the text field will be cleared. You can input a new PIN to get new tokens.
-                        </div>
+                        <button is="emby-button" type="button" id="authorizeDevice" class="raised block"><span>Authorize device</span></button>
                     </div>
                     <div>
                         <h3 class="checkboxListLabel">Exclude folders:</h3>
@@ -101,7 +98,6 @@
                             if (!currentUserConfig) {
                                 // You don't have to put every property in here, just the ones the UI is expecting (below)
                                 currentUserConfig = {
-                                    PIN: "",
                                     SkipUnwatchedImportFromTrakt: true,
                                     PostWatchedHistory: true,
                                     ExtraLogging: false,
@@ -110,7 +106,6 @@
                             }
                             // Default this to an empty array so the rendering code doesn't have to worry about it
                             currentUserConfig.LocationsExcluded = currentUserConfig.LocationsExcluded || [];
-                            $('#txtTraktPIN', page).val(currentUserConfig.PIN); 
                             $('#chkSkipUnwatchedImportFromTrakt', page).checked(currentUserConfig.SkipUnwatchedImportFromTrakt).checkboxradio("refresh");
                             $('#chkPostWatchedHistory', page).checked(currentUserConfig.PostWatchedHistory).checkboxradio("refresh");
                             $('#chkExtraLogging', page).checked(currentUserConfig.ExtraLogging).checkboxradio("refresh");
@@ -155,48 +150,75 @@
                         return html;
                     }
                 };
-
+            
+            function save(page) {
+                var dfd = $.Deferred();
+                Dashboard.showLoadingMsg();
+                var currentUserId = $('#selectUser', page).val();
+                ApiClient.getPluginConfiguration(TraktConfigurationPage.pluginUniqueId).then(function (config) {
+                    var currentUserConfig = config.TraktUsers.filter(function (curr) {
+                        return curr.LinkedMbUserId == currentUserId;
+                    })[0];
+                    // User doesn't have a config, so create a default one.
+                    if (!currentUserConfig) {
+                        currentUserConfig = {};
+                        config.TraktUsers.push(currentUserConfig);
+                    }
+                    currentUserConfig.SkipUnwatchedImportFromTrakt = $('#chkSkipUnwatchedImportFromTrakt', page).checked();
+                    currentUserConfig.PostWatchedHistory = $('#chkPostWatchedHistory', page).checked();
+                    currentUserConfig.ExtraLogging = $('#chkExtraLogging', page).checked();
+                    currentUserConfig.ExportMediaInfo = $('#chkExportMediaInfo', page).checked();
+                    currentUserConfig.LinkedMbUserId = currentUserId;
+                    currentUserConfig.LocationsExcluded = $('.chkTraktLocation:checked', page).map(function () {
+                        return this.getAttribute('data-location');
+                    }).get();
+                    if (currentUserConfig.UserName == '') {
+                        config.TraktUsers.remove(config.TraktUsers.indexOf(currentUserConfig));
+                    }
+                    ApiClient.updatePluginConfiguration(TraktConfigurationPage.pluginUniqueId, config).then(function (result) {
+                        Dashboard.processPluginConfigurationUpdateResult(result);
+                        ApiClient.getUsers().then(function (users) {
+                            var currentUserId = $('#selectUser', page).val();
+                            TraktConfigurationPage.populateUsers(users);
+                            $('#selectUser', page).val(currentUserId);
+                            TraktConfigurationPage.loadConfiguration(currentUserId, page);
+                            Dashboard.alert('Settings saved.');
+                            dfd.resolve();
+                        });
+                    });
+                });
+                return dfd.promise();
+            }
+            
             $('.traktConfigurationPage').on('pageinit', function () {
                 Dashboard.showLoadingMsg();
                 var page = this;
-                $('#traktConfigurationForm', page).on('submit', function () {
-                    Dashboard.showLoadingMsg();
-                    var currentUserId = $('#selectUser', page).val();
-                    ApiClient.getPluginConfiguration(TraktConfigurationPage.pluginUniqueId).then(function (config) {
-                        var currentUserConfig = config.TraktUsers.filter(function (curr) {
-                            return curr.LinkedMbUserId == currentUserId;
-                        })[0];
-                        // User doesn't have a config, so create a default one.
-                        if (!currentUserConfig) {
-                            currentUserConfig = {};
-                            config.TraktUsers.push(currentUserConfig);
-                        }
-                        currentUserConfig.SkipUnwatchedImportFromTrakt = $('#chkSkipUnwatchedImportFromTrakt', page).checked();
-                        currentUserConfig.PostWatchedHistory = $('#chkPostWatchedHistory', page).checked();
-                        currentUserConfig.ExtraLogging = $('#chkExtraLogging', page).checked();
-                        currentUserConfig.ExportMediaInfo = $('#chkExportMediaInfo', page).checked();
-                        currentUserConfig.PIN = $('#txtTraktPIN', page).val();
-                        currentUserConfig.LinkedMbUserId = currentUserId;
-                        currentUserConfig.LocationsExcluded = $('.chkTraktLocation:checked', page).map(function () {
-                            return this.getAttribute('data-location');
-                        }).get();
-                        if (currentUserConfig.UserName == '') {
-                            config.TraktUsers.remove(config.TraktUsers.indexOf(currentUserConfig));
-                        }
-                        ApiClient.updatePluginConfiguration(TraktConfigurationPage.pluginUniqueId, config).then(function (result) {
-                            Dashboard.processPluginConfigurationUpdateResult(result);
-                            ApiClient.getUsers().then(function (users) {
-                                var currentUserId = $('#selectUser', page).val();
-                                TraktConfigurationPage.populateUsers(users);
-                                $('#selectUser', page).val(currentUserId);
-                                TraktConfigurationPage.loadConfiguration(currentUserId, page);
-                                Dashboard.alert('Settings saved.');
-                            });
-                        });
-                    });
+                $('#traktConfigurationForm', page).on('submit', function(){
+                    save(page);
                     return false;
                 });
+                $('#authorizeDevice', page).on('click', function () {
+                    // Save first to make sure a TraktUser is created - TODO This is not very nice. Backend should handle it
+                    save(page).then(function() {
+                        var currentUserId = $('#selectUser').val();
+                        var headers = {
+                            accept: "application/json"
+                        };
+                        var request = {
+                            url: '/Trakt/Users/' + currentUserId + '/Authorize',
+                            dataType: 'json',
+                            type: 'POST',
+                            headers: headers
+                        };
+                        ApiClient.fetch(request).then(function (result) {
+                            debugger;
+                            console.log(result.userCode);
+                        });
+                    });
+                    
+                });
             });
+            
             $('.traktConfigurationPage').on('pageshow', function () {
                 Dashboard.showLoadingMsg();
                 var page = this;

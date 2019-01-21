@@ -30,7 +30,7 @@ namespace Trakt.Helpers
                 {
                     return false;
                 }
-                if (string.IsNullOrWhiteSpace(tUser.AccessToken) && string.IsNullOrWhiteSpace(tUser.RefreshToken) && string.IsNullOrWhiteSpace(tUser.PIN))
+                if (string.IsNullOrWhiteSpace(tUser.AccessToken) && string.IsNullOrWhiteSpace(tUser.RefreshToken))
                 {
                     return false;
                 }

@@ -3,9 +3,7 @@
 namespace Trakt.Model
 {
     public class TraktUser
-    {
-        public String PIN { get; set; }
-        
+    {        
         public String AccessToken { get; set; }
 
         public String RefreshToken { get; set; }
