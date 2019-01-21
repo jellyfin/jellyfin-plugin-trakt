@@ -18,7 +18,7 @@ namespace Trakt.ScheduledTasks
     using MediaBrowser.Controller.Entities.TV;
     using MediaBrowser.Controller.Library;
     using MediaBrowser.Model.Entities;
-    using MediaBrowser.Model.Logging;
+    using Microsoft.Extensions.Logging;
     using MediaBrowser.Model.Serialization;
 
     using Trakt.Api;
@@ -50,12 +50,12 @@ namespace Trakt.ScheduledTasks
         /// <param name="httpClient"></param>
         /// <param name="appHost"></param>
         /// <param name="fileSystem"></param>
-        public SyncFromTraktTask(ILogManager logger, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataManager userDataManager, IHttpClient httpClient, IServerApplicationHost appHost, IFileSystem fileSystem, ILibraryManager libraryManager)
+        public SyncFromTraktTask(ILoggerFactory loggerFactory, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataManager userDataManager, IHttpClient httpClient, IServerApplicationHost appHost, IFileSystem fileSystem, ILibraryManager libraryManager)
         {
             _userManager = userManager;
             _userDataManager = userDataManager;
             _libraryManager = libraryManager;
-            _logger = logger.GetLogger("Trakt");
+            _logger = loggerFactory.CreateLogger("Trakt");
             _traktApi = new TraktApi(jsonSerializer, _logger, httpClient, appHost, userDataManager, fileSystem);
         }
 
@@ -69,7 +69,7 @@ namespace Trakt.ScheduledTasks
             // No point going further if we don't have users.
             if (users.Count == 0)
             {
-                _logger.Info("No Users returned");
+                _logger.LogInformation("No Users returned");
                 return;
             }
 
@@ -90,7 +90,7 @@ namespace Trakt.ScheduledTasks
                 }
                 catch (Exception ex)
                 {
-                    _logger.ErrorException("Error syncing trakt data for user {0}", ex, user.Name);
+                    _logger.LogError("Error syncing trakt data for user {0}", ex, user.Name);
                 }
             }
         }
@@ -114,12 +114,12 @@ namespace Trakt.ScheduledTasks
             }
             catch (Exception ex)
             {
-                _logger.ErrorException("Exception handled", ex);
+                _logger.LogError("Exception handled", ex);
                 throw;
             }
 
-            _logger.Info("Trakt.tv watched Movies count = " + traktWatchedMovies.Count);
-            _logger.Info("Trakt.tv watched Shows count = " + traktWatchedShows.Count);
+            _logger.LogInformation("Trakt.tv watched Movies count = " + traktWatchedMovies.Count);
+            _logger.LogInformation("Trakt.tv watched Shows count = " + traktWatchedShows.Count);
 
             var mediaItems =
                 _libraryManager.GetItemList(
@@ -145,7 +145,7 @@ namespace Trakt.ScheduledTasks
 
                 if (matchedMovie != null)
                 {
-                    _logger.Debug("Movie is in Watched list " + movie.Name);
+                    _logger.LogDebug("Movie is in Watched list " + movie.Name);
 
                     var userData = _userDataManager.GetUserData(user.InternalId, movie);
                     bool changed = false;
@@ -193,7 +193,7 @@ namespace Trakt.ScheduledTasks
                 }
                 else
                 {
-                    //_logger.Info("Failed to match " + movie.Name);
+                    //_logger.LogInformation("Failed to match " + movie.Name);
                 }
 
                 // purely for progress reporting
@@ -228,7 +228,7 @@ namespace Trakt.ScheduledTasks
 
                         if (matchedEpisode != null)
                         {
-                            _logger.Debug("Episode is in Watched list " + GetVerboseEpisodeData(episode));
+                            _logger.LogDebug("Episode is in Watched list " + GetVerboseEpisodeData(episode));
 
                             // Set episode as watched
                             if (!userData.Played)
@@ -270,12 +270,12 @@ namespace Trakt.ScheduledTasks
                     }
                     else
                     {
-                        _logger.Debug("No Season match in Watched shows list " + GetVerboseEpisodeData(episode));
+                        _logger.LogDebug("No Season match in Watched shows list " + GetVerboseEpisodeData(episode));
                     }
                 }
                 else
                 {
-                    _logger.Debug("No Show match in Watched shows list " + GetVerboseEpisodeData(episode));
+                    _logger.LogDebug("No Show match in Watched shows list " + GetVerboseEpisodeData(episode));
                 }
 
                 // purely for progress reporting
@@ -283,7 +283,7 @@ namespace Trakt.ScheduledTasks
                 progress.Report(currentProgress);
             }
 
-            // _logger.Info(syncItemFailures + " items not parsed");
+            // _logger.LogInformation(syncItemFailures + " items not parsed");
         }
 
         private static string GetVerboseEpisodeData(Episode episode)

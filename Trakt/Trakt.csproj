@@ -19,6 +19,7 @@
   <ItemGroup>
     <PackageReference Include="mediabrowser.server.core" Version="3.6.0.68-beta" />
     <PackageReference Include="System.Memory" Version="4.5.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="1.0.0" />
   </ItemGroup>
 
 </Project>

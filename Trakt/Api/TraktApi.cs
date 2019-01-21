@@ -11,7 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Model.Logging;
+using Microsoft.Extensions.Logging;
 using MediaBrowser.Model.Serialization;
 using Trakt.Api.DataContracts;
 using Trakt.Api.DataContracts.BaseModel;
@@ -944,7 +944,7 @@ namespace Trakt.Api
             }
             else
             {
-                _logger.Error("Tried to reauthenticate with Trakt, but neither PIN nor refreshToken was available");
+                _logger.LogError("Tried to reauthenticate with Trakt, but neither PIN nor refreshToken was available");
             }
 
             TraktUserToken userToken;
@@ -1004,7 +1004,7 @@ namespace Trakt.Api
             TraktUser traktUser)
         {
             var requestContent = data == null ? string.Empty : _jsonSerializer.SerializeToString(data);
-            if (traktUser != null && traktUser.ExtraLogging) _logger.Debug(requestContent);
+            if (traktUser != null && traktUser.ExtraLogging) _logger.LogDebug(requestContent);
             var options = GetHttpRequestOptions();
             options.Url = url;
             options.CancellationToken = cancellationToken;

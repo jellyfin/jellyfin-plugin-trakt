@@ -1,6 +1,6 @@
 ﻿using System;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Model.Logging;
+using Microsoft.Extensions.Logging;
 using MediaBrowser.Model.Services;
 using Trakt.Helpers;
 
@@ -134,13 +134,13 @@ namespace Trakt.Api
         /// <returns></returns>
         public object Post(RateItem request)
         {
-            _logger.Info("RateItem request received");
+            _logger.LogInformation("RateItem request received");
 
             var currentItem = _libraryManager.GetItemById(request.Id);
 
             if (currentItem == null)
             {
-                _logger.Info("currentItem is null");
+                _logger.LogInformation("currentItem is null");
                 return null;
             }
 
@@ -157,7 +157,7 @@ namespace Trakt.Api
         /// <returns></returns>
         public object Post(CommentItem request)
         {
-            _logger.Info("CommentItem request received");
+            _logger.LogInformation("CommentItem request received");
 
             var currentItem = _libraryManager.GetItemById(request.Id);
 

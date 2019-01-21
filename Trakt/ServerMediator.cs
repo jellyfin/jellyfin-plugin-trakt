@@ -8,7 +8,7 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Session;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.Logging;
+using Microsoft.Extensions.Logging;
 using MediaBrowser.Model.Serialization;
 using System;
 using System.Linq;
@@ -45,13 +45,13 @@ namespace Trakt
         /// <param name="httpClient"></param>
         /// <param name="appHost"></param>
         /// <param name="fileSystem"></param>
-        public ServerMediator(IJsonSerializer jsonSerializer, ISessionManager sessionManager, IUserDataManager userDataManager, ILibraryManager libraryManager, ILogManager logger, IHttpClient httpClient, IServerApplicationHost appHost, IFileSystem fileSystem, ITimerFactory timerFactory)
+        public ServerMediator(IJsonSerializer jsonSerializer, ISessionManager sessionManager, IUserDataManager userDataManager, ILibraryManager libraryManager, ILoggerFactory loggerFactory, IHttpClient httpClient, IServerApplicationHost appHost, IFileSystem fileSystem, ITimerFactory timerFactory)
         {
             Instance = this;
             _sessionManager = sessionManager;
             _libraryManager = libraryManager;
             _userDataManager = userDataManager;
-            _logger = logger.GetLogger("Trakt");
+            _logger = loggerFactory.CreateLogger("Trakt");
 
             _traktApi = new TraktApi(jsonSerializer, _logger, httpClient, appHost, userDataManager, fileSystem);
             _service = new TraktUriService(_traktApi, _logger, _libraryManager);
@@ -140,11 +140,11 @@ namespace Trakt
         {
             try
             {
-                _logger.Info("Playback Started");
+                _logger.LogInformation("Playback Started");
 
                 if (e.Users == null || !e.Users.Any() || e.Item == null)
                 {
-                    _logger.Error("Event details incomplete. Cannot process current media");
+                    _logger.LogError("Event details incomplete. Cannot process current media");
                     return;
                 }
 
@@ -153,7 +153,7 @@ namespace Trakt
 
                 if (traktUser == null)
                 {
-                    _logger.Info("Could not match user with any stored credentials");
+                    _logger.LogInformation("Could not match user with any stored credentials");
                     return;
                 }
 
@@ -162,7 +162,7 @@ namespace Trakt
                     return;
                 }
 
-                _logger.Debug(traktUser.LinkedMbUserId + " appears to be monitoring " + e.Item.Path);
+                _logger.LogDebug(traktUser.LinkedMbUserId + " appears to be monitoring " + e.Item.Path);
 
                 var video = e.Item as Video;
                 var progressPercent = video.RunTimeTicks.HasValue && video.RunTimeTicks != 0 ? 
@@ -172,14 +172,14 @@ namespace Trakt
                 {
                     if (video is Movie)
                     {
-                        _logger.Debug("Send movie status update");
+                        _logger.LogDebug("Send movie status update");
                         await
                             _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser, progressPercent).
                                       ConfigureAwait(false);
                     }
                     else if (video is Episode)
                     {
-                        _logger.Debug("Send episode status update");
+                        _logger.LogDebug("Send episode status update");
                         await
                             _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser, progressPercent).
                                       ConfigureAwait(false);
@@ -187,7 +187,7 @@ namespace Trakt
                 }
                 catch (Exception ex)
                 {
-                    _logger.ErrorException("Exception handled sending status update", ex);
+                    _logger.LogError("Exception handled sending status update", ex);
                 }
 
                 var playEvent = new ProgressEvent
@@ -199,7 +199,7 @@ namespace Trakt
             }
             catch (Exception ex)
             {
-                _logger.ErrorException("Error sending watching status update", ex, null);
+                _logger.LogError("Error sending watching status update", ex, null);
             }
         }
 
@@ -213,18 +213,18 @@ namespace Trakt
         {
             if (e.Users == null || !e.Users.Any() || e.Item == null)
             {
-                _logger.Error("Event details incomplete. Cannot process current media");
+                _logger.LogError("Event details incomplete. Cannot process current media");
                 return;
             }
 
             try
             {
-                _logger.Info("Playback Stopped");
+                _logger.LogInformation("Playback Stopped");
                 var traktUser = UserHelper.GetTraktUser(e.Users.FirstOrDefault());
 
                 if (traktUser == null)
                 {
-                    _logger.Error("Could not match trakt user");
+                    _logger.LogError("Could not match trakt user");
                     return;
                 }
 
@@ -237,7 +237,7 @@ namespace Trakt
 
                 if (e.PlayedToCompletion)
                 {
-                    _logger.Info("Item is played. Scrobble");
+                    _logger.LogInformation("Item is played. Scrobble");
 
                     try
                     {
@@ -256,7 +256,7 @@ namespace Trakt
                     }
                     catch (Exception ex)
                     {
-                        _logger.ErrorException("Exception handled sending status update", ex);
+                        _logger.LogError("Exception handled sending status update", ex);
                     }
 
                 }
@@ -264,7 +264,7 @@ namespace Trakt
                 {
                     var progressPercent = video.RunTimeTicks.HasValue && video.RunTimeTicks != 0 ?
                     (float)(e.PlaybackPositionTicks ?? 0) / video.RunTimeTicks.Value * 100.0f : 0.0f;
-                    _logger.Info("Item Not fully played. Tell trakt.tv we are no longer watching but don't scrobble");
+                    _logger.LogInformation("Item Not fully played. Tell trakt.tv we are no longer watching but don't scrobble");
 
                     if (video is Movie)
                     {
@@ -279,7 +279,7 @@ namespace Trakt
             }
             catch (Exception ex)
             {
-                _logger.ErrorException("Error sending scrobble", ex, null);
+                _logger.LogError("Error sending scrobble", ex, null);
             }
         }
 
