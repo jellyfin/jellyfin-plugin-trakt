@@ -147,7 +147,7 @@ namespace Trakt.ScheduledTasks
                 {
                     _logger.Debug("Movie is in Watched list " + movie.Name);
 
-                    var userData = _userDataManager.GetUserData(user.InternalId, movie);
+                    var userData = _userDataManager.GetUserData(user.Id, movie);
                     bool changed = false;
 
                     // set movie as watched
@@ -184,7 +184,7 @@ namespace Trakt.ScheduledTasks
                     if (changed)
                     {
                         _userDataManager.SaveUserData(
-                               user.InternalId,
+                               user.Id,
                                movie,
                                userData,
                                UserDataSaveReason.Import,
@@ -220,7 +220,7 @@ namespace Trakt.ScheduledTasks
                     if (matchedSeason != null)
                     {
                         // episode is in users libary. Now we need to determine if it's watched
-                        var userData = _userDataManager.GetUserData(user, episode);
+                        var userData = _userDataManager.GetUserData(user.Id, episode);
                         bool changed = false;
 
                         var matchedEpisode =
@@ -261,7 +261,7 @@ namespace Trakt.ScheduledTasks
                         {
 
                             _userDataManager.SaveUserData(
-                                user.InternalId,
+                                user.Id,
                                 episode,
                                 userData,
                                 UserDataSaveReason.Import,
