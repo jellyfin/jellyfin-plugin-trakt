@@ -6,12 +6,10 @@ using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
 using Trakt.Configuration;
-using System.IO;
-using MediaBrowser.Model.Drawing;
 
 namespace Trakt
 {
-    public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages, IHasThumbImage
+    public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
         public SemaphoreSlim TraktResourcePool = new SemaphoreSlim(1, 1);
 
@@ -48,18 +46,5 @@ namespace Trakt
             };
         }
 
-        public Stream GetThumbImage()
-        {
-            var type = GetType();
-            return type.Assembly.GetManifestResourceStream(type.Namespace + ".thumb.png");
-        }
-
-        public ImageFormat ThumbImageFormat
-        {
-            get
-            {
-                return ImageFormat.Png;
-            }
-        }
     }
 }

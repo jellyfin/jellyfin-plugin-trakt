@@ -109,9 +109,9 @@ namespace Trakt
             return null;
         }
         
-        public static string ToISO8601(this DateTimeOffset dt)
+        public static string ToISO8601(this DateTime dt)
         {
-            return dt.ToString("yyyy-MM-ddTHH:mm:ssZ");
+            return dt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ");
         }
 
 

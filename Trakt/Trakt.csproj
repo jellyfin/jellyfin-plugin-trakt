@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;</TargetFrameworks>
@@ -19,8 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="mediabrowser.server.core" Version="3.6.0.68-beta" />
-    <PackageReference Include="mediabrowser.server.core" Version="3.6.0.5-beta" />
+    <PackageReference Include="Jellyfin.Controller" Version="10.0.1" />
     <PackageReference Include="System.Memory" Version="4.5.1" />
   </ItemGroup>
 

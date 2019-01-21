@@ -5,8 +5,8 @@ using System.Threading;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Threading;
+using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Model;
 
