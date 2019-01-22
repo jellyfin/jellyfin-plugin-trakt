@@ -971,14 +971,11 @@ namespace Trakt.Api
                         var deviceAccessToken = _jsonSerializer.DeserializeFromStream<TraktDeviceAccessToken>(response.Content);
                         if (deviceAccessToken != null)
                         {
-                            _logger.LogInformation($"{deviceAccessToken.access_token}");
-                            _logger.LogInformation($"{deviceAccessToken.refresh_token}");
-                            _logger.LogInformation($"{deviceAccessToken.expires_in}");
-
                             traktUser.AccessToken = deviceAccessToken.access_token;
                             traktUser.RefreshToken = deviceAccessToken.refresh_token;
                             traktUser.AccessTokenExpiration = DateTimeOffset.Now.AddMonths(2);
                             Plugin.Instance.SaveConfiguration();
+                            return;
                         }
                     }
                 }

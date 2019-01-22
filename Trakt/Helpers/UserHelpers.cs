@@ -30,10 +30,6 @@ namespace Trakt.Helpers
                 {
                     return false;
                 }
-                if (string.IsNullOrWhiteSpace(tUser.AccessToken) && string.IsNullOrWhiteSpace(tUser.RefreshToken))
-                {
-                    return false;
-                }
 
                 Guid traktUserGuid;
                 if (Guid.TryParse(tUser.LinkedMbUserId, out traktUserGuid) && traktUserGuid.Equals(userGuid))
