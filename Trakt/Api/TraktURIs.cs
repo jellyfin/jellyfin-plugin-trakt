@@ -3,8 +3,8 @@
     public static class TraktUris
     {
         public const string BaseUrl = "https://api.trakt.tv";
-        public const string ClientId = "redacted";
-        public const string ClientSecret = "redacted";
+        public const string ClientId = "58f2251f1c9e7275e94fef723a8604e6848bbf86a0d97dda82382a6c3231608c";
+        public const string ClientSecret = "bf9fce37cf45c1de91da009e7ac6fca905a35d7a718bf65a52f92199073a2503";
 
         #region POST URI's
 
