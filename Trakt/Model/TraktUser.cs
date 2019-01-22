@@ -22,7 +22,7 @@ namespace Trakt.Model
         public bool ExportMediaInfo { get; set; }
 
         public String[] LocationsExcluded { get; set; }
-        public DateTimeOffset AccessTokenExpiration { get; set; }
+        public DateTime AccessTokenExpiration { get; set; }
 
         public TraktUser()
         {

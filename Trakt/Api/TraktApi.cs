@@ -879,7 +879,7 @@ namespace Trakt.Api
                         {
                             traktUser.AccessToken = deviceAccessToken.access_token;
                             traktUser.RefreshToken = deviceAccessToken.refresh_token;
-                            traktUser.AccessTokenExpiration = DateTimeOffset.Now.AddMonths(2);
+                            traktUser.AccessTokenExpiration = DateTime.Now.AddMonths(2);
                             Plugin.Instance.SaveConfiguration();
                             return true;
                         }
@@ -954,7 +954,7 @@ namespace Trakt.Api
             {
                 traktUser.AccessToken = userAccessToken.access_token;
                 traktUser.RefreshToken = userAccessToken.refresh_token;
-                traktUser.AccessTokenExpiration = DateTimeOffset.Now.AddMonths(2);
+                traktUser.AccessTokenExpiration = DateTime.Now.AddMonths(2);
                 Plugin.Instance.SaveConfiguration();
                 _logger.LogInformation("Successfully refreshed the access token for user {UserId}", traktUser.LinkedMbUserId);
             }
