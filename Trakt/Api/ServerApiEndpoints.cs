@@ -7,9 +7,6 @@ using Trakt.Helpers;
 
 namespace Trakt.Api
 {
-    /// <summary>
-    /// 
-    /// </summary>
     [Route("/Trakt/Users/{UserId}/Authorize", "POST")]
     public class DeviceAuthorization
     {
@@ -23,10 +20,7 @@ namespace Trakt.Api
         [ApiMember(Name = "UserId", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "POST")]
         public string UserId { get; set; }
     }
-    
-    /// <summary>
-    /// 
-    /// </summary>
+
     [Route("/Trakt/Users/{UserId}/Items/{Id}/Rate", "POST")]
     public class RateItem
     {
@@ -41,35 +35,6 @@ namespace Trakt.Api
         
     }
 
-
-
-    /// <summary>
-    /// 
-    /// </summary>
-    [Route("/Trakt/Users/{UserId}/Items/{Id}/Comment", "POST")]
-    public class CommentItem
-    {
-        [ApiMember(Name = "UserId", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "POST")]
-        public string UserId { get; set; }
-
-        [ApiMember(Name = "Id", Description = "Item Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "POST")]
-        public Guid Id { get; set; }
-
-        [ApiMember(Name = "Comment", Description = "Text for the comment", IsRequired = true, DataType = "string", ParameterType = "query", Verb = "POST")]
-        public string Comment { get; set; }
-
-        [ApiMember(Name = "Spoiler", Description = "Set to true to indicate the comment contains spoilers. Defaults to false", IsRequired = false, DataType = "bool", ParameterType = "query", Verb = "POST")]
-        public bool Spoiler { get; set; }
-
-        [ApiMember(Name = "Review", Description = "Set to true to indicate the comment is a 200+ word review. Defaults to false", IsRequired = false, DataType = "bool", ParameterType = "query", Verb = "POST")]
-        public bool Review { get; set; }
-    }
-
-
-
-    /// <summary>
-    /// 
-    /// </summary>
     [Route("/Trakt/Users/{UserId}/RecommendedMovies", "POST")]
     public class RecommendedMovies
     {
@@ -92,11 +57,6 @@ namespace Trakt.Api
         public bool HideWatchlisted { get; set; }
     }
 
-
-
-    /// <summary>
-    /// 
-    /// </summary>
     [Route("/Trakt/Users/{UserId}/RecommendedShows", "POST")]
     public class RecommendedShows
     {
@@ -197,25 +157,6 @@ namespace Trakt.Api
             
         }
 
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
-        public object Post(CommentItem request)
-        {
-            _logger.LogInformation("CommentItem request received");
-
-            var currentItem = _libraryManager.GetItemById(request.Id);
-
-            return _traktApi.SendItemComment(currentItem, request.Comment, request.Spoiler,
-                                             UserHelper.GetTraktUser(request.UserId), request.Review).Result;
-        }
-
-
-
         /// <summary>
         /// 
         /// </summary>
@@ -225,8 +166,6 @@ namespace Trakt.Api
         {
             return _traktApi.SendMovieRecommendationsRequest(UserHelper.GetTraktUser(request.UserId)).Result;
         }
-
-
 
         /// <summary>
         /// 

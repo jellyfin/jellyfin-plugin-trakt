@@ -266,7 +266,6 @@ namespace Trakt.Api
                 };
                 if (traktUser.ExportMediaInfo)
                 {
-                    //traktMovieCollected.Is3D = m.Is3D;
                     traktMovieCollected.audio_channels = audioStream.GetAudioChannels();
                     traktMovieCollected.audio = audioStream.GetCodecRepresetation();
                     traktMovieCollected.resolution = m.GetDefaultVideoStream().GetResolution();
@@ -290,8 +289,6 @@ namespace Trakt.Api
             }
             return responses;
         }
-
-
 
         /// <summary>
         /// Add or remove a list of Episodes to/from the users trakt.tv library
@@ -592,85 +589,6 @@ namespace Trakt.Api
             }
         }
 
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="item"></param>
-        /// <param name="comment"></param>
-        /// <param name="containsSpoilers"></param>
-        /// <param name="traktUser"></param>
-        /// <param name="isReview"></param>
-        /// <returns></returns>
-        public async Task<object> SendItemComment(BaseItem item, string comment, bool containsSpoilers, TraktUser traktUser, bool isReview = false)
-        {
-            return null;
-            //TODO: This functionallity is not available yet
-            //            string url;
-            //            var data = new Dictionary<string, string>
-            //                           {
-            //                               {"username", traktUser.UserName},
-            //                               {"password", traktUser.Password}
-            //                           };
-            //
-            //            if (item is Movie)
-            //            {
-            //                if (item.ProviderIds != null && item.ProviderIds.ContainsKey("Imdb"))
-            //                    data.Add("imdb_id", item.ProviderIds["Imdb"]);
-            //                
-            //                data.Add("title", item.Name);
-            //                data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
-            //                url = TraktUris.CommentMovie;
-            //            }
-            //            else
-            //            {
-            //                var episode = item as Episode;
-            //                if (episode != null)
-            //                {
-            //                    if (episode.Series.ProviderIds != null)
-            //                    {
-            //                        if (episode.Series.ProviderIds.ContainsKey("Imdb"))
-            //                            data.Add("imdb_id", episode.Series.ProviderIds["Imdb"]);
-            //
-            //                        if (episode.Series.ProviderIds.ContainsKey("Tvdb"))
-            //                            data.Add("tvdb_id", episode.Series.ProviderIds["Tvdb"]);
-            //                    }
-            //
-            //                    data.Add("season", episode.AiredSeasonNumber.ToString());
-            //                    data.Add("episode", episode.IndexNumber.ToString());
-            //                    url = TraktUris.CommentEpisode;   
-            //                }
-            //                else // It's a Series
-            //                {
-            //                    data.Add("title", item.Name);
-            //                    data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
-            //
-            //                    if (item.ProviderIds != null)
-            //                    {
-            //                        if (item.ProviderIds.ContainsKey("Imdb"))
-            //                            data.Add("imdb_id", item.ProviderIds["Imdb"]);
-            //
-            //                        if (item.ProviderIds.ContainsKey("Tvdb"))
-            //                            data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
-            //                    }
-            //                    
-            //                    url = TraktUris.CommentShow;
-            //                }
-            //            }
-            //
-            //            data.Add("comment", comment);
-            //            data.Add("spoiler", containsSpoilers.ToString());
-            //            data.Add("review", isReview.ToString());
-            //
-            //            Stream response =
-            //                await
-            //                _httpClient.Post(url, data, Plugin.Instance.TraktResourcePool,
-            //                                                 CancellationToken.None).ConfigureAwait(false);
-            //
-            //            return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
-        }
-
         /// <summary>
         /// 
         /// </summary>
@@ -684,8 +602,6 @@ namespace Trakt.Api
             }
         }
 
-
-
         /// <summary>
         /// 
         /// </summary>
@@ -698,8 +614,6 @@ namespace Trakt.Api
                 return _jsonSerializer.DeserializeFromStream<List<TraktShow>>(response);
             }
         }
-
-
 
         /// <summary>
         /// 
@@ -755,8 +669,7 @@ namespace Trakt.Api
 
         private int? ParseId(string value)
         {
-            int parsed;
-            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed))
+            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
             {
                 return parsed;
             }
@@ -798,7 +711,7 @@ namespace Trakt.Api
                                 : ParseId(m.GetProviderId(MetadataProviders.Tmdb))
                     },
                     year = m.ProductionYear,
-                    watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.ToISO8601() : null
+                    watched_at = lastPlayedDate?.ToISO8601()
                 };
             }).ToList();
             var chunks = moviesPayload.ToChunks(100).ToList();
@@ -820,8 +733,6 @@ namespace Trakt.Api
             }
             return traktResponses;
         }
-
-
 
         /// <summary>
         /// Send a list of episodes to trakt.tv that have been marked watched or unwatched
@@ -853,7 +764,6 @@ namespace Trakt.Api
             }
             return traktResponses;
         }
-
 
         private async Task<TraktSyncResponse> SendEpisodePlaystateUpdatesInternalAsync(IEnumerable<Episode> episodeChunk, TraktUser traktUser, bool seen, CancellationToken cancellationToken)
         {
