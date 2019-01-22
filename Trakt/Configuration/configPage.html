@@ -19,10 +19,13 @@
                         <select is="emby-select" id="selectUser" name="selectUser" onchange="TraktConfigurationPage.loadConfiguration(this.value);" label="Configure Trakt for:"></select>
                     </div>
                     <div>
-                        <button is="emby-button" type="button" id="authorizeDevice" class="raised block"><span>Authorize device</span></button>
+                        <div class="fieldDescription hide" id="authorizedDescription">
+                            This user is authorized. You can force a re-authorization by clicking the button below.
+                        </div>
+                        <button is="emby-button" type="button" id="authorizeDevice" class="raised block">Authorize device</button>
                         <div id="activateWithCode" class="hide">
                             Please visit <a href="https://trakt.tv/activate" target="_blank">https://trakt.tv/activate</a> and authorize Jellyfin to access your account.<br/>
-                            Your device PIN is <span id="userCode"></span>.
+                            Your device code is <span id="userCode"></span>.
                         </div>
                     </div>
                     <div>
@@ -87,7 +90,19 @@
                 }
                 return this;
             };
-
+            function setAuthorizationElements(page, isAuthorized) {
+                var buttonText;
+                if (isAuthorized) {
+                    $('#activateWithCode', page).addClass('hide');
+                    $('#authorizedDescription', page).removeClass('hide');
+                    buttonText = 'Force re-authorization';
+                } else {
+                    $('#authorizedDescription', page).addClass('hide');
+                    buttonText = 'Authorize device';
+                }
+                // Set the auth button
+                $('#authorizeDevice', page).text(buttonText);
+            }
             var TraktConfigurationPage =
                 {
                     pluginUniqueId: "8abc6789-fde2-4705-8592-4028806fa343",
@@ -102,6 +117,7 @@
                             if (!currentUserConfig) {
                                 // You don't have to put every property in here, just the ones the UI is expecting (below)
                                 currentUserConfig = {
+                                    AccessToken: null,
                                     SkipUnwatchedImportFromTrakt: true,
                                     PostWatchedHistory: true,
                                     ExtraLogging: false,
@@ -118,6 +134,8 @@
                             ApiClient.getVirtualFolders(userId).then(function (result) {
                                 TraktConfigurationPage.loadFolders(currentUserConfig, result);
                             });
+
+                            setAuthorizationElements(page, currentUserConfig.AccessToken != null);
                             Dashboard.hideLoadingMsg();
                         });
                     },
@@ -215,10 +233,20 @@
                             headers: headers
                         };
                         ApiClient.fetch(request).then(function (result) {
-                            console.log("Trakt user code: " + result.userCode);
+                            console.log('Trakt user code: ' + result.userCode);
+                            $('#authorizedDescription', page).addClass('hide');
                             $('#authorizeDevice', page).addClass('hide');
-                            $('#userCode').text(result.userCode);
+                            $('#userCode', page).text(result.userCode);
                             $('#activateWithCode', page).removeClass('hide');
+
+                            console.log('Polling for authorization.');
+                            request.url = '/Trakt/Users/' + currentUserId + '/PollAuthorizationStatus';
+                            request.type = 'GET';
+                            ApiClient.fetch(request).then(function (result) {
+                                console.log('User is authorized: ' + result.isAuthorized);
+                                $('#userCode').text('');
+                                TraktConfigurationPage.loadConfiguration(currentUserId, page);
+                            });
                         });
                     });
                     

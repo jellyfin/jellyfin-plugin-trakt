@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Services;
 using Microsoft.Extensions.Logging;
@@ -11,6 +12,13 @@ namespace Trakt.Api
     /// </summary>
     [Route("/Trakt/Users/{UserId}/Authorize", "POST")]
     public class DeviceAuthorization
+    {
+        [ApiMember(Name = "UserId", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "POST")]
+        public string UserId { get; set; }
+    }
+
+    [Route("/Trakt/Users/{UserId}/PollAuthorizationStatus", "GET")]
+    public class PollAuthorizationStatus
     {
         [ApiMember(Name = "UserId", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "POST")]
         public string UserId { get; set; }
@@ -145,6 +153,26 @@ namespace Trakt.Api
             return new
             {
                 userCode
+            };
+        }
+        public object Get(PollAuthorizationStatus pollRequest)
+        {
+            _logger.LogInformation("PollAuthorizationStatus request received");
+            var traktUser = UserHelper.GetTraktUser(pollRequest.UserId);
+            bool isAuthorized = traktUser.AccessToken != null && traktUser.RefreshToken != null;
+
+            if (Plugin.Instance.PollingTasks.TryGetValue(pollRequest.UserId, out var task))
+            {
+                using (task)
+                {
+                    isAuthorized = task.Result;
+                    Plugin.Instance.PollingTasks.Remove(pollRequest.UserId);
+                }
+            }
+
+            return new
+            {
+                isAuthorized
             };
         }
         

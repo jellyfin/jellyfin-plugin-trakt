@@ -927,10 +927,6 @@ namespace Trakt.Api
 
         public string AuthorizeDevice(TraktUser traktUser)
         {
-            if (traktUser == null)
-            {
-                
-            }
             var deviceCodeRequest = new
             {
                 client_id = TraktUris.ClientId
@@ -941,14 +937,14 @@ namespace Trakt.Api
             {
                 deviceCode = _jsonSerializer.DeserializeFromStream<TraktDeviceCode>(response.Result);
             }
-            
+
             // Start polling in the background
-            Task.Run(() => PollForAccessToken(deviceCode, traktUser));
+            Plugin.Instance.PollingTasks[traktUser.LinkedMbUserId] = Task.Run(() => PollForAccessToken(deviceCode, traktUser));
             
             return deviceCode.user_code;
         }
 
-        public async Task PollForAccessToken(TraktDeviceCode deviceCode, TraktUser traktUser)
+        public async Task<bool> PollForAccessToken(TraktDeviceCode deviceCode, TraktUser traktUser)
         {
             var deviceAccessTokenRequest = new
             {
@@ -975,7 +971,7 @@ namespace Trakt.Api
                             traktUser.RefreshToken = deviceAccessToken.refresh_token;
                             traktUser.AccessTokenExpiration = DateTimeOffset.Now.AddMonths(2);
                             Plugin.Instance.SaveConfiguration();
-                            return;
+                            return true;
                         }
                     }
                 }
@@ -991,13 +987,13 @@ namespace Trakt.Api
                             break;
                         case HttpStatusCode.Conflict:
                             _logger.LogWarning("Already Used - user already approved this code");
-                            return;
+                            return false;
                         case HttpStatusCode.Gone:
                             _logger.LogError("Expired - the tokens have expired, restart the process");
                             break;
                         case (HttpStatusCode) 418:
                             _logger.LogInformation("Denied - user explicitly denied this code");
-                            return;
+                            return false;
                         case (HttpStatusCode) 429:
                             _logger.LogWarning("Polling too quickly. Slowing down");
                             pollingInterval += 1;
@@ -1007,9 +1003,9 @@ namespace Trakt.Api
                             break;
                     }
                 }
-
                 await Task.Delay(pollingInterval * 1000);
             }
+            return false;
         }
         
         private Task<Stream> GetFromTrakt(string url, TraktUser traktUser)
@@ -1047,7 +1043,7 @@ namespace Trakt.Api
             options.Url = url;
             options.CancellationToken = CancellationToken.None;
             options.RequestContent = requestContent;
-            options.LogErrors = true;
+            options.LogErrors = false;
 
             await Plugin.Instance.TraktResourcePool.WaitAsync(options.CancellationToken).ConfigureAwait(false);
 

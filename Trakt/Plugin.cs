@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;
@@ -17,6 +18,7 @@ namespace Trakt
             : base(appPaths, xmlSerializer)
         {
             Instance = this;
+            PollingTasks = new Dictionary<string, Task<bool>>();
         }
 
         public override string Name => "Trakt";
@@ -45,6 +47,6 @@ namespace Trakt
                 }
             };
         }
-
+        public Dictionary<string, Task<bool>> PollingTasks { get; set; }
     }
 }
