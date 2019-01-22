@@ -18,8 +18,12 @@
                     <div class="selectContainer">
                         <select is="emby-select" id="selectUser" name="selectUser" onchange="TraktConfigurationPage.loadConfiguration(this.value);" label="Configure Trakt for:"></select>
                     </div>
-                    <div class="inputContainer">
+                    <div>
                         <button is="emby-button" type="button" id="authorizeDevice" class="raised block"><span>Authorize device</span></button>
+                        <div id="activateWithCode" class="hide">
+                            Please visit <a href="https://trakt.tv/activate" target="_blank">https://trakt.tv/activate</a> and authorize Jellyfin to access your account.<br/>
+                            Your device PIN is <span id="userCode"></span>.
+                        </div>
                     </div>
                     <div>
                         <h3 class="checkboxListLabel">Exclude folders:</h3>
@@ -211,8 +215,10 @@
                             headers: headers
                         };
                         ApiClient.fetch(request).then(function (result) {
-                            debugger;
-                            console.log(result.userCode);
+                            console.log("Trakt user code: " + result.userCode);
+                            $('#authorizeDevice', page).addClass('hide');
+                            $('#userCode').text(result.userCode);
+                            $('#activateWithCode', page).removeClass('hide');
                         });
                     });
                     
