@@ -132,11 +132,8 @@ namespace Trakt.Api
 
             if (Plugin.Instance.PollingTasks.TryGetValue(pollRequest.UserId, out var task))
             {
-                using (task)
-                {
-                    isAuthorized = task.Result;
-                    Plugin.Instance.PollingTasks.Remove(pollRequest.UserId);
-                }
+                isAuthorized = task.Result;
+                Plugin.Instance.PollingTasks.Remove(pollRequest.UserId);
             }
 
             return new
