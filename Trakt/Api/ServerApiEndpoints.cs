@@ -4,6 +4,7 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Services;
 using Microsoft.Extensions.Logging;
 using Trakt.Helpers;
+using Trakt.Model;
 
 namespace Trakt.Api
 {
@@ -108,7 +109,15 @@ namespace Trakt.Api
         {
             _logger.LogInformation("DeviceAuthorization request received");
 
-            string userCode = _traktApi.AuthorizeDevice(UserHelper.GetTraktUser(deviceAuthorizationRequest.UserId));
+            // Create a user if we don't have one yet - TODO there should be an endpoint for this that creates a default user
+            var traktUser = UserHelper.GetTraktUser(deviceAuthorizationRequest.UserId);
+            if (traktUser == null)
+            {
+                Plugin.Instance.PluginConfiguration.AddUser(deviceAuthorizationRequest.UserId);
+                traktUser = UserHelper.GetTraktUser(deviceAuthorizationRequest.UserId);
+                Plugin.Instance.SaveConfiguration();
+            }
+            string userCode = _traktApi.AuthorizeDevice(traktUser);
 
             return new
             {

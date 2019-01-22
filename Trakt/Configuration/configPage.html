@@ -220,36 +220,37 @@
                     return false;
                 });
                 $('#authorizeDevice', page).on('click', function () {
-                    // Save first to make sure a TraktUser is created - TODO This is not very nice. Backend should handle it
-                    save(page).then(function() {
-                        var currentUserId = $('#selectUser').val();
-                        var headers = {
-                            accept: "application/json"
-                        };
-                        var request = {
-                            url: '/Trakt/Users/' + currentUserId + '/Authorize',
-                            dataType: 'json',
-                            type: 'POST',
-                            headers: headers
-                        };
-                        ApiClient.fetch(request).then(function (result) {
-                            console.log('Trakt user code: ' + result.userCode);
-                            $('#authorizedDescription', page).addClass('hide');
-                            $('#authorizeDevice', page).addClass('hide');
-                            $('#userCode', page).text(result.userCode);
-                            $('#activateWithCode', page).removeClass('hide');
-
-                            console.log('Polling for authorization.');
-                            request.url = '/Trakt/Users/' + currentUserId + '/PollAuthorizationStatus';
-                            request.type = 'GET';
-                            ApiClient.fetch(request).then(function (result) {
-                                console.log('User is authorized: ' + result.isAuthorized);
-                                $('#userCode').text('');
-                                TraktConfigurationPage.loadConfiguration(currentUserId, page);
-                            });
+                    var currentUserId = $('#selectUser').val();
+                    var headers = {
+                        accept: "application/json"
+                    };
+                    var request = {
+                        url: '/Trakt/Users/' + currentUserId + '/Authorize',
+                        dataType: 'json',
+                        type: 'POST',
+                        headers: headers
+                    };
+                    function handleError(result) {
+                        Dashboard.alert({
+                            message: 'An error occurred when trying to authorize device: ' + result.status + ' - ' + result.statusText
                         });
-                    });
-                    
+                    }
+                    ApiClient.fetch(request).then(function (result) {
+                        console.log('Trakt user code: ' + result.userCode);
+                        $('#authorizedDescription', page).addClass('hide');
+                        $('#authorizeDevice', page).addClass('hide');
+                        $('#userCode', page).text(result.userCode);
+                        $('#activateWithCode', page).removeClass('hide');
+
+                        console.log('Polling for authorization.');
+                        request.url = '/Trakt/Users/' + currentUserId + '/PollAuthorizationStatus';
+                        request.type = 'GET';
+                        ApiClient.fetch(request).then(function (result) {
+                            console.log('User is authorized: ' + result.isAuthorized);
+                            $('#userCode').text('');
+                            TraktConfigurationPage.loadConfiguration(currentUserId, page);
+                        }).catch(error);
+                    }).catch(handleError);                    
                 });
             });
             

@@ -28,6 +28,8 @@ namespace Trakt.Model
         {
             SkipUnwatchedImportFromTrakt = true;
             PostWatchedHistory = true;
+            ExtraLogging = false;
+            ExportMediaInfo = false;
         }
     }
 }
