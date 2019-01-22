@@ -10,6 +10,7 @@
 
         public static readonly string DeviceCode = $@"{BaseUrl}/oauth/device/code";
         public static readonly string DeviceToken = $@"{BaseUrl}/oauth/device/token";
+        public static readonly string AccessToken = $@"{BaseUrl}/oauth/token";
 
         public static readonly string SyncCollectionAdd = $@"{BaseUrl}/sync/collection";
         public static readonly string SyncCollectionRemove = $@"{BaseUrl}/sync/collection/remove";

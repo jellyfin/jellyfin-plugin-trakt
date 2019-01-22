@@ -102,6 +102,7 @@
                 }
                 // Set the auth button
                 $('#authorizeDevice', page).text(buttonText);
+                $('#authorizeDevice', page).removeClass('hide');
             }
             var TraktConfigurationPage =
                 {
@@ -249,7 +250,7 @@
                             console.log('User is authorized: ' + result.isAuthorized);
                             $('#userCode').text('');
                             TraktConfigurationPage.loadConfiguration(currentUserId, page);
-                        }).catch(error);
+                        }).catch(handleError);
                     }).catch(handleError);                    
                 });
             });

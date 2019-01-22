@@ -918,6 +918,48 @@ namespace Trakt.Api
             return false;
         }
         
+        public async Task RefreshUserAccessToken(TraktUser traktUser)
+        {
+            if (string.IsNullOrWhiteSpace(traktUser.RefreshToken))
+            {
+                _logger.LogError("Tried to reauthenticate with Trakt, but no refreshToken was available");
+                return;
+            }
+            
+            var data = new TraktUserRefreshTokenRequest
+            {
+                client_id = TraktUris.ClientId,
+                client_secret = TraktUris.ClientSecret,
+                redirect_uri = "urn:ietf:wg:oauth:2.0:oob",
+                refresh_token = traktUser.RefreshToken,
+                grant_type = "refresh_token"
+            };
+
+            TraktUserAccessToken userAccessToken;
+            try
+            {
+                using (var response = await PostToTrakt(TraktUris.AccessToken, data).ConfigureAwait(false))
+                {
+                    userAccessToken = _jsonSerializer.DeserializeFromStream<TraktUserAccessToken>(response.Content);
+                }
+
+            }
+            catch (HttpException ex)
+            {
+                _logger.LogError(ex, "An error occurred during token refresh");
+                return;
+            }
+            
+            if (userAccessToken != null)
+            {
+                traktUser.AccessToken = userAccessToken.access_token;
+                traktUser.RefreshToken = userAccessToken.refresh_token;
+                traktUser.AccessTokenExpiration = DateTimeOffset.Now.AddMonths(2);
+                Plugin.Instance.SaveConfiguration();
+                _logger.LogInformation("Successfully refreshed the access token for user {UserId}", traktUser.LinkedMbUserId);
+            }
+        }
+        
         private Task<Stream> GetFromTrakt(string url, TraktUser traktUser)
         {
             return GetFromTrakt(url, CancellationToken.None, traktUser);
@@ -1040,21 +1082,15 @@ namespace Trakt.Api
 
         private async Task SetRequestHeaders(HttpRequestOptions options, TraktUser traktUser)
         {
-
             if (DateTimeOffset.Now > traktUser.AccessTokenExpiration)
             {
                 traktUser.AccessToken = "";
+                await RefreshUserAccessToken(traktUser).ConfigureAwait(false);
             }
-            // TODO remove?
-//            if (string.IsNullOrEmpty(traktUser.AccessToken) || !string.IsNullOrEmpty(traktUser.PIN))
-//            {
-//                await RefreshUserAuth(traktUser).ConfigureAwait(false);
-//            }
             if (!string.IsNullOrEmpty(traktUser.AccessToken))
             {
                 options.RequestHeaders.Add("Authorization", "Bearer " + traktUser.AccessToken);
             }
-
         }
     }
 }
