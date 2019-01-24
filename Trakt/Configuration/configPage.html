@@ -226,7 +226,7 @@
                         accept: "application/json"
                     };
                     var request = {
-                        url: '/Trakt/Users/' + currentUserId + '/Authorize',
+                        url: ApiClient.getUrl('Trakt/Users/' + currentUserId + '/Authorize'),
                         dataType: 'json',
                         type: 'POST',
                         headers: headers
@@ -244,7 +244,7 @@
                         $('#activateWithCode', page).removeClass('hide');
 
                         console.log('Polling for authorization.');
-                        request.url = '/Trakt/Users/' + currentUserId + '/PollAuthorizationStatus';
+                        request.url = ApiClient.getUrl('Trakt/Users/' + currentUserId + '/PollAuthorizationStatus');
                         request.type = 'GET';
                         ApiClient.fetch(request).then(function (result) {
                             console.log('User is authorized: ' + result.isAuthorized);
