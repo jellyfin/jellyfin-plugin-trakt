@@ -874,12 +874,12 @@ namespace Trakt.Api
                     {
                         _logger.LogInformation("Device successfully authorized");
                         
-                        var deviceAccessToken = _jsonSerializer.DeserializeFromStream<TraktDeviceAccessToken>(response.Content);
-                        if (deviceAccessToken != null)
+                        var userAccessToken = _jsonSerializer.DeserializeFromStream<TraktUserAccessToken>(response.Content);
+                        if (userAccessToken != null)
                         {
-                            traktUser.AccessToken = deviceAccessToken.access_token;
-                            traktUser.RefreshToken = deviceAccessToken.refresh_token;
-                            traktUser.AccessTokenExpiration = DateTime.Now.AddMonths(2);
+                            traktUser.AccessToken = userAccessToken.access_token;
+                            traktUser.RefreshToken = userAccessToken.refresh_token;
+                            traktUser.AccessTokenExpiration = DateTime.Now.AddSeconds(userAccessToken.expirationWithBuffer);
                             Plugin.Instance.SaveConfiguration();
                             return true;
                         }
@@ -954,7 +954,7 @@ namespace Trakt.Api
             {
                 traktUser.AccessToken = userAccessToken.access_token;
                 traktUser.RefreshToken = userAccessToken.refresh_token;
-                traktUser.AccessTokenExpiration = DateTime.Now.AddMonths(2);
+                traktUser.AccessTokenExpiration = DateTime.Now.AddSeconds(userAccessToken.expirationWithBuffer);
                 Plugin.Instance.SaveConfiguration();
                 _logger.LogInformation("Successfully refreshed the access token for user {UserId}", traktUser.LinkedMbUserId);
             }
