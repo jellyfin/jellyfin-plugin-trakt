@@ -1,4 +1,5 @@
-﻿using MediaBrowser.Model.Plugins;
+﻿using System.Linq;
+using MediaBrowser.Model.Plugins;
 using Trakt.Model;
 
 namespace Trakt.Configuration
@@ -11,5 +12,16 @@ namespace Trakt.Configuration
         }
 
         public TraktUser[] TraktUsers { get; set; }
+
+        public void AddUser(string userId)
+        {
+            var traktUsers = TraktUsers.ToList();
+            var traktUser = new TraktUser
+            {
+                LinkedMbUserId = userId
+            };
+            traktUsers.Add(traktUser);
+            TraktUsers = traktUsers.ToArray();
+        }
     }
 }

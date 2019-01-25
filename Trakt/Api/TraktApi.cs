@@ -9,9 +9,9 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Threading.Tasks;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Serialization;
 using Trakt.Api.DataContracts;
 using Trakt.Api.DataContracts.BaseModel;
@@ -26,6 +26,8 @@ using TraktMovieCollected = Trakt.Api.DataContracts.Sync.Collection.TraktMovieCo
 using TraktEpisodeCollected = Trakt.Api.DataContracts.Sync.Collection.TraktEpisodeCollected;
 using TraktShowCollected = Trakt.Api.DataContracts.Sync.Collection.TraktShowCollected;
 using MediaBrowser.Model.IO;
+using MediaBrowser.Model.Net;
+using Microsoft.Extensions.Logging;
 
 namespace Trakt.Api
 {
@@ -264,7 +266,6 @@ namespace Trakt.Api
                 };
                 if (traktUser.ExportMediaInfo)
                 {
-                    //traktMovieCollected.Is3D = m.Is3D;
                     traktMovieCollected.audio_channels = audioStream.GetAudioChannels();
                     traktMovieCollected.audio = audioStream.GetCodecRepresetation();
                     traktMovieCollected.resolution = m.GetDefaultVideoStream().GetResolution();
@@ -288,8 +289,6 @@ namespace Trakt.Api
             }
             return responses;
         }
-
-
 
         /// <summary>
         /// Add or remove a list of Episodes to/from the users trakt.tv library
@@ -590,85 +589,6 @@ namespace Trakt.Api
             }
         }
 
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="item"></param>
-        /// <param name="comment"></param>
-        /// <param name="containsSpoilers"></param>
-        /// <param name="traktUser"></param>
-        /// <param name="isReview"></param>
-        /// <returns></returns>
-        public async Task<object> SendItemComment(BaseItem item, string comment, bool containsSpoilers, TraktUser traktUser, bool isReview = false)
-        {
-            return null;
-            //TODO: This functionallity is not available yet
-            //            string url;
-            //            var data = new Dictionary<string, string>
-            //                           {
-            //                               {"username", traktUser.UserName},
-            //                               {"password", traktUser.Password}
-            //                           };
-            //
-            //            if (item is Movie)
-            //            {
-            //                if (item.ProviderIds != null && item.ProviderIds.ContainsKey("Imdb"))
-            //                    data.Add("imdb_id", item.ProviderIds["Imdb"]);
-            //                
-            //                data.Add("title", item.Name);
-            //                data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
-            //                url = TraktUris.CommentMovie;
-            //            }
-            //            else
-            //            {
-            //                var episode = item as Episode;
-            //                if (episode != null)
-            //                {
-            //                    if (episode.Series.ProviderIds != null)
-            //                    {
-            //                        if (episode.Series.ProviderIds.ContainsKey("Imdb"))
-            //                            data.Add("imdb_id", episode.Series.ProviderIds["Imdb"]);
-            //
-            //                        if (episode.Series.ProviderIds.ContainsKey("Tvdb"))
-            //                            data.Add("tvdb_id", episode.Series.ProviderIds["Tvdb"]);
-            //                    }
-            //
-            //                    data.Add("season", episode.AiredSeasonNumber.ToString());
-            //                    data.Add("episode", episode.IndexNumber.ToString());
-            //                    url = TraktUris.CommentEpisode;   
-            //                }
-            //                else // It's a Series
-            //                {
-            //                    data.Add("title", item.Name);
-            //                    data.Add("year", item.ProductionYear != null ? item.ProductionYear.ToString() : "");
-            //
-            //                    if (item.ProviderIds != null)
-            //                    {
-            //                        if (item.ProviderIds.ContainsKey("Imdb"))
-            //                            data.Add("imdb_id", item.ProviderIds["Imdb"]);
-            //
-            //                        if (item.ProviderIds.ContainsKey("Tvdb"))
-            //                            data.Add("tvdb_id", item.ProviderIds["Tvdb"]);
-            //                    }
-            //                    
-            //                    url = TraktUris.CommentShow;
-            //                }
-            //            }
-            //
-            //            data.Add("comment", comment);
-            //            data.Add("spoiler", containsSpoilers.ToString());
-            //            data.Add("review", isReview.ToString());
-            //
-            //            Stream response =
-            //                await
-            //                _httpClient.Post(url, data, Plugin.Instance.TraktResourcePool,
-            //                                                 CancellationToken.None).ConfigureAwait(false);
-            //
-            //            return _jsonSerializer.DeserializeFromStream<TraktResponseDataContract>(response);
-        }
-
         /// <summary>
         /// 
         /// </summary>
@@ -682,8 +602,6 @@ namespace Trakt.Api
             }
         }
 
-
-
         /// <summary>
         /// 
         /// </summary>
@@ -696,8 +614,6 @@ namespace Trakt.Api
                 return _jsonSerializer.DeserializeFromStream<List<TraktShow>>(response);
             }
         }
-
-
 
         /// <summary>
         /// 
@@ -753,8 +669,7 @@ namespace Trakt.Api
 
         private int? ParseId(string value)
         {
-            int parsed;
-            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out parsed))
+            if (int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))
             {
                 return parsed;
             }
@@ -782,7 +697,7 @@ namespace Trakt.Api
             var moviesPayload = movies.Select(m =>
             {
                 var lastPlayedDate = seen
-                    ? _userDataManager.GetUserData(traktUser.LinkedMbUserId, m).LastPlayedDate
+                    ? _userDataManager.GetUserData(new Guid(traktUser.LinkedMbUserId), m).LastPlayedDate
                     : null;
                 return new TraktMovieWatched
                 {
@@ -796,7 +711,7 @@ namespace Trakt.Api
                                 : ParseId(m.GetProviderId(MetadataProviders.Tmdb))
                     },
                     year = m.ProductionYear,
-                    watched_at = lastPlayedDate.HasValue ? lastPlayedDate.Value.ToISO8601() : null
+                    watched_at = lastPlayedDate?.ToISO8601()
                 };
             }).ToList();
             var chunks = moviesPayload.ToChunks(100).ToList();
@@ -818,8 +733,6 @@ namespace Trakt.Api
             }
             return traktResponses;
         }
-
-
 
         /// <summary>
         /// Send a list of episodes to trakt.tv that have been marked watched or unwatched
@@ -852,7 +765,6 @@ namespace Trakt.Api
             return traktResponses;
         }
 
-
         private async Task<TraktSyncResponse> SendEpisodePlaystateUpdatesInternalAsync(IEnumerable<Episode> episodeChunk, TraktUser traktUser, bool seen, CancellationToken cancellationToken)
         {
             var data = new TraktSyncWatched { episodes = new List<TraktEpisodeWatched>(), shows = new List<TraktShowWatched>() };
@@ -860,7 +772,7 @@ namespace Trakt.Api
             {
                 var tvDbId = episode.GetProviderId(MetadataProviders.Tvdb);
                 var lastPlayedDate = seen
-                    ? _userDataManager.GetUserData(traktUser.LinkedMbUserId, episode)
+                    ? _userDataManager.GetUserData(new Guid(traktUser.LinkedMbUserId), episode)
                         .LastPlayedDate
                     : null;
                 if (!string.IsNullOrEmpty(tvDbId) && (!episode.IndexNumber.HasValue || !episode.IndexNumberEnd.HasValue || episode.IndexNumberEnd <= episode.IndexNumber))
@@ -923,46 +835,131 @@ namespace Trakt.Api
             }
         }
 
-        public async Task RefreshUserAuth(TraktUser traktUser)
+        public string AuthorizeDevice(TraktUser traktUser)
         {
-            var data = new TraktUserTokenRequest
+            var deviceCodeRequest = new
             {
-                client_id = TraktUris.Id,
-                client_secret = TraktUris.Secret,
-                redirect_uri = "urn:ietf:wg:oauth:2.0:oob"
+                client_id = TraktUris.ClientId
             };
-
-            if (!string.IsNullOrWhiteSpace(traktUser.PIN))
+            
+            TraktDeviceCode deviceCode;
+            using (var response = PostToTrakt(TraktUris.DeviceCode, deviceCodeRequest, null))
             {
-                data.code = traktUser.PIN;
-                data.grant_type = "authorization_code";
-            }
-            else if (!string.IsNullOrWhiteSpace(traktUser.RefreshToken))
-            {
-                data.refresh_token = traktUser.RefreshToken;
-                data.grant_type = "refresh_token";
-            }
-            else
-            {
-                _logger.Error("Tried to reauthenticate with Trakt, but neither PIN nor refreshToken was available");
+                deviceCode = _jsonSerializer.DeserializeFromStream<TraktDeviceCode>(response.Result);
             }
 
-            TraktUserToken userToken;
-            using (var response = await PostToTrakt(TraktUris.Token, data, null).ConfigureAwait(false))
-            {
-                userToken = _jsonSerializer.DeserializeFromStream<TraktUserToken>(response);
-            }
-
-            if (userToken != null)
-            {
-                traktUser.AccessToken = userToken.access_token;
-                traktUser.RefreshToken = userToken.refresh_token;
-                traktUser.PIN = null;
-                traktUser.AccessTokenExpiration = DateTimeOffset.Now.AddMonths(2);
-                Plugin.Instance.SaveConfiguration();
-            }
+            // Start polling in the background
+            Plugin.Instance.PollingTasks[traktUser.LinkedMbUserId] = Task.Run(() => PollForAccessToken(deviceCode, traktUser));
+            
+            return deviceCode.user_code;
         }
 
+        public async Task<bool> PollForAccessToken(TraktDeviceCode deviceCode, TraktUser traktUser)
+        {
+            var deviceAccessTokenRequest = new
+            {
+                code = deviceCode.device_code,
+                client_id = TraktUris.ClientId,
+                client_secret = TraktUris.ClientSecret
+            };
+
+            var pollingInterval = deviceCode.interval;
+            var expiresAt = DateTime.UtcNow.AddSeconds(deviceCode.expires_in);
+            _logger.LogInformation("Polling for access token every {PollingInterval}s. Expires at {ExpiresAt} UTC.", pollingInterval, expiresAt);
+            while (DateTime.UtcNow < expiresAt)
+            {
+                try
+                {
+                    using (var response = await PostToTrakt(TraktUris.DeviceToken, deviceAccessTokenRequest).ConfigureAwait(false))
+                    {
+                        _logger.LogInformation("Device successfully authorized");
+                        
+                        var userAccessToken = _jsonSerializer.DeserializeFromStream<TraktUserAccessToken>(response.Content);
+                        if (userAccessToken != null)
+                        {
+                            traktUser.AccessToken = userAccessToken.access_token;
+                            traktUser.RefreshToken = userAccessToken.refresh_token;
+                            traktUser.AccessTokenExpiration = DateTime.Now.AddSeconds(userAccessToken.expirationWithBuffer);
+                            Plugin.Instance.SaveConfiguration();
+                            return true;
+                        }
+                    }
+                }
+                catch (HttpException e)
+                {
+                    switch (e.StatusCode)
+                    {
+                        case HttpStatusCode.BadRequest:
+                            // Pending - waiting for the user to authorize your app
+                            break;
+                        case HttpStatusCode.NotFound:
+                            _logger.LogError("Not Found - invalid device_code");
+                            break;
+                        case HttpStatusCode.Conflict:
+                            _logger.LogWarning("Already Used - user already approved this code");
+                            return false;
+                        case HttpStatusCode.Gone:
+                            _logger.LogError("Expired - the tokens have expired, restart the process");
+                            break;
+                        case (HttpStatusCode) 418:
+                            _logger.LogInformation("Denied - user explicitly denied this code");
+                            return false;
+                        case (HttpStatusCode) 429:
+                            _logger.LogWarning("Polling too quickly. Slowing down");
+                            pollingInterval += 1;
+                            break;
+                        default:
+                            _logger.LogError(e, "Unexpected error when authorizing device");
+                            break;
+                    }
+                }
+                await Task.Delay(pollingInterval * 1000);
+            }
+            return false;
+        }
+        
+        public async Task RefreshUserAccessToken(TraktUser traktUser)
+        {
+            if (string.IsNullOrWhiteSpace(traktUser.RefreshToken))
+            {
+                _logger.LogError("Tried to reauthenticate with Trakt, but no refreshToken was available");
+                return;
+            }
+            
+            var data = new TraktUserRefreshTokenRequest
+            {
+                client_id = TraktUris.ClientId,
+                client_secret = TraktUris.ClientSecret,
+                redirect_uri = "urn:ietf:wg:oauth:2.0:oob",
+                refresh_token = traktUser.RefreshToken,
+                grant_type = "refresh_token"
+            };
+
+            TraktUserAccessToken userAccessToken;
+            try
+            {
+                using (var response = await PostToTrakt(TraktUris.AccessToken, data).ConfigureAwait(false))
+                {
+                    userAccessToken = _jsonSerializer.DeserializeFromStream<TraktUserAccessToken>(response.Content);
+                }
+
+            }
+            catch (HttpException ex)
+            {
+                _logger.LogError(ex, "An error occurred during token refresh");
+                return;
+            }
+            
+            if (userAccessToken != null)
+            {
+                traktUser.AccessToken = userAccessToken.access_token;
+                traktUser.RefreshToken = userAccessToken.refresh_token;
+                traktUser.AccessTokenExpiration = DateTime.Now.AddSeconds(userAccessToken.expirationWithBuffer);
+                Plugin.Instance.SaveConfiguration();
+                _logger.LogInformation("Successfully refreshed the access token for user {UserId}", traktUser.LinkedMbUserId);
+            }
+        }
+        
         private Task<Stream> GetFromTrakt(string url, TraktUser traktUser)
         {
             return GetFromTrakt(url, CancellationToken.None, traktUser);
@@ -991,6 +988,27 @@ namespace Trakt.Api
             }
         }
 
+        private async Task<HttpResponseInfo> PostToTrakt(string url, object data)
+        {
+            var requestContent = data == null ? string.Empty : _jsonSerializer.SerializeToString(data);
+            var options = GetHttpRequestOptions();
+            options.Url = url;
+            options.CancellationToken = CancellationToken.None;
+            options.RequestContent = requestContent;
+            options.LogErrors = false;
+
+            await Plugin.Instance.TraktResourcePool.WaitAsync(options.CancellationToken).ConfigureAwait(false);
+
+            try
+            {
+                return await _httpClient.Post(options).ConfigureAwait(false);
+            }
+            finally
+            {
+                Plugin.Instance.TraktResourcePool.Release();
+            }
+        }
+        
         private Task<Stream> PostToTrakt(string url, object data, TraktUser traktUser)
         {
             return PostToTrakt(url, data, CancellationToken.None, traktUser);
@@ -1004,11 +1022,11 @@ namespace Trakt.Api
             TraktUser traktUser)
         {
             var requestContent = data == null ? string.Empty : _jsonSerializer.SerializeToString(data);
-            if (traktUser != null && traktUser.ExtraLogging) _logger.Debug(requestContent);
+            if (traktUser != null && traktUser.ExtraLogging) _logger.LogDebug(requestContent);
             var options = GetHttpRequestOptions();
             options.Url = url;
             options.CancellationToken = cancellationToken;
-            options.RequestContent = requestContent.AsMemory();
+            options.RequestContent = requestContent;
 
             if (traktUser != null)
             {
@@ -1058,26 +1076,21 @@ namespace Trakt.Api
                 EnableKeepAlive = false
             };
             options.RequestHeaders.Add("trakt-api-version", "2");
-            options.RequestHeaders.Add("trakt-api-key", TraktUris.Id);
+            options.RequestHeaders.Add("trakt-api-key", TraktUris.ClientId);
             return options;
         }
 
         private async Task SetRequestHeaders(HttpRequestOptions options, TraktUser traktUser)
         {
-
             if (DateTimeOffset.Now > traktUser.AccessTokenExpiration)
             {
                 traktUser.AccessToken = "";
-            }
-            if (string.IsNullOrEmpty(traktUser.AccessToken) || !string.IsNullOrEmpty(traktUser.PIN))
-            {
-                await RefreshUserAuth(traktUser).ConfigureAwait(false);
+                await RefreshUserAccessToken(traktUser).ConfigureAwait(false);
             }
             if (!string.IsNullOrEmpty(traktUser.AccessToken))
             {
                 options.RequestHeaders.Add("Authorization", "Bearer " + traktUser.AccessToken);
             }
-
         }
     }
 }

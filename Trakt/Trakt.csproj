@@ -1,9 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;</TargetFrameworks>
     <AssemblyVersion>3.3.0.0</AssemblyVersion>
     <FileVersion>3.3.0.0</FileVersion>
+    <AssemblyVersion>3.2.2.0</AssemblyVersion>
+    <FileVersion>3.2.2.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,11 +15,10 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Configuration\configPage.html" />
-    <EmbeddedResource Include="thumb.png" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="mediabrowser.server.core" Version="3.6.0.68-beta" />
+    <PackageReference Include="Jellyfin.Controller" Version="10.1.0" />
     <PackageReference Include="System.Memory" Version="4.5.1" />
   </ItemGroup>
 

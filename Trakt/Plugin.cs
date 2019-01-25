@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
 using Trakt.Configuration;
-using System.IO;
-using MediaBrowser.Model.Drawing;
 
 namespace Trakt
 {
-    public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages, IHasThumbImage
+    public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
         public SemaphoreSlim TraktResourcePool = new SemaphoreSlim(1, 1);
 
@@ -19,6 +18,7 @@ namespace Trakt
             : base(appPaths, xmlSerializer)
         {
             Instance = this;
+            PollingTasks = new Dictionary<string, Task<bool>>();
         }
 
         public override string Name => "Trakt";
@@ -47,19 +47,6 @@ namespace Trakt
                 }
             };
         }
-
-        public Stream GetThumbImage()
-        {
-            var type = GetType();
-            return type.Assembly.GetManifestResourceStream(type.Namespace + ".thumb.png");
-        }
-
-        public ImageFormat ThumbImageFormat
-        {
-            get
-            {
-                return ImageFormat.Png;
-            }
-        }
+        public Dictionary<string, Task<bool>> PollingTasks { get; set; }
     }
 }

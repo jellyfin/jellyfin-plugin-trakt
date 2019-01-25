@@ -1,11 +1,10 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Trakt.Model
 {
     public class TraktUser
-    {
-        public String PIN { get; set; }
-        
+    {        
         public String AccessToken { get; set; }
 
         public String RefreshToken { get; set; }
@@ -23,12 +22,14 @@ namespace Trakt.Model
         public bool ExportMediaInfo { get; set; }
 
         public String[] LocationsExcluded { get; set; }
-        public DateTimeOffset AccessTokenExpiration { get; set; }
+        public DateTime AccessTokenExpiration { get; set; }
 
         public TraktUser()
         {
             SkipUnwatchedImportFromTrakt = true;
             PostWatchedHistory = true;
+            ExtraLogging = false;
+            ExportMediaInfo = false;
         }
     }
 }

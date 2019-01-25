@@ -1,30 +1,29 @@
-﻿using MediaBrowser.Model.Querying;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
+using MediaBrowser.Common.Net;
+using MediaBrowser.Controller;
+using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Entities.Movies;
+using MediaBrowser.Controller.Entities.TV;
+using MediaBrowser.Controller.Library;
+using MediaBrowser.Model.Entities;
+using MediaBrowser.Model.IO;
+using MediaBrowser.Model.Serialization;
+using MediaBrowser.Model.Tasks;
+
+using Trakt.Api;
+using Trakt.Api.DataContracts.Sync;
+using Trakt.Helpers;
+using Trakt.Model;
+using MediaBrowser.Model.Querying;
+using Microsoft.Extensions.Logging;
 
 namespace Trakt.ScheduledTasks
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
-
-    using MediaBrowser.Common.Net;
-    using MediaBrowser.Controller;
-    using MediaBrowser.Controller.Entities;
-    using MediaBrowser.Controller.Entities.Movies;
-    using MediaBrowser.Controller.Entities.TV;
-    using MediaBrowser.Controller.Library;
-    using MediaBrowser.Model.Entities;
-    using MediaBrowser.Model.IO;
-    using MediaBrowser.Model.Logging;
-    using MediaBrowser.Model.Serialization;
-    using MediaBrowser.Model.Tasks;
-
-    using Trakt.Api;
-    using Trakt.Api.DataContracts.Sync;
-    using Trakt.Helpers;
-    using Trakt.Model;
-
     /// <summary>
     /// Task that will Sync each users local library with their respective trakt.tv profiles. This task will only include 
     /// titles, watched states will be synced in other tasks.
@@ -45,7 +44,7 @@ namespace Trakt.ScheduledTasks
         private readonly ILibraryManager _libraryManager;
 
         public SyncLibraryTask(
-            ILogManager logger,
+            ILoggerFactory logger,
             IJsonSerializer jsonSerializer,
             IUserManager userManager,
             IUserDataManager userDataManager,
@@ -58,7 +57,7 @@ namespace Trakt.ScheduledTasks
             _userManager = userManager;
             _userDataManager = userDataManager;
             _libraryManager = libraryManager;
-            _logger = logger.GetLogger("Trakt");
+            _logger = logger.CreateLogger("Trakt");
             _traktApi = new TraktApi(jsonSerializer, _logger, httpClient, appHost, userDataManager, fileSystem);
         }
 
@@ -85,7 +84,7 @@ namespace Trakt.ScheduledTasks
             // No point going further if we don't have users.
             if (users.Count == 0)
             {
-                _logger.Info("No Users returned");
+                _logger.LogInformation("No Users returned");
                 return;
             }
 
@@ -96,7 +95,7 @@ namespace Trakt.ScheduledTasks
                 // I'll leave this in here for now, but in reality this continue should never be reached.
                 if (string.IsNullOrEmpty(traktUser?.LinkedMbUserId))
                 {
-                    _logger.Error("traktUser is either null or has no linked MB account");
+                    _logger.LogError("traktUser is either null or has no linked MB account");
                     continue;
                 }
 
@@ -157,7 +156,7 @@ namespace Trakt.ScheduledTasks
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var libraryMovie = child as Movie;
-                var userData = _userDataManager.GetUserData(user, child);
+                var userData = _userDataManager.GetUserData(user.Id, child);
 
                 // if movie is not collected, or (export media info setting is enabled and every collected matching movie has different metadata), collect it
                 var collectedMathingMovies = SyncFromTraktTask.FindMatches(libraryMovie, traktCollectedMovies).ToList();
@@ -187,7 +186,7 @@ namespace Trakt.ScheduledTasks
                                 userData.Played = false;
 
                                 _userDataManager.SaveUserData(
-                                    user.InternalId,
+                                    user.Id,
                                     libraryMovie,
                                     userData,
                                     UserDataSaveReason.Import,
@@ -225,7 +224,7 @@ namespace Trakt.ScheduledTasks
             ISplittableProgress<double> progress,
             CancellationToken cancellationToken)
         {
-            _logger.Info("Movies to " + (collected ? "add to" : "remove from") + " Collection: " + movies.Count);
+            _logger.LogInformation("Movies to " + (collected ? "add to" : "remove from") + " Collection: " + movies.Count);
             if (movies.Count > 0)
             {
                 try
@@ -247,11 +246,11 @@ namespace Trakt.ScheduledTasks
                 }
                 catch (ArgumentNullException argNullEx)
                 {
-                    _logger.ErrorException("ArgumentNullException handled sending movies to trakt.tv", argNullEx);
+                    _logger.LogError(argNullEx, "ArgumentNullException handled sending movies to trakt.tv");
                 }
                 catch (Exception e)
                 {
-                    _logger.ErrorException("Exception handled sending movies to trakt.tv", e);
+                    _logger.LogError(e, "Exception handled sending movies to trakt.tv");
                 }
 
                 progress.Report(100);
@@ -265,7 +264,7 @@ namespace Trakt.ScheduledTasks
             ISplittableProgress<double> progress,
             CancellationToken cancellationToken)
         {
-            _logger.Info("Movies to set " + (seen ? string.Empty : "un") + "watched: " + playedMovies.Count);
+            _logger.LogInformation("Movies to set " + (seen ? string.Empty : "un") + "watched: " + playedMovies.Count);
             if (playedMovies.Count > 0)
             {
                 try
@@ -282,7 +281,7 @@ namespace Trakt.ScheduledTasks
                 }
                 catch (Exception e)
                 {
-                    _logger.ErrorException("Error updating movie play states", e);
+                    _logger.LogError(e, "Error updating movie play states");
                 }
 
                 progress.Report(100);
@@ -323,7 +322,7 @@ namespace Trakt.ScheduledTasks
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var episode = child as Episode;
-                var userData = _userDataManager.GetUserData(user, episode);
+                var userData = _userDataManager.GetUserData(user.Id, episode);
                 var isPlayedTraktTv = false;
                 var traktWatchedShow = SyncFromTraktTask.FindMatch(episode.Series, traktWatchedShows);
 
@@ -350,7 +349,7 @@ namespace Trakt.ScheduledTasks
                             userData.Played = false;
 
                             _userDataManager.SaveUserData(
-                                user.InternalId,
+                                user.Id,
                                 episode,
                                 userData,
                                 UserDataSaveReason.Import,
@@ -390,7 +389,7 @@ namespace Trakt.ScheduledTasks
             ISplittableProgress<double> progress,
             CancellationToken cancellationToken)
         {
-            _logger.Info("Episodes to set " + (seen ? string.Empty : "un") + "watched: " + playedEpisodes.Count);
+            _logger.LogInformation("Episodes to set " + (seen ? string.Empty : "un") + "watched: " + playedEpisodes.Count);
             if (playedEpisodes.Count > 0)
             {
                 try
@@ -407,7 +406,7 @@ namespace Trakt.ScheduledTasks
                 }
                 catch (Exception e)
                 {
-                    _logger.ErrorException("Error updating episode play states", e);
+                    _logger.LogError(e, "Error updating episode play states");
                 }
 
                 progress.Report(100);
@@ -421,7 +420,7 @@ namespace Trakt.ScheduledTasks
             ISplittableProgress<double> progress,
             CancellationToken cancellationToken)
         {
-            _logger.Info("Episodes to add to Collection: " + collectedEpisodes.Count);
+            _logger.LogInformation("Episodes to add to Collection: " + collectedEpisodes.Count);
             if (collectedEpisodes.Count > 0)
             {
                 try
@@ -443,11 +442,11 @@ namespace Trakt.ScheduledTasks
                 }
                 catch (ArgumentNullException argNullEx)
                 {
-                    _logger.ErrorException("ArgumentNullException handled sending episodes to trakt.tv", argNullEx);
+                    _logger.LogError(argNullEx, "ArgumentNullException handled sending episodes to trakt.tv");
                 }
                 catch (Exception e)
                 {
-                    _logger.ErrorException("Exception handled sending episodes to trakt.tv", e);
+                    _logger.LogError(e, "Exception handled sending episodes to trakt.tv");
                 }
 
                 progress.Report(100);
@@ -463,28 +462,28 @@ namespace Trakt.ScheduledTasks
 
         private void LogTraktResponseDataContract(TraktSyncResponse dataContract)
         {
-            _logger.Debug("TraktResponse Added Movies: " + dataContract.added.movies);
-            _logger.Debug("TraktResponse Added Shows: " + dataContract.added.shows);
-            _logger.Debug("TraktResponse Added Seasons: " + dataContract.added.seasons);
-            _logger.Debug("TraktResponse Added Episodes: " + dataContract.added.episodes);
+            _logger.LogDebug("TraktResponse Added Movies: " + dataContract.added.movies);
+            _logger.LogDebug("TraktResponse Added Shows: " + dataContract.added.shows);
+            _logger.LogDebug("TraktResponse Added Seasons: " + dataContract.added.seasons);
+            _logger.LogDebug("TraktResponse Added Episodes: " + dataContract.added.episodes);
             foreach (var traktMovie in dataContract.not_found.movies)
             {
-                _logger.Error("TraktResponse not Found:" + _jsonSerializer.SerializeToString(traktMovie));
+                _logger.LogError("TraktResponse not Found: {TraktMovie}", _jsonSerializer.SerializeToString(traktMovie));
             }
 
             foreach (var traktShow in dataContract.not_found.shows)
             {
-                _logger.Error("TraktResponse not Found:" + _jsonSerializer.SerializeToString(traktShow));
+                _logger.LogError("TraktResponse not Found: {TraktShow}", _jsonSerializer.SerializeToString(traktShow));
             }
 
             foreach (var traktSeason in dataContract.not_found.seasons)
             {
-                _logger.Error("TraktResponse not Found:" + _jsonSerializer.SerializeToString(traktSeason));
+                _logger.LogError("TraktResponse not Found: {TraktSeason}", _jsonSerializer.SerializeToString(traktSeason));
             }
 
             foreach (var traktEpisode in dataContract.not_found.episodes)
             {
-                _logger.Error("TraktResponse not Found:" + _jsonSerializer.SerializeToString(traktEpisode));
+                _logger.LogError("TraktResponse not Found: {TraktEpisode}", _jsonSerializer.SerializeToString(traktEpisode));
             }
         }
     }

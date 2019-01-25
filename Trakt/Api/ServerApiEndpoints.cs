@@ -1,14 +1,27 @@
 ﻿using System;
+using System.Threading.Tasks;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Services;
+using Microsoft.Extensions.Logging;
 using Trakt.Helpers;
+using Trakt.Model;
 
 namespace Trakt.Api
 {
-    /// <summary>
-    /// 
-    /// </summary>
+    [Route("/Trakt/Users/{UserId}/Authorize", "POST")]
+    public class DeviceAuthorization
+    {
+        [ApiMember(Name = "UserId", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "POST")]
+        public string UserId { get; set; }
+    }
+
+    [Route("/Trakt/Users/{UserId}/PollAuthorizationStatus", "GET")]
+    public class PollAuthorizationStatus
+    {
+        [ApiMember(Name = "UserId", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "POST")]
+        public string UserId { get; set; }
+    }
+
     [Route("/Trakt/Users/{UserId}/Items/{Id}/Rate", "POST")]
     public class RateItem
     {
@@ -23,35 +36,6 @@ namespace Trakt.Api
         
     }
 
-
-
-    /// <summary>
-    /// 
-    /// </summary>
-    [Route("/Trakt/Users/{UserId}/Items/{Id}/Comment", "POST")]
-    public class CommentItem
-    {
-        [ApiMember(Name = "UserId", Description = "User Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "POST")]
-        public string UserId { get; set; }
-
-        [ApiMember(Name = "Id", Description = "Item Id", IsRequired = true, DataType = "string", ParameterType = "path", Verb = "POST")]
-        public Guid Id { get; set; }
-
-        [ApiMember(Name = "Comment", Description = "Text for the comment", IsRequired = true, DataType = "string", ParameterType = "query", Verb = "POST")]
-        public string Comment { get; set; }
-
-        [ApiMember(Name = "Spoiler", Description = "Set to true to indicate the comment contains spoilers. Defaults to false", IsRequired = false, DataType = "bool", ParameterType = "query", Verb = "POST")]
-        public bool Spoiler { get; set; }
-
-        [ApiMember(Name = "Review", Description = "Set to true to indicate the comment is a 200+ word review. Defaults to false", IsRequired = false, DataType = "bool", ParameterType = "query", Verb = "POST")]
-        public bool Review { get; set; }
-    }
-
-
-
-    /// <summary>
-    /// 
-    /// </summary>
     [Route("/Trakt/Users/{UserId}/RecommendedMovies", "POST")]
     public class RecommendedMovies
     {
@@ -74,11 +58,6 @@ namespace Trakt.Api
         public bool HideWatchlisted { get; set; }
     }
 
-
-
-    /// <summary>
-    /// 
-    /// </summary>
     [Route("/Trakt/Users/{UserId}/RecommendedShows", "POST")]
     public class RecommendedShows
     {
@@ -126,7 +105,43 @@ namespace Trakt.Api
         }
 
 
+        public object Post(DeviceAuthorization deviceAuthorizationRequest)
+        {
+            _logger.LogInformation("DeviceAuthorization request received");
 
+            // Create a user if we don't have one yet - TODO there should be an endpoint for this that creates a default user
+            var traktUser = UserHelper.GetTraktUser(deviceAuthorizationRequest.UserId);
+            if (traktUser == null)
+            {
+                Plugin.Instance.PluginConfiguration.AddUser(deviceAuthorizationRequest.UserId);
+                traktUser = UserHelper.GetTraktUser(deviceAuthorizationRequest.UserId);
+                Plugin.Instance.SaveConfiguration();
+            }
+            string userCode = _traktApi.AuthorizeDevice(traktUser);
+
+            return new
+            {
+                userCode
+            };
+        }
+        public object Get(PollAuthorizationStatus pollRequest)
+        {
+            _logger.LogInformation("PollAuthorizationStatus request received");
+            var traktUser = UserHelper.GetTraktUser(pollRequest.UserId);
+            bool isAuthorized = traktUser.AccessToken != null && traktUser.RefreshToken != null;
+
+            if (Plugin.Instance.PollingTasks.TryGetValue(pollRequest.UserId, out var task))
+            {
+                isAuthorized = task.Result;
+                Plugin.Instance.PollingTasks.Remove(pollRequest.UserId);
+            }
+
+            return new
+            {
+                isAuthorized
+            };
+        }
+        
         /// <summary>
         /// 
         /// </summary>
@@ -134,38 +149,19 @@ namespace Trakt.Api
         /// <returns></returns>
         public object Post(RateItem request)
         {
-            _logger.Info("RateItem request received");
+            _logger.LogInformation("RateItem request received");
 
-            var currentItem = _libraryManager.GetItemById(request.Id);
+            var currentItem = _libraryManager.GetItemById(new Guid(request.Id));
 
             if (currentItem == null)
             {
-                _logger.Info("currentItem is null");
+                _logger.LogInformation("currentItem is null");
                 return null;
             }
 
             return _traktApi.SendItemRating(currentItem, request.Rating, UserHelper.GetTraktUser(request.UserId)).Result;
             
         }
-
-
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="request"></param>
-        /// <returns></returns>
-        public object Post(CommentItem request)
-        {
-            _logger.Info("CommentItem request received");
-
-            var currentItem = _libraryManager.GetItemById(request.Id);
-
-            return _traktApi.SendItemComment(currentItem, request.Comment, request.Spoiler,
-                                             UserHelper.GetTraktUser(request.UserId), request.Review).Result;
-        }
-
-
 
         /// <summary>
         /// 
@@ -176,8 +172,6 @@ namespace Trakt.Api
         {
             return _traktApi.SendMovieRecommendationsRequest(UserHelper.GetTraktUser(request.UserId)).Result;
         }
-
-
 
         /// <summary>
         /// 

@@ -7,8 +7,8 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Threading;
+using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Model;
 
@@ -81,17 +81,17 @@ namespace Trakt.Helpers
             }
             catch (Exception ex)
             {
-                _logger.ErrorException("Error in OnQueueTimerCallbackInternal", ex);
+                _logger.LogError(ex, "Error in OnQueueTimerCallbackInternal");
             }
         }
 
         private async Task OnQueueTimerCallbackInternal()
         {
-            _logger.Info("Timer elapsed - Processing queued items");
+            _logger.LogInformation("Timer elapsed - Processing queued items");
 
             if (!_queuedEvents.Any())
             {
-                _logger.Info("No events... Stopping queue timer");
+                _logger.LogInformation("No events... Stopping queue timer");
                 // This may need to go
                 return;
             }
@@ -106,12 +106,12 @@ namespace Trakt.Helpers
 
                 if (queuedMovieDeletes.Any())
                 {
-                    _logger.Info(queuedMovieDeletes.Count + " Movie Deletes to Process");
+                    _logger.LogInformation(queuedMovieDeletes.Count + " Movie Deletes to Process");
                     await ProcessQueuedMovieEvents(queuedMovieDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
                 }
                 else
                 {
-                    _logger.Info("No Movie Deletes to Process");
+                    _logger.LogInformation("No Movie Deletes to Process");
                 }
 
                 var queuedMovieAdds = queue.Where(ev =>
@@ -121,12 +121,12 @@ namespace Trakt.Helpers
 
                 if (queuedMovieAdds.Any())
                 {
-                    _logger.Info(queuedMovieAdds.Count + " Movie Adds to Process");
+                    _logger.LogInformation(queuedMovieAdds.Count + " Movie Adds to Process");
                     await ProcessQueuedMovieEvents(queuedMovieAdds, traktUser, EventType.Add).ConfigureAwait(false);
                 }
                 else
                 {
-                    _logger.Info("No Movie Adds to Process");
+                    _logger.LogInformation("No Movie Adds to Process");
                 }
 
                 var queuedEpisodeDeletes = queue.Where(ev =>
@@ -136,12 +136,12 @@ namespace Trakt.Helpers
 
                 if (queuedEpisodeDeletes.Any())
                 {
-                    _logger.Info(queuedEpisodeDeletes.Count + " Episode Deletes to Process");
+                    _logger.LogInformation(queuedEpisodeDeletes.Count + " Episode Deletes to Process");
                     await ProcessQueuedEpisodeEvents(queuedEpisodeDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
                 }
                 else
                 {
-                    _logger.Info("No Episode Deletes to Process");
+                    _logger.LogInformation("No Episode Deletes to Process");
                 }
 
                 var queuedEpisodeAdds = queue.Where(ev =>
@@ -151,12 +151,12 @@ namespace Trakt.Helpers
 
                 if (queuedEpisodeAdds.Any())
                 {
-                    _logger.Info(queuedEpisodeAdds.Count + " Episode Adds to Process");
+                    _logger.LogInformation(queuedEpisodeAdds.Count + " Episode Adds to Process");
                     await ProcessQueuedEpisodeEvents(queuedEpisodeAdds, traktUser, EventType.Add).ConfigureAwait(false);
                 }
                 else
                 {
-                    _logger.Info("No Episode Adds to Process");
+                    _logger.LogInformation("No Episode Adds to Process");
                 }
 
                 var queuedShowDeletes = queue.Where(ev =>
@@ -166,12 +166,12 @@ namespace Trakt.Helpers
 
                 if (queuedShowDeletes.Any())
                 {
-                    _logger.Info(queuedMovieDeletes.Count + " Series Deletes to Process");
+                    _logger.LogInformation(queuedMovieDeletes.Count + " Series Deletes to Process");
                     await ProcessQueuedShowEvents(queuedShowDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
                 }
                 else
                 {
-                    _logger.Info("No Series Deletes to Process");
+                    _logger.LogInformation("No Series Deletes to Process");
                 }
             }
 
@@ -192,7 +192,7 @@ namespace Trakt.Helpers
             }
             catch (Exception ex)
             {
-                _logger.ErrorException("Exception handled processing queued series events", ex);
+                _logger.LogError(ex, "Exception handled processing queued series events");
             }
         }
 
@@ -214,7 +214,7 @@ namespace Trakt.Helpers
             }
             catch (Exception ex)
             {
-                _logger.ErrorException("Exception handled processing queued movie events", ex);
+                _logger.LogError(ex, "Exception handled processing queued movie events");
             }
 
         }
@@ -236,7 +236,7 @@ namespace Trakt.Helpers
             // Can't progress further without episodes
             if (!episodes.Any())
             {
-                _logger.Info("episodes count is 0");
+                _logger.LogInformation("episodes count is 0");
 
                 return;
             }
@@ -266,7 +266,7 @@ namespace Trakt.Helpers
                 }
                 catch (Exception ex)
                 {
-                    _logger.ErrorException("Exception handled processing queued episode events", ex);
+                    _logger.LogError(ex, "Exception handled processing queued episode events");
                 }
             }
         }
