@@ -7,7 +7,6 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.Threading;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Model;
@@ -17,22 +16,20 @@ namespace Trakt.Helpers
     internal class LibraryManagerEventsHelper
     {
         private readonly List<LibraryEvent> _queuedEvents;
-        private ITimer _queueTimer;
+        private Timer _queueTimer;
         private readonly ILogger _logger;
         private readonly TraktApi _traktApi;
-        private readonly ITimerFactory _timerFactory;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="traktApi"></param>
-        public LibraryManagerEventsHelper(ILogger logger, TraktApi traktApi, ITimerFactory timerFactory)
+        public LibraryManagerEventsHelper(ILogger logger, TraktApi traktApi)
         {
             _queuedEvents = new List<LibraryEvent>();
             _logger = logger;
             _traktApi = traktApi;
-            _timerFactory = timerFactory;
         }
 
         /// <summary>
@@ -47,7 +44,7 @@ namespace Trakt.Helpers
 
             if (_queueTimer == null)
             {
-                _queueTimer = _timerFactory.Create(OnQueueTimerCallback, null, TimeSpan.FromMilliseconds(20000),
+                _queueTimer = new Timer(OnQueueTimerCallback, null, TimeSpan.FromMilliseconds(20000),
                     Timeout.InfiniteTimeSpan);
             }
             else

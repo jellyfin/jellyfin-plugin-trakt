@@ -11,7 +11,7 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Serialization;
 using System;
 using System.Linq;
-using MediaBrowser.Model.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Helpers;
@@ -45,7 +45,15 @@ namespace Trakt
         /// <param name="httpClient"></param>
         /// <param name="appHost"></param>
         /// <param name="fileSystem"></param>
-        public ServerMediator(IJsonSerializer jsonSerializer, ISessionManager sessionManager, IUserDataManager userDataManager, ILibraryManager libraryManager, ILoggerFactory logger, IHttpClient httpClient, IServerApplicationHost appHost, IFileSystem fileSystem, ITimerFactory timerFactory)
+        public ServerMediator(
+            IJsonSerializer jsonSerializer,
+            ISessionManager sessionManager,
+            IUserDataManager userDataManager,
+            ILibraryManager libraryManager,
+            ILoggerFactory logger,
+            IHttpClient httpClient,
+            IServerApplicationHost appHost,
+            IFileSystem fileSystem)
         {
             Instance = this;
             _sessionManager = sessionManager;
@@ -55,8 +63,8 @@ namespace Trakt
 
             _traktApi = new TraktApi(jsonSerializer, _logger, httpClient, appHost, userDataManager, fileSystem);
             _service = new TraktUriService(_traktApi, _logger, _libraryManager);
-            _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _traktApi, timerFactory);
-            _userDataManagerEventsHelper = new UserDataManagerEventsHelper(_logger, _traktApi, timerFactory);
+            _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _traktApi);
+            _userDataManagerEventsHelper = new UserDataManagerEventsHelper(_logger, _traktApi);
 
         }
 
@@ -91,13 +99,14 @@ namespace Trakt
         /// <summary>
         /// 
         /// </summary>
-        public void Run()
+        public Task RunAsync()
         {
             _userDataManager.UserDataSaved += _userDataManager_UserDataSaved;
             _sessionManager.PlaybackStart += KernelPlaybackStart;
             _sessionManager.PlaybackStopped += KernelPlaybackStopped;
             _libraryManager.ItemAdded += LibraryManagerItemAdded;
             _libraryManager.ItemRemoved += LibraryManagerItemRemoved;
+            return Task.CompletedTask;
         }
 
 
