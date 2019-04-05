@@ -233,3 +233,8 @@ pip-log.txt
 ## Rider
 #############
 .idea
+
+#############
+## Build scripts
+#############
+*/*.csproj
