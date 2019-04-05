@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>DOTNET_FRAMEWORK;</TargetFrameworks>
-    <AssemblyVersion>PLUGIN_VERSION</AssemblyVersion>
-    <FileVersion>PLUGIN_VERSION</FileVersion>
+    <TargetFrameworks>$DOTNET_FRAMEWORK;</TargetFrameworks>
+    <AssemblyVersion>$PLUGIN_VERSION</AssemblyVersion>
+    <FileVersion>$PLUGIN_VERSION</FileVersion>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Configuration\configPage.html" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Jellyfin.Controller" Version="JELLYFIN_VERSION" />
+    <PackageReference Include="Jellyfin.Controller" Version="$JELLYFIN_VERSION" />
     <PackageReference Include="System.Memory" Version="4.5.1" />
   </ItemGroup>
 </Project>

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #! python3
 
-import os, yaml, subprocess
+import os, yaml, subprocess, string
 
 def load_buildcfg(build_file):
     with open (build_file, 'r') as buildf:
@@ -17,13 +17,19 @@ build_file = "build.yaml"
 cfg = load_buildcfg(build_file)
 
 # Prepare the csproj file based on build.yaml
-make_cmd = "make -f csproj.make csproj CSPROJ={} DOTNET_FRAMEWORK={} VERSION={} JELLYFIN_VERSION={}".format(
-    cfg['csproj'],
-    cfg['dotnet_framework'],
-    cfg['version'],
-    cfg['jellyfin_version']
-)
-subprocess.run(make_cmd.split())
+csproj_template_file = "csproj.in"
+newcsproj = str()
+with open(csproj_template_file, 'r') as csprojtf:
+    for line in csprojtf.readlines():
+        template = string.Template(line)
+        newcsproj += template.substitute(
+            DOTNET_FRAMEWORK=cfg['dotnet_framework'],
+            PLUGIN_VERSION=cfg['version'],
+            JELLYFIN_VERSION=cfg['jellyfin_version']
+        )
+print(newcsproj)
+with open(cfg['csproj'], 'w') as csprojf:
+    csprojf.write(newcsproj)
 
 # Publish with dotnet to ./bin
 publish_cmd = "dotnet publish --configuration {} --framework {} --output {}/bin/".format(
@@ -33,8 +39,5 @@ publish_cmd = "dotnet publish --configuration {} --framework {} --output {}/bin/
 )
 subprocess.run(publish_cmd.split())
 
-# Clean up the csproj file
-clean_cmd = "make -f csproj.make clean CSPROJ={}".format(
-    cfg['csproj']
-)
-subprocess.run(clean_cmd.split())
+# Renove the csproj
+os.remove(cfg['csproj'])
