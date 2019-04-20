@@ -1,8 +1,10 @@
 ---
 name: "jellyfin-plugin-trakt"
 guid: "4fe3201e-d6ae-4f2e-8917-e12bda571281"
-version: "1.0.0"
+version: "2" # Please increment with each pull request
+jellyfin_version: "10.3.0" # The earliest binary-compatible version
 nicename: "Trakt"
+owner: "jellyfin"
 description: "Record your watched media with Trakt"
 overview: >
   Record your watched media with Trakt.
