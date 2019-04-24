@@ -1,10 +1,12 @@
 ﻿using System;
-using System.Threading.Tasks;
+using MediaBrowser.Common.Net;
+using MediaBrowser.Controller;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Model.IO;
+using MediaBrowser.Model.Serialization;
 using MediaBrowser.Model.Services;
 using Microsoft.Extensions.Logging;
 using Trakt.Helpers;
-using Trakt.Model;
 
 namespace Trakt.Api
 {
@@ -94,13 +96,24 @@ namespace Trakt.Api
         /// <summary>
         /// Initializes a new instance of the <see cref="TraktUriService"/> class.
         /// </summary>
-        /// <param name="traktApi">The trakt API.</param>
+        /// <param name="userDataManager"></param>
         /// <param name="logger">The logger.</param>
+        /// <param name="fileSystem"></param>
         /// <param name="libraryManager">The library manager.</param>
-        public TraktUriService(TraktApi traktApi, ILogger logger, ILibraryManager libraryManager)
+        /// <param name="httpClient"></param>
+        /// <param name="appHost"></param>
+        /// <param name="jsonSerializer"></param>
+        public TraktUriService(
+            IJsonSerializer jsonSerializer,
+            IUserDataManager userDataManager,
+            ILogger logger,
+            IHttpClient httpClient,
+            IServerApplicationHost appHost,
+            IFileSystem fileSystem,
+            ILibraryManager libraryManager)
         {
-            _traktApi = traktApi;
             _logger = logger;
+            _traktApi = new TraktApi(jsonSerializer, _logger, httpClient, appHost, userDataManager, fileSystem);
             _libraryManager = libraryManager;
         }
 

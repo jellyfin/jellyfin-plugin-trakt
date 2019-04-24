@@ -27,7 +27,6 @@ namespace Trakt
         private readonly ILibraryManager _libraryManager;
         private readonly ILogger _logger;
         private TraktApi _traktApi;
-        private TraktUriService _service;
         private LibraryManagerEventsHelper _libraryManagerEventsHelper;
         private readonly UserDataManagerEventsHelper _userDataManagerEventsHelper;
         private IUserDataManager _userDataManager;
@@ -62,7 +61,6 @@ namespace Trakt
             _logger = logger.CreateLogger("Trakt");
 
             _traktApi = new TraktApi(jsonSerializer, _logger, httpClient, appHost, userDataManager, fileSystem);
-            _service = new TraktUriService(_traktApi, _logger, _libraryManager);
             _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _traktApi);
             _userDataManagerEventsHelper = new UserDataManagerEventsHelper(_logger, _traktApi);
 
@@ -78,9 +76,7 @@ namespace Trakt
             // ignore change events for any reason other than manually toggling played.
             if (e.SaveReason != UserDataSaveReason.TogglePlayed) return;
 
-            var baseItem = e.Item as BaseItem;
-
-            if (baseItem != null)
+            if (e.Item is BaseItem baseItem)
             {
                 // determine if user has trakt credentials
                 var traktUser = UserHelper.GetTraktUser(e.UserId);
@@ -302,7 +298,6 @@ namespace Trakt
             _sessionManager.PlaybackStopped -= KernelPlaybackStopped;
             _libraryManager.ItemAdded -= LibraryManagerItemAdded;
             _libraryManager.ItemRemoved -= LibraryManagerItemRemoved;
-            _service = null;
             _traktApi = null;
             _libraryManagerEventsHelper = null;
         }
