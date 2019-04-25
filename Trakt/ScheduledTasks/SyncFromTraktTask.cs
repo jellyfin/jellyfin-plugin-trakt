@@ -31,7 +31,7 @@ namespace Trakt.ScheduledTasks
     /// Task that will Sync each users trakt.tv profile with their local library. This task will only include 
     /// watched states.
     /// </summary>
-    class SyncFromTraktTask : IScheduledTask
+    public class SyncFromTraktTask : IScheduledTask
     {
         private readonly IUserManager _userManager;
         private readonly IUserDataManager _userDataManager;
