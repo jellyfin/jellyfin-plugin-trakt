@@ -13,13 +13,17 @@ namespace Trakt.Model
 
         public bool UsesAdvancedRating { get; set; }
 
-        public bool  SkipUnwatchedImportFromTrakt { get; set; }
+        public bool SkipUnwatchedImportFromTrakt { get; set; }
 
         public bool PostWatchedHistory { get; set; }
 
         public bool ExtraLogging { get; set; }
 
         public bool ExportMediaInfo { get; set; }
+
+        public bool SynchronizeCollections { get; set; }
+
+        public bool Scrobble { get; set; }
 
         public String[] LocationsExcluded { get; set; }
         public DateTime AccessTokenExpiration { get; set; }
@@ -30,6 +34,8 @@ namespace Trakt.Model
             PostWatchedHistory = true;
             ExtraLogging = false;
             ExportMediaInfo = false;
+            SynchronizeCollections = true;
+            Scrobble = true;
         }
     }
 }

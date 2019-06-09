@@ -161,6 +161,9 @@ namespace Trakt
                     _logger.LogInformation("Could not match user with any stored credentials");
                     return;
                 }
+                
+                if (!traktUser.Scrobble)
+                    return;
 
                 if (!_traktApi.CanSync(e.Item, traktUser))
                 {
@@ -232,6 +235,9 @@ namespace Trakt
                     _logger.LogError("Could not match trakt user");
                     return;
                 }
+                
+                if (!traktUser.Scrobble)
+                    return;
 
                 if (!_traktApi.CanSync(e.Item, traktUser))
                 {

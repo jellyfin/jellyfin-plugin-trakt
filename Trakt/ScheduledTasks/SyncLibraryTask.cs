@@ -208,7 +208,8 @@ namespace Trakt.ScheduledTasks
             }
 
             // send movies to mark collected
-            await SendMovieCollectionUpdates(true, traktUser, collectedMovies, progress.Split(4), cancellationToken).ConfigureAwait(false);
+            if(traktUser.SynchronizeCollections)
+                await SendMovieCollectionUpdates(true, traktUser, collectedMovies, progress.Split(4), cancellationToken).ConfigureAwait(false);
 
             // send movies to mark watched
             await SendMoviePlaystateUpdates(true, traktUser, playedMovies, progress.Split(4), cancellationToken).ConfigureAwait(false);
@@ -375,7 +376,8 @@ namespace Trakt.ScheduledTasks
                 decisionProgress.Report(100);
             }
 
-            await SendEpisodeCollectionUpdates(true, traktUser, collectedEpisodes, progress.Split(4), cancellationToken).ConfigureAwait(false);
+            if(traktUser.SynchronizeCollections)
+                await SendEpisodeCollectionUpdates(true, traktUser, collectedEpisodes, progress.Split(4), cancellationToken).ConfigureAwait(false);
 
             await SendEpisodePlaystateUpdates(true, traktUser, playedEpisodes, progress.Split(4), cancellationToken).ConfigureAwait(false);
 
