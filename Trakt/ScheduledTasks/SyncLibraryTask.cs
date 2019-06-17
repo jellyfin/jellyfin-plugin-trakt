@@ -212,7 +212,9 @@ namespace Trakt.ScheduledTasks
 
             // send movies to mark collected
             if (traktUser.SynchronizeCollections)
+            {
                 await SendMovieCollectionUpdates(true, traktUser, collectedMovies, progress.Split(4), cancellationToken).ConfigureAwait(false);
+            }
 
             // send movies to mark watched
             await SendMoviePlaystateUpdates(true, traktUser, playedMovies, progress.Split(4), cancellationToken).ConfigureAwait(false);
