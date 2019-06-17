@@ -369,7 +369,7 @@ namespace Trakt.ScheduledTasks
                     unplayedEpisodes.Add(episode);
                 }
 
-                if(traktUser.SynchronizeCollections)
+                if (traktUser.SynchronizeCollections)
                 {
                     var traktCollectedShow = SyncFromTraktTask.FindMatch(episode.Series, traktCollectedShows);
                     if (traktCollectedShow?.seasons == null
