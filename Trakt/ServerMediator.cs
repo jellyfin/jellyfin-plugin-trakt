@@ -239,7 +239,9 @@ namespace Trakt
                 }
                 
                 if (!traktUser.Scrobble)
+                {
                     return;
+                }
 
                 if (!_traktApi.CanSync(e.Item, traktUser))
                 {
