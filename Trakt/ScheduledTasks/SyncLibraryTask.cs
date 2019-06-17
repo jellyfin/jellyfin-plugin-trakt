@@ -158,7 +158,7 @@ namespace Trakt.ScheduledTasks
                 var libraryMovie = child as Movie;
                 var userData = _userDataManager.GetUserData(user.Id, child);
 
-                if(traktUser.SynchronizeCollections)
+                if (traktUser.SynchronizeCollections)
                 {
                     // if movie is not collected, or (export media info setting is enabled and every collected matching movie has different metadata), collect it
                     var collectedMathingMovies = SyncFromTraktTask.FindMatches(libraryMovie, traktCollectedMovies).ToList();
