@@ -384,7 +384,7 @@ namespace Trakt.ScheduledTasks
                 decisionProgress.Report(100);
             }
 
-            if(traktUser.SynchronizeCollections)
+            if (traktUser.SynchronizeCollections)
                 await SendEpisodeCollectionUpdates(true, traktUser, collectedEpisodes, progress.Split(4), cancellationToken).ConfigureAwait(false);
 
             await SendEpisodePlaystateUpdates(true, traktUser, playedEpisodes, progress.Split(4), cancellationToken).ConfigureAwait(false);
