@@ -1052,13 +1052,21 @@ namespace Trakt.Api
             {
                 return await function().ConfigureAwait(false);
             }
-            catch{}
+            catch
+            {
+                
+            }
+
             await Task.Delay(500).ConfigureAwait(false);
             try
             {
                 return await function().ConfigureAwait(false);
             }
-            catch { }
+            catch
+            {
+
+            }
+
             await Task.Delay(500).ConfigureAwait(false);
             return await function().ConfigureAwait(false);
         }
@@ -1068,13 +1076,13 @@ namespace Trakt.Api
             var options = new HttpRequestOptions
             {
                 RequestContentType = "application/json",
-                TimeoutMs = 120000,
                 LogErrorResponseBody = false,
                 LogRequest = true,
                 BufferContent = false,
-                EnableHttpCompression = false,
+                DecompressionMethod = CompressionMethod.None,
                 EnableKeepAlive = false
             };
+
             options.RequestHeaders.Add("trakt-api-version", "2");
             options.RequestHeaders.Add("trakt-api-key", TraktUris.ClientId);
             return options;
@@ -1084,9 +1092,10 @@ namespace Trakt.Api
         {
             if (DateTimeOffset.Now > traktUser.AccessTokenExpiration)
             {
-                traktUser.AccessToken = "";
+                traktUser.AccessToken = string.Empty;
                 await RefreshUserAccessToken(traktUser).ConfigureAwait(false);
             }
+
             if (!string.IsNullOrEmpty(traktUser.AccessToken))
             {
                 options.RequestHeaders.Add("Authorization", "Bearer " + traktUser.AccessToken);
