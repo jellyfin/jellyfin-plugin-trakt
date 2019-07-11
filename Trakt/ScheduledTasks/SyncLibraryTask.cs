@@ -158,14 +158,17 @@ namespace Trakt.ScheduledTasks
                 var libraryMovie = child as Movie;
                 var userData = _userDataManager.GetUserData(user.Id, child);
 
-                // if movie is not collected, or (export media info setting is enabled and every collected matching movie has different metadata), collect it
-                var collectedMathingMovies = SyncFromTraktTask.FindMatches(libraryMovie, traktCollectedMovies).ToList();
-                if (!collectedMathingMovies.Any()
-                    || (traktUser.ExportMediaInfo
-                        && collectedMathingMovies.All(
-                            collectedMovie => collectedMovie.MetadataIsDifferent(libraryMovie))))
+                if (traktUser.SynchronizeCollections)
                 {
-                    collectedMovies.Add(libraryMovie);
+                    // if movie is not collected, or (export media info setting is enabled and every collected matching movie has different metadata), collect it
+                    var collectedMathingMovies = SyncFromTraktTask.FindMatches(libraryMovie, traktCollectedMovies).ToList();
+                    if (!collectedMathingMovies.Any()
+                        || (traktUser.ExportMediaInfo
+                            && collectedMathingMovies.All(
+                                collectedMovie => collectedMovie.MetadataIsDifferent(libraryMovie))))
+                    {
+                        collectedMovies.Add(libraryMovie);
+                    }
                 }
 
                 var movieWatched = SyncFromTraktTask.FindMatch(libraryMovie, traktWatchedMovies);
@@ -208,7 +211,10 @@ namespace Trakt.ScheduledTasks
             }
 
             // send movies to mark collected
-            await SendMovieCollectionUpdates(true, traktUser, collectedMovies, progress.Split(4), cancellationToken).ConfigureAwait(false);
+            if (traktUser.SynchronizeCollections)
+            {
+                await SendMovieCollectionUpdates(true, traktUser, collectedMovies, progress.Split(4), cancellationToken).ConfigureAwait(false);
+            }
 
             // send movies to mark watched
             await SendMoviePlaystateUpdates(true, traktUser, playedMovies, progress.Split(4), cancellationToken).ConfigureAwait(false);
@@ -363,19 +369,25 @@ namespace Trakt.ScheduledTasks
                     unplayedEpisodes.Add(episode);
                 }
 
-                var traktCollectedShow = SyncFromTraktTask.FindMatch(episode.Series, traktCollectedShows);
-                if (traktCollectedShow?.seasons == null
-                    || traktCollectedShow.seasons.All(x => x.number != episode.ParentIndexNumber)
-                    || traktCollectedShow.seasons.First(x => x.number == episode.ParentIndexNumber)
-                        .episodes.All(e => e.number != episode.IndexNumber))
+                if (traktUser.SynchronizeCollections)
                 {
-                    collectedEpisodes.Add(episode);
+                    var traktCollectedShow = SyncFromTraktTask.FindMatch(episode.Series, traktCollectedShows);
+                    if (traktCollectedShow?.seasons == null
+                        || traktCollectedShow.seasons.All(x => x.number != episode.ParentIndexNumber)
+                        || traktCollectedShow.seasons.First(x => x.number == episode.ParentIndexNumber)
+                            .episodes.All(e => e.number != episode.IndexNumber))
+                    {
+                        collectedEpisodes.Add(episode);
+                    }
                 }
 
                 decisionProgress.Report(100);
             }
 
-            await SendEpisodeCollectionUpdates(true, traktUser, collectedEpisodes, progress.Split(4), cancellationToken).ConfigureAwait(false);
+            if (traktUser.SynchronizeCollections)
+            {
+                await SendEpisodeCollectionUpdates(true, traktUser, collectedEpisodes, progress.Split(4), cancellationToken).ConfigureAwait(false);
+            }
 
             await SendEpisodePlaystateUpdates(true, traktUser, playedEpisodes, progress.Split(4), cancellationToken).ConfigureAwait(false);
 

@@ -70,6 +70,24 @@
                             Send audio and video metadata to Trakt.
                         </div>
                     </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="chkSyncCollections" name="chkSyncCollections" />
+                            <span>Synchronize Collection</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">
+                            Synchronize the collected movies and shows to Trakt.
+                        </div>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="chkScrobble" name="chkScrobble" />
+                            <span>Scrobble</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">
+                            Scrobble to Trakt.
+                        </div>
+                    </div>
                     <div>
                         <button is="emby-button" type="submit" class="raised button-submit block"><span>${ButtonSave}</span></button>
                     </div>
@@ -122,7 +140,9 @@
                                     SkipUnwatchedImportFromTrakt: true,
                                     PostWatchedHistory: true,
                                     ExtraLogging: false,
-                                    ExportMediaInfo: false
+                                    ExportMediaInfo: false,
+                                    SynchronizeCollections: true,
+                                    Scrobble: true
                                 };
                             }
                             // Default this to an empty array so the rendering code doesn't have to worry about it
@@ -131,6 +151,8 @@
                             $('#chkPostWatchedHistory', page).checked(currentUserConfig.PostWatchedHistory).checkboxradio("refresh");
                             $('#chkExtraLogging', page).checked(currentUserConfig.ExtraLogging).checkboxradio("refresh");
                             $('#chkExportMediaInfo', page).checked(currentUserConfig.ExportMediaInfo).checkboxradio("refresh");
+                            $('#chkSyncCollections', page).checked(currentUserConfig.SynchronizeCollections).checkboxradio("refresh");
+                            $('#chkScrobble', page).checked(currentUserConfig.Scrobble).checkboxradio("refresh");
                             // List the folders the user can access
                             ApiClient.getVirtualFolders(userId).then(function (result) {
                                 TraktConfigurationPage.loadFolders(currentUserConfig, result);
@@ -191,6 +213,8 @@
                     currentUserConfig.PostWatchedHistory = $('#chkPostWatchedHistory', page).checked();
                     currentUserConfig.ExtraLogging = $('#chkExtraLogging', page).checked();
                     currentUserConfig.ExportMediaInfo = $('#chkExportMediaInfo', page).checked();
+                    currentUserConfig.SynchronizeCollections = $('#chkSyncCollections', page).checked();
+                    currentUserConfig.Scrobble = $('#chkScrobble', page).checked();
                     currentUserConfig.LinkedMbUserId = currentUserId;
                     currentUserConfig.LocationsExcluded = $('.chkTraktLocation:checked', page).map(function () {
                         return this.getAttribute('data-location');
