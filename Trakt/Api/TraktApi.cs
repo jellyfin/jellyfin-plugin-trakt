@@ -32,7 +32,7 @@ using Microsoft.Extensions.Logging;
 namespace Trakt.Api
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public class TraktApi
     {
@@ -590,7 +590,7 @@ namespace Trakt.Api
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="traktUser"></param>
         /// <returns></returns>
@@ -603,7 +603,7 @@ namespace Trakt.Api
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="traktUser"></param>
         /// <returns></returns>
@@ -616,7 +616,7 @@ namespace Trakt.Api
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="traktUser"></param>
         /// <returns></returns>
@@ -629,7 +629,7 @@ namespace Trakt.Api
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="traktUser"></param>
         /// <returns></returns>
@@ -642,7 +642,7 @@ namespace Trakt.Api
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="traktUser"></param>
         /// <returns></returns>
@@ -655,7 +655,7 @@ namespace Trakt.Api
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="traktUser"></param>
         /// <returns></returns>
@@ -841,7 +841,7 @@ namespace Trakt.Api
             {
                 client_id = TraktUris.ClientId
             };
-            
+
             TraktDeviceCode deviceCode;
             using (var response = PostToTrakt(TraktUris.DeviceCode, deviceCodeRequest, null))
             {
@@ -850,7 +850,7 @@ namespace Trakt.Api
 
             // Start polling in the background
             Plugin.Instance.PollingTasks[traktUser.LinkedMbUserId] = Task.Run(() => PollForAccessToken(deviceCode, traktUser));
-            
+
             return deviceCode.user_code;
         }
 
@@ -873,7 +873,7 @@ namespace Trakt.Api
                     using (var response = await PostToTrakt(TraktUris.DeviceToken, deviceAccessTokenRequest).ConfigureAwait(false))
                     {
                         _logger.LogInformation("Device successfully authorized");
-                        
+
                         var userAccessToken = _jsonSerializer.DeserializeFromStream<TraktUserAccessToken>(response.Content);
                         if (userAccessToken != null)
                         {
@@ -917,7 +917,7 @@ namespace Trakt.Api
             }
             return false;
         }
-        
+
         public async Task RefreshUserAccessToken(TraktUser traktUser)
         {
             if (string.IsNullOrWhiteSpace(traktUser.RefreshToken))
@@ -925,7 +925,7 @@ namespace Trakt.Api
                 _logger.LogError("Tried to reauthenticate with Trakt, but no refreshToken was available");
                 return;
             }
-            
+
             var data = new TraktUserRefreshTokenRequest
             {
                 client_id = TraktUris.ClientId,
@@ -949,7 +949,7 @@ namespace Trakt.Api
                 _logger.LogError(ex, "An error occurred during token refresh");
                 return;
             }
-            
+
             if (userAccessToken != null)
             {
                 traktUser.AccessToken = userAccessToken.access_token;
@@ -959,7 +959,7 @@ namespace Trakt.Api
                 _logger.LogInformation("Successfully refreshed the access token for user {UserId}", traktUser.LinkedMbUserId);
             }
         }
-        
+
         private Task<Stream> GetFromTrakt(string url, TraktUser traktUser)
         {
             return GetFromTrakt(url, CancellationToken.None, traktUser);
@@ -1008,7 +1008,7 @@ namespace Trakt.Api
                 Plugin.Instance.TraktResourcePool.Release();
             }
         }
-        
+
         private Task<Stream> PostToTrakt(string url, object data, TraktUser traktUser)
         {
             return PostToTrakt(url, data, CancellationToken.None, traktUser);
@@ -1054,7 +1054,7 @@ namespace Trakt.Api
             }
             catch
             {
-                
+
             }
 
             await Task.Delay(500).ConfigureAwait(false);
@@ -1077,7 +1077,6 @@ namespace Trakt.Api
             {
                 RequestContentType = "application/json",
                 LogErrorResponseBody = false,
-                LogRequest = true,
                 BufferContent = false,
                 DecompressionMethod = CompressionMethod.None,
                 EnableKeepAlive = false
