@@ -126,7 +126,6 @@
                 {
                     pluginUniqueId: "4fe3201e-d6ae-4f2e-8917-e12bda571281",
                     loadConfiguration: function (userId, page) {
-                        Dashboard.showLoadingMsg();
                         ApiClient.getPluginConfiguration(TraktConfigurationPage.pluginUniqueId).then(function (config) {
                             var currentUserConfig = config.TraktUsers.filter(function (curr) {
                                 return curr.LinkedMbUserId == userId;
@@ -198,7 +197,6 @@
             
             function save(page) {
                 var dfd = $.Deferred();
-                Dashboard.showLoadingMsg();
                 var currentUserId = $('#selectUser', page).val();
                 ApiClient.getPluginConfiguration(TraktConfigurationPage.pluginUniqueId).then(function (config) {
                     var currentUserConfig = config.TraktUsers.filter(function (curr) {
@@ -238,7 +236,6 @@
             }
             
             $('.traktConfigurationPage').on('pageinit', function () {
-                Dashboard.showLoadingMsg();
                 var page = this;
                 $('#traktConfigurationForm', page).on('submit', function(){
                     save(page);
@@ -280,7 +277,6 @@
             });
             
             $('.traktConfigurationPage').on('pageshow', function () {
-                Dashboard.showLoadingMsg();
                 var page = this;
                 ApiClient.getUsers().then(function (users) {
                     TraktConfigurationPage.populateUsers(users);

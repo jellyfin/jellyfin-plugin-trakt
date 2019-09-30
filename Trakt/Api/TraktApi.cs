@@ -995,7 +995,6 @@ namespace Trakt.Api
             options.Url = url;
             options.CancellationToken = CancellationToken.None;
             options.RequestContent = requestContent;
-            options.LogErrors = false;
 
             await Plugin.Instance.TraktResourcePool.WaitAsync(options.CancellationToken).ConfigureAwait(false);
 
