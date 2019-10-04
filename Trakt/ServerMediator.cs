@@ -1,4 +1,6 @@
-﻿using MediaBrowser.Model.IO;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
@@ -8,10 +10,8 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Session;
 using MediaBrowser.Model.Entities;
+using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Serialization;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Helpers;
@@ -31,10 +31,8 @@ namespace Trakt
         private readonly UserDataManagerEventsHelper _userDataManagerEventsHelper;
         private IUserDataManager _userDataManager;
 
-        public static ServerMediator Instance { get; private set; }
-
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="jsonSerializer"></param>
         /// <param name="sessionManager"> </param>
@@ -54,7 +52,6 @@ namespace Trakt
             IServerApplicationHost appHost,
             IFileSystem fileSystem)
         {
-            Instance = this;
             _sessionManager = sessionManager;
             _libraryManager = libraryManager;
             _userDataManager = userDataManager;
@@ -67,14 +64,17 @@ namespace Trakt
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void _userDataManager_UserDataSaved(object sender, UserDataSaveEventArgs e)
+        private void OnUserDataSaved(object sender, UserDataSaveEventArgs e)
         {
             // ignore change events for any reason other than manually toggling played.
-            if (e.SaveReason != UserDataSaveReason.TogglePlayed) return;
+            if (e.SaveReason != UserDataSaveReason.TogglePlayed)
+            {
+                return;
+            }
 
             if (e.Item is BaseItem baseItem)
             {
@@ -83,21 +83,19 @@ namespace Trakt
 
                 // Can't progress
                 if (traktUser == null || !_traktApi.CanSync(baseItem, traktUser))
+                {
                     return;
+                }
 
-                // We have a user and the item is in a trakt monitored location. 
+                // We have a user and the item is in a trakt monitored location.
                 _userDataManagerEventsHelper.ProcessUserDataSaveEventArgs(e, traktUser);
             }
         }
 
-
-
-        /// <summary>
-        /// 
-        /// </summary>
+        /// <inheritdoc />
         public Task RunAsync()
         {
-            _userDataManager.UserDataSaved += _userDataManager_UserDataSaved;
+            _userDataManager.UserDataSaved += OnUserDataSaved;
             _sessionManager.PlaybackStart += KernelPlaybackStart;
             _sessionManager.PlaybackStopped += KernelPlaybackStopped;
             _libraryManager.ItemAdded += LibraryManagerItemAdded;
@@ -108,29 +106,43 @@ namespace Trakt
 
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void LibraryManagerItemRemoved(object sender, ItemChangeEventArgs e)
+        private void LibraryManagerItemRemoved(object sender, ItemChangeEventArgs e)
         {
-            if (!(e.Item is Movie) && !(e.Item is Episode) && !(e.Item is Series)) return;
-            if (e.Item.LocationType == LocationType.Virtual) return;
+            if (!(e.Item is Movie) && !(e.Item is Episode) && !(e.Item is Series))
+            {
+                return;
+            }
+
+            if (e.Item.LocationType == LocationType.Virtual)
+            {
+                return;
+            }
+
             _libraryManagerEventsHelper.QueueItem(e.Item, EventType.Remove);
         }
 
-
-
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void LibraryManagerItemAdded(object sender, ItemChangeEventArgs e)
+        private void LibraryManagerItemAdded(object sender, ItemChangeEventArgs e)
         {
             // Don't do anything if it's not a supported media type
-            if (!(e.Item is Movie) && !(e.Item is Episode) && !(e.Item is Series)) return;
-            if (e.Item.LocationType == LocationType.Virtual) return;
+            if (!(e.Item is Movie) && !(e.Item is Episode) && !(e.Item is Series))
+            {
+                return;
+            }
+
+            if (e.Item.LocationType == LocationType.Virtual)
+            {
+                return;
+            }
+
             _libraryManagerEventsHelper.QueueItem(e.Item, EventType.Add);
         }
 
@@ -161,7 +173,7 @@ namespace Trakt
                     _logger.LogInformation("Could not match user with any stored credentials");
                     return;
                 }
-                
+
                 if (!traktUser.Scrobble)
                 {
                     return;
@@ -175,37 +187,34 @@ namespace Trakt
                 _logger.LogDebug(traktUser.LinkedMbUserId + " appears to be monitoring " + e.Item.Path);
 
                 var video = e.Item as Video;
-                var progressPercent = video.RunTimeTicks.HasValue && video.RunTimeTicks != 0 ? 
-                    (float)(e.PlaybackPositionTicks??0) / video.RunTimeTicks.Value * 100.0f : 0.0f;
+                var progressPercent = video.RunTimeTicks.HasValue && video.RunTimeTicks != 0 ?
+                    (float)(e.PlaybackPositionTicks ?? 0) / video.RunTimeTicks.Value * 100.0f : 0.0f;
 
                 try
                 {
-                    if (video is Movie)
+                    if (video is Movie movie)
                     {
                         _logger.LogDebug("Send movie status update");
-                        await
-                            _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Watching, traktUser, progressPercent).
-                                      ConfigureAwait(false);
+                        await _traktApi.SendMovieStatusUpdateAsync(
+                            movie,
+                            MediaStatus.Watching,
+                            traktUser,
+                            progressPercent).ConfigureAwait(false);
                     }
-                    else if (video is Episode)
+                    else if (video is Episode episode)
                     {
                         _logger.LogDebug("Send episode status update");
-                        await
-                            _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Watching, traktUser, progressPercent).
-                                      ConfigureAwait(false);
+                        await _traktApi.SendEpisodeStatusUpdateAsync(
+                            episode,
+                            MediaStatus.Watching,
+                            traktUser,
+                            progressPercent).ConfigureAwait(false);
                     }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Exception handled sending status update");
                 }
-
-                var playEvent = new ProgressEvent
-                {
-                    UserId = e.Users.First().Id,
-                    ItemId = e.Item.Id,
-                    LastApiAccess = DateTimeOffset.UtcNow
-                };
             }
             catch (Exception ex)
             {
@@ -237,7 +246,7 @@ namespace Trakt
                     _logger.LogError("Could not match trakt user");
                     return;
                 }
-                
+
                 if (!traktUser.Scrobble)
                 {
                     return;
@@ -256,24 +265,27 @@ namespace Trakt
 
                     try
                     {
-                        if (video is Movie)
+                        if (video is Movie movie)
                         {
-                            await
-                                _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Stop, traktUser, 100).
-                                    ConfigureAwait(false);
+                            await _traktApi.SendMovieStatusUpdateAsync(
+                                movie,
+                                MediaStatus.Stop,
+                                traktUser,
+                                100).ConfigureAwait(false);
                         }
-                        else if (video is Episode)
+                        else if (video is Episode episode)
                         {
-                            await
-                                _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Stop, traktUser, 100)
-                                    .ConfigureAwait(false);
+                            await _traktApi.SendEpisodeStatusUpdateAsync(
+                                episode,
+                                MediaStatus.Stop,
+                                traktUser,
+                                100).ConfigureAwait(false);
                         }
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Exception handled sending status update");
                     }
-
                 }
                 else
                 {
@@ -281,16 +293,15 @@ namespace Trakt
                     (float)(e.PlaybackPositionTicks ?? 0) / video.RunTimeTicks.Value * 100.0f : 0.0f;
                     _logger.LogInformation("Item Not fully played. Tell trakt.tv we are no longer watching but don't scrobble");
 
-                    if (video is Movie)
+                    if (video is Movie movie)
                     {
-                        await _traktApi.SendMovieStatusUpdateAsync(video as Movie, MediaStatus.Stop, traktUser, progressPercent).ConfigureAwait(false);
+                        await _traktApi.SendMovieStatusUpdateAsync(movie, MediaStatus.Stop, traktUser, progressPercent).ConfigureAwait(false);
                     }
                     else
                     {
                         await _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Stop, traktUser, progressPercent).ConfigureAwait(false);
                     }
                 }
-
             }
             catch (Exception ex)
             {
@@ -298,12 +309,10 @@ namespace Trakt
             }
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
+        /// <inheritdoc />
         public void Dispose()
         {
-            _userDataManager.UserDataSaved -= _userDataManager_UserDataSaved;
+            _userDataManager.UserDataSaved -= OnUserDataSaved;
             _sessionManager.PlaybackStart -= KernelPlaybackStart;
             _sessionManager.PlaybackStopped -= KernelPlaybackStopped;
             _libraryManager.ItemAdded -= LibraryManagerItemAdded;
@@ -311,17 +320,5 @@ namespace Trakt
             _traktApi = null;
             _libraryManagerEventsHelper = null;
         }
-    }
-
-
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public class ProgressEvent
-    {
-        public Guid UserId;
-        public Guid ItemId;
-        public DateTimeOffset LastApiAccess;
     }
 }

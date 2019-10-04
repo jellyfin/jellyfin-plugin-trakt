@@ -1,39 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Entities;
 using Trakt.Api.DataContracts.Users.Collection;
+using Trakt.Helpers;
 
 namespace Trakt
 {
-    using Trakt.Helpers;
-
     public static class Extensions
     {
         public static int? ConvertToInt(this string input)
         {
-            int result;
-            if (int.TryParse(input, out result))
+            if (int.TryParse(input, out int result))
             {
                 return result;
             }
+
             return null;
         }
 
         public static bool IsEmpty(this TraktMetadata metadata)
-        {
-            return string.IsNullOrEmpty(metadata.media_type) &&
-                   string.IsNullOrEmpty(metadata.resolution) &&
-                   string.IsNullOrEmpty(metadata.audio) &&
-                   string.IsNullOrEmpty(metadata.audio_channels);
-        }
+            => string.IsNullOrEmpty(metadata.media_type)
+                && string.IsNullOrEmpty(metadata.resolution)
+                && string.IsNullOrEmpty(metadata.audio)
+                && string.IsNullOrEmpty(metadata.audio_channels);
 
         public static string GetCodecRepresetation(this MediaStream audioStream)
         {
             var audio = audioStream != null && !string.IsNullOrEmpty(audioStream.Codec)
-                ? audioStream.Codec.ToLower().Replace(" ", "_")
+                ? audioStream.Codec.ToLowerInvariant().Replace(" ", "_")
                 : null;
             switch (audio)
             {
@@ -73,11 +71,14 @@ namespace Trakt
 
             if (collectedMovie.metadata == null || collectedMovie.metadata.IsEmpty())
             {
-                return !string.IsNullOrEmpty(resolution) || !string.IsNullOrEmpty(audio) || !string.IsNullOrEmpty(audioChannels);
+                return !string.IsNullOrEmpty(resolution)
+                    || !string.IsNullOrEmpty(audio)
+                    || !string.IsNullOrEmpty(audioChannels);
             }
-            return collectedMovie.metadata.audio != audio ||
-                   collectedMovie.metadata.audio_channels != audioChannels ||
-                   collectedMovie.metadata.resolution != resolution;
+
+            return collectedMovie.metadata.audio != audio
+                || collectedMovie.metadata.audio_channels != audioChannels
+                || collectedMovie.metadata.resolution != resolution;
         }
 
         public static string GetResolution(this MediaStream videoStream)
@@ -86,39 +87,40 @@ namespace Trakt
             {
                 return null;
             }
+
             if (!videoStream.Width.HasValue)
             {
                 return null;
             }
+
             if (videoStream.Width.Value >= 3800)
             {
                 return "uhd_4k";
             }
+
             if (videoStream.Width.Value >= 1900)
             {
                 return "hd_1080p";
             }
+
             if (videoStream.Width.Value >= 1270)
             {
                 return "hd_720p";
             }
+
             if (videoStream.Width.Value >= 700)
             {
                 return "sd_480p";
             }
+
             return null;
         }
-        
-        public static string ToISO8601(this DateTime dt)
-        {
-            return dt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ");
-        }
 
+        public static string ToISO8601(this DateTime dt)
+            => dt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
 
         public static int GetSeasonNumber(this Episode episode)
-        {
-            return (episode.ParentIndexNumber != 0 ? episode.ParentIndexNumber ?? 1 : episode.ParentIndexNumber).Value;
-        }
+            => (episode.ParentIndexNumber != 0 ? episode.ParentIndexNumber ?? 1 : episode.ParentIndexNumber).Value;
 
         public static string GetAudioChannels(this MediaStream audioStream)
         {
@@ -126,6 +128,7 @@ namespace Trakt
             {
                 return null;
             }
+
             var channels = audioStream.ChannelLayout.Split('(')[0];
             switch (channels)
             {
@@ -160,6 +163,7 @@ namespace Trakt
                 list = list.Skip(chunkSize).ToList();
                 itemsReturned += chunkSize;
             }
+
             return chunks;
         }
 
@@ -190,6 +194,5 @@ namespace Trakt
             dolby_digital_plus,
             dolby_truehd
         }
-       
     }
 }

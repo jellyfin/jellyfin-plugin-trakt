@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
@@ -12,8 +11,6 @@ namespace Trakt
 {
     public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     {
-        public SemaphoreSlim TraktResourcePool = new SemaphoreSlim(1, 1);
-
         public Plugin(IApplicationPaths appPaths, IXmlSerializer xmlSerializer)
             : base(appPaths, xmlSerializer)
         {
@@ -21,14 +18,13 @@ namespace Trakt
             PollingTasks = new Dictionary<string, Task<bool>>();
         }
 
+        /// <inheritdoc />
         public override string Name => "Trakt";
 
-        private Guid _id = new Guid("4fe3201e-d6ae-4f2e-8917-e12bda571281");
-        public override Guid Id
-        {
-            get { return _id; }
-        }
+        /// <inheritdoc />
+        public override Guid Id { get; } = new Guid("4fe3201e-d6ae-4f2e-8917-e12bda571281");
 
+        /// <inheritdoc />
         public override string Description
             => "Watch, rate and discover media using Trakt. The htpc just got more social";
 
@@ -36,6 +32,9 @@ namespace Trakt
 
         public PluginConfiguration PluginConfiguration => Configuration;
 
+        public Dictionary<string, Task<bool>> PollingTasks { get; set; }
+
+        /// <inheritdoc />
         public IEnumerable<PluginPageInfo> GetPages()
         {
             return new[]
@@ -47,6 +46,5 @@ namespace Trakt
                 }
             };
         }
-        public Dictionary<string, Task<bool>> PollingTasks { get; set; }
     }
 }

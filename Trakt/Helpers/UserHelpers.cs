@@ -31,8 +31,8 @@ namespace Trakt.Helpers
                     return false;
                 }
 
-                Guid traktUserGuid;
-                if (Guid.TryParse(tUser.LinkedMbUserId, out traktUserGuid) && traktUserGuid.Equals(userGuid))
+                if (Guid.TryParse(tUser.LinkedMbUserId, out Guid traktUserGuid)
+                    && traktUserGuid.Equals(userGuid))
                 {
                     return true;
                 }

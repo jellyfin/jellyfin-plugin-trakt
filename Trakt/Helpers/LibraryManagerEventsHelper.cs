@@ -21,7 +21,7 @@ namespace Trakt.Helpers
         private readonly TraktApi _traktApi;
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="traktApi"></param>
@@ -33,18 +33,23 @@ namespace Trakt.Helpers
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="item"></param>
         /// <param name="eventType"></param>
         public void QueueItem(BaseItem item, EventType eventType)
         {
             if (item == null)
-                throw new ArgumentNullException("item");
+            {
+                throw new ArgumentNullException(nameof(item));
+            }
 
             if (_queueTimer == null)
             {
-                _queueTimer = new Timer(OnQueueTimerCallback, null, TimeSpan.FromMilliseconds(20000),
+                _queueTimer = new Timer(
+                    OnQueueTimerCallback,
+                    null,
+                    TimeSpan.FromMilliseconds(20000),
                     Timeout.InfiniteTimeSpan);
             }
             else
@@ -64,11 +69,10 @@ namespace Trakt.Helpers
                 var libraryEvent = new LibraryEvent { Item = item, TraktUser = user, EventType = eventType };
                 _queuedEvents.Add(libraryEvent);
             }
-
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         private async void OnQueueTimerCallback(object state)
         {
@@ -92,6 +96,7 @@ namespace Trakt.Helpers
                 // This may need to go
                 return;
             }
+
             var queue = _queuedEvents.ToList();
             _queuedEvents.Clear();
             foreach (var traktUser in Plugin.Instance.PluginConfiguration.TraktUsers)
@@ -185,7 +190,9 @@ namespace Trakt.Helpers
             {
                 // Should probably not be awaiting this, but it's unlikely a user will be deleting more than one or two shows at a time
                 foreach (var show in shows)
+                {
                     await _traktApi.SendLibraryUpdateAsync(show, traktUser, CancellationToken.None, eventType).ConfigureAwait(false);
+                }
             }
             catch (Exception ex)
             {
@@ -194,7 +201,7 @@ namespace Trakt.Helpers
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="events"></param>
         /// <param name="traktUser"></param>
@@ -217,7 +224,7 @@ namespace Trakt.Helpers
         }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="events"></param>
         /// <param name="traktUser"></param>
@@ -246,7 +253,7 @@ namespace Trakt.Helpers
                 if (!currentSeriesId.Equals(ep.Series.Id))
                 {
                     // We're starting a new series. Time to send the current one to trakt.tv
-                    await _traktApi.SendLibraryUpdateAsync(payload, traktUser, CancellationToken.None, eventType);
+                    await _traktApi.SendLibraryUpdateAsync(payload, traktUser, CancellationToken.None, eventType).ConfigureAwait(false);
 
                     currentSeriesId = ep.Series.Id;
                     payload.Clear();
@@ -259,7 +266,7 @@ namespace Trakt.Helpers
             {
                 try
                 {
-                    await _traktApi.SendLibraryUpdateAsync(payload, traktUser, CancellationToken.None, eventType);
+                    await _traktApi.SendLibraryUpdateAsync(payload, traktUser, CancellationToken.None, eventType).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -269,12 +276,12 @@ namespace Trakt.Helpers
         }
     }
 
-    #region internal helper types
-
     internal class LibraryEvent
     {
         public BaseItem Item { get; set; }
+
         public TraktUser TraktUser { get; set; }
+
         public EventType EventType { get; set; }
     }
 
@@ -284,6 +291,4 @@ namespace Trakt.Helpers
         Remove,
         Update
     }
-
-    #endregion
 }

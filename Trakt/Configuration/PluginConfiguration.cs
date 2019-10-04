@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using MediaBrowser.Model.Plugins;
 using Trakt.Model;
 
@@ -8,7 +9,7 @@ namespace Trakt.Configuration
     {
         public PluginConfiguration()
         {
-            TraktUsers = new TraktUser[] {};
+            TraktUsers = Array.Empty<TraktUser>();
         }
 
         public TraktUser[] TraktUsers { get; set; }
