@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
@@ -12,20 +11,19 @@ using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.IO;
+using MediaBrowser.Model.Querying;
 using MediaBrowser.Model.Serialization;
 using MediaBrowser.Model.Tasks;
-
+using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Api.DataContracts.Sync;
 using Trakt.Helpers;
 using Trakt.Model;
-using MediaBrowser.Model.Querying;
-using Microsoft.Extensions.Logging;
 
 namespace Trakt.ScheduledTasks
 {
     /// <summary>
-    /// Task that will Sync each users local library with their respective trakt.tv profiles. This task will only include 
+    /// Task that will Sync each users local library with their respective trakt.tv profiles. This task will only include
     /// titles, watched states will be synced in other tasks.
     /// </summary>
     public class SyncLibraryTask : IScheduledTask
@@ -61,18 +59,16 @@ namespace Trakt.ScheduledTasks
             _traktApi = new TraktApi(jsonSerializer, _logger, httpClient, appHost, userDataManager, fileSystem);
         }
 
-        public IEnumerable<TaskTriggerInfo> GetDefaultTriggers()
-        {
-            return new List<TaskTriggerInfo>();
-        }
+        public IEnumerable<TaskTriggerInfo> GetDefaultTriggers() => Enumerable.Empty<TaskTriggerInfo>();
 
-        public string Key
-        {
-            get
-            {
-                return "TraktSyncLibraryTask";
-            }
-        }
+        public string Key => "TraktSyncLibraryTask";
+
+        public string Name => "Sync library to trakt.tv";
+
+        public string Category => "Trakt";
+
+        public string Description
+            => "Adds any media that is in each users trakt monitored locations to their trakt.tv profile";
 
         /// <summary>
         /// Gather users and call <see cref="SyncUserLibrary"/>
@@ -311,7 +307,7 @@ namespace Trakt.ScheduledTasks
                         {
                             IncludeItemTypes = new[] { typeof(Episode).Name },
                             IsVirtualItem = false,
-                            OrderBy = new []
+                            OrderBy = new[]
                             {
                                 new ValueTuple<string, SortOrder>(ItemSortBy.SeriesSortName, SortOrder.Ascending)
                             }
@@ -464,13 +460,6 @@ namespace Trakt.ScheduledTasks
                 progress.Report(100);
             }
         }
-
-        public string Name => "Sync library to trakt.tv";
-
-        public string Category => "Trakt";
-
-        public string Description
-            => "Adds any media that is in each users trakt monitored locations to their trakt.tv profile";
 
         private void LogTraktResponseDataContract(TraktSyncResponse dataContract)
         {

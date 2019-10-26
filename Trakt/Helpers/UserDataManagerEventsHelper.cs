@@ -23,7 +23,7 @@ namespace Trakt.Helpers
         private Timer _timer;
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="traktApi"></param>
@@ -34,10 +34,8 @@ namespace Trakt.Helpers
             _traktApi = traktApi;
         }
 
-
-
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="userDataSaveEventArgs"></param>
         /// <param name="traktUser"></param>
@@ -54,7 +52,10 @@ namespace Trakt.Helpers
 
             if (_timer == null)
             {
-                _timer = new Timer(OnTimerCallback, null, TimeSpan.FromMilliseconds(5000),
+                _timer = new Timer(
+                    OnTimerCallback,
+                    null,
+                    TimeSpan.FromMilliseconds(5000),
                     Timeout.InfiniteTimeSpan);
             }
             else
@@ -70,8 +71,12 @@ namespace Trakt.Helpers
 
                     if (userPackage.SeenMovies.Count >= 100)
                     {
-                        _traktApi.SendMoviePlaystateUpdates(userPackage.SeenMovies, userPackage.TraktUser, true, true,
-                                                            CancellationToken.None).ConfigureAwait(false);
+                        _traktApi.SendMoviePlaystateUpdates(
+                            userPackage.SeenMovies,
+                            userPackage.TraktUser,
+                            true,
+                            true,
+                            CancellationToken.None).ConfigureAwait(false);
                         userPackage.SeenMovies = new List<Movie>();
                     }
                 }
@@ -81,8 +86,12 @@ namespace Trakt.Helpers
 
                     if (userPackage.UnSeenMovies.Count >= 100)
                     {
-                        _traktApi.SendMoviePlaystateUpdates(userPackage.UnSeenMovies, userPackage.TraktUser, true, false,
-                                                            CancellationToken.None).ConfigureAwait(false);
+                        _traktApi.SendMoviePlaystateUpdates(
+                            userPackage.UnSeenMovies,
+                            userPackage.TraktUser,
+                            true,
+                            false,
+                            CancellationToken.None).ConfigureAwait(false);
                         userPackage.UnSeenMovies = new List<Movie>();
                     }
                 }
@@ -90,24 +99,34 @@ namespace Trakt.Helpers
                 return;
             }
 
-            var episode = userDataSaveEventArgs.Item as Episode;
 
-            if (episode == null) return;
+            if (!(userDataSaveEventArgs.Item is Episode episode))
+            {
+                return;
+            }
 
             // If it's not the series we're currently storing, upload our episodes and reset the arrays
             if (!userPackage.CurrentSeriesId.Equals(episode.Series.Id))
             {
                 if (userPackage.SeenEpisodes.Any())
                 {
-                    _traktApi.SendEpisodePlaystateUpdates(userPackage.SeenEpisodes, userPackage.TraktUser, true, true,
-                                                          CancellationToken.None).ConfigureAwait(false);
+                    _traktApi.SendEpisodePlaystateUpdates(
+                        userPackage.SeenEpisodes,
+                        userPackage.TraktUser,
+                        true,
+                        true,
+                        CancellationToken.None).ConfigureAwait(false);
                     userPackage.SeenEpisodes = new List<Episode>();
                 }
 
                 if (userPackage.UnSeenEpisodes.Any())
                 {
-                    _traktApi.SendEpisodePlaystateUpdates(userPackage.UnSeenEpisodes, userPackage.TraktUser, true, false,
-                                                          CancellationToken.None).ConfigureAwait(false);
+                    _traktApi.SendEpisodePlaystateUpdates(
+                        userPackage.UnSeenEpisodes,
+                        userPackage.TraktUser,
+                        true,
+                        false,
+                        CancellationToken.None).ConfigureAwait(false);
                     userPackage.UnSeenEpisodes = new List<Episode>();
                 }
 
@@ -128,33 +147,49 @@ namespace Trakt.Helpers
         {
             foreach (var package in _userDataPackages)
             {
-
                 if (package.UnSeenMovies.Any())
                 {
                     var movies = package.UnSeenMovies.ToList();
                     package.UnSeenMovies.Clear();
-                    _traktApi.SendMoviePlaystateUpdates(movies, package.TraktUser, true, false,
+                    _traktApi.SendMoviePlaystateUpdates(
+                        movies,
+                        package.TraktUser,
+                        true,
+                        false,
                         CancellationToken.None).ConfigureAwait(false);
                 }
+
                 if (package.SeenMovies.Any())
                 {
                     var movies = package.SeenMovies.ToList();
                     package.SeenMovies.Clear();
-                    _traktApi.SendMoviePlaystateUpdates(movies, package.TraktUser, true, true,
+                    _traktApi.SendMoviePlaystateUpdates(
+                        movies,
+                        package.TraktUser,
+                        true,
+                        true,
                         CancellationToken.None).ConfigureAwait(false);
                 }
                 if (package.UnSeenEpisodes.Any())
                 {
                     var episodes = package.UnSeenEpisodes.ToList();
                     package.UnSeenEpisodes.Clear();
-                    _traktApi.SendEpisodePlaystateUpdates(episodes, package.TraktUser, true, false,
+                    _traktApi.SendEpisodePlaystateUpdates(
+                        episodes,
+                        package.TraktUser,
+                        true,
+                        false,
                         CancellationToken.None).ConfigureAwait(false);
                 }
                 if (package.SeenEpisodes.Any())
                 {
                     var episodes = package.SeenEpisodes.ToList();
                     package.SeenEpisodes.Clear();
-                    _traktApi.SendEpisodePlaystateUpdates(episodes, package.TraktUser, true, true,
+                    _traktApi.SendEpisodePlaystateUpdates(
+                        episodes,
+                        package.TraktUser,
+                        true,
+                        true,
                         CancellationToken.None).ConfigureAwait(false);
                 }
             }
@@ -162,16 +197,21 @@ namespace Trakt.Helpers
     }
 
     /// <summary>
-    /// Class that contains all the items to be reported to trakt.tv and supporting properties. 
+    /// Class that contains all the items to be reported to trakt.tv and supporting properties.
     /// </summary>
     internal class UserDataPackage
     {
-        public TraktUser TraktUser;
-        public Guid CurrentSeriesId;
-        public List<Movie> SeenMovies;
-        public List<Movie> UnSeenMovies; 
-        public List<Episode> SeenEpisodes;
-        public List<Episode> UnSeenEpisodes; 
+        public TraktUser TraktUser { get; set; }
+
+        public Guid CurrentSeriesId { get; set; }
+
+        public List<Movie> SeenMovies { get; set; }
+
+        public List<Movie> UnSeenMovies { get; set; }
+
+        public List<Episode> SeenEpisodes { get; set; }
+
+        public List<Episode> UnSeenEpisodes { get; set; }
 
         public UserDataPackage()
         {

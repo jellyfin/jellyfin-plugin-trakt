@@ -1,7 +1,7 @@
-﻿namespace Trakt.Helpers
-{
-    using System;
+﻿using System;
 
+namespace Trakt.Helpers
+{
     /// <summary>
     /// Similar to <see cref="Progress"/>, but report is relative, not absolute.
     /// </summary>
