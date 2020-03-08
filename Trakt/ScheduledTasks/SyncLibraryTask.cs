@@ -197,7 +197,7 @@ namespace Trakt.ScheduledTasks
                 else
                 {
                     // If the show has not been played locally but is played on trakt.tv then add it to the unplayed list
-                    if (movieWatched != null)
+                    if (movieWatched != null && traktUser.PostUnwatchedHistory)
                     {
                         unplayedMovies.Add(libraryMovie);
                     }
@@ -272,7 +272,7 @@ namespace Trakt.ScheduledTasks
                 try
                 {
                     var dataContracts =
-                        await _traktApi.SendMoviePlaystateUpdates(playedMovies, traktUser, false, seen, cancellationToken).ConfigureAwait(false);
+                        await _traktApi.SendMoviePlaystateUpdates(playedMovies, traktUser, seen, cancellationToken).ConfigureAwait(false);
                     if (dataContracts != null)
                     {
                         foreach (var traktSyncResponse in dataContracts)
@@ -359,7 +359,7 @@ namespace Trakt.ScheduledTasks
                         }
                     }
                 }
-                else if (userData != null && !userData.Played && isPlayedTraktTv)
+                else if (userData != null && !userData.Played && isPlayedTraktTv && traktUser.PostUnwatchedHistory)
                 {
                     // If the show has not been played locally but is played on trakt.tv then add it to the unplayed list
                     unplayedEpisodes.Add(episode);
@@ -403,7 +403,7 @@ namespace Trakt.ScheduledTasks
                 try
                 {
                     var dataContracts =
-                        await _traktApi.SendEpisodePlaystateUpdates(playedEpisodes, traktUser, false, seen, cancellationToken).ConfigureAwait(false);
+                        await _traktApi.SendEpisodePlaystateUpdates(playedEpisodes, traktUser, seen, cancellationToken).ConfigureAwait(false);
                     if (dataContracts != null)
                     {
                         foreach (var con in dataContracts)

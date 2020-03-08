@@ -67,7 +67,10 @@ namespace Trakt.Helpers
             {
                 if (userDataSaveEventArgs.UserData.Played)
                 {
-                    userPackage.SeenMovies.Add(movie);
+                    if(traktUser.PostSetWatched)
+                    {
+                        userPackage.SeenMovies.Add(movie);
+                    }
 
                     if (userPackage.SeenMovies.Count >= 100)
                     {
@@ -75,21 +78,22 @@ namespace Trakt.Helpers
                             userPackage.SeenMovies,
                             userPackage.TraktUser,
                             true,
-                            true,
                             CancellationToken.None).ConfigureAwait(false);
                         userPackage.SeenMovies = new List<Movie>();
                     }
                 }
                 else
                 {
-                    userPackage.UnSeenMovies.Add(movie);
+                    if(traktUser.PostSetUnwatched)
+                    {
+                        userPackage.UnSeenMovies.Add(movie);
+                    }
 
                     if (userPackage.UnSeenMovies.Count >= 100)
                     {
                         _traktApi.SendMoviePlaystateUpdates(
                             userPackage.UnSeenMovies,
                             userPackage.TraktUser,
-                            true,
                             false,
                             CancellationToken.None).ConfigureAwait(false);
                         userPackage.UnSeenMovies = new List<Movie>();
@@ -114,7 +118,6 @@ namespace Trakt.Helpers
                         userPackage.SeenEpisodes,
                         userPackage.TraktUser,
                         true,
-                        true,
                         CancellationToken.None).ConfigureAwait(false);
                     userPackage.SeenEpisodes = new List<Episode>();
                 }
@@ -124,7 +127,6 @@ namespace Trakt.Helpers
                     _traktApi.SendEpisodePlaystateUpdates(
                         userPackage.UnSeenEpisodes,
                         userPackage.TraktUser,
-                        true,
                         false,
                         CancellationToken.None).ConfigureAwait(false);
                     userPackage.UnSeenEpisodes = new List<Episode>();
@@ -135,11 +137,17 @@ namespace Trakt.Helpers
 
             if (userDataSaveEventArgs.UserData.Played)
             {
-                userPackage.SeenEpisodes.Add(episode);
+                if (traktUser.PostSetWatched)
+                {
+                    userPackage.SeenEpisodes.Add(episode);
+                }
             }
             else
             {
-                userPackage.UnSeenEpisodes.Add(episode);
+                if(traktUser.PostSetUnwatched)
+                {
+                    userPackage.UnSeenEpisodes.Add(episode);
+                }
             }
         }
 
@@ -154,7 +162,6 @@ namespace Trakt.Helpers
                     _traktApi.SendMoviePlaystateUpdates(
                         movies,
                         package.TraktUser,
-                        true,
                         false,
                         CancellationToken.None).ConfigureAwait(false);
                 }
@@ -167,7 +174,6 @@ namespace Trakt.Helpers
                         movies,
                         package.TraktUser,
                         true,
-                        true,
                         CancellationToken.None).ConfigureAwait(false);
                 }
                 if (package.UnSeenEpisodes.Any())
@@ -177,7 +183,6 @@ namespace Trakt.Helpers
                     _traktApi.SendEpisodePlaystateUpdates(
                         episodes,
                         package.TraktUser,
-                        true,
                         false,
                         CancellationToken.None).ConfigureAwait(false);
                 }
@@ -188,7 +193,6 @@ namespace Trakt.Helpers
                     _traktApi.SendEpisodePlaystateUpdates(
                         episodes,
                         package.TraktUser,
-                        true,
                         true,
                         CancellationToken.None).ConfigureAwait(false);
                 }
