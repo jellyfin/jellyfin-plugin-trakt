@@ -4,7 +4,6 @@ using Trakt.Api.DataContracts.BaseModel;
 
 namespace Trakt.Api.DataContracts.Users.Watched
 {
-    
     public class TraktShowWatched
     {
         public int plays { get; set; }
@@ -15,14 +14,12 @@ namespace Trakt.Api.DataContracts.Users.Watched
 
         public List<Season> seasons { get; set; }
 
-        
         public class Season
         {
             public int number { get; set; }
 
             public List<Episode> episodes { get; set; }
 
-            
             public class Episode
             {
                 public int number { get; set; }

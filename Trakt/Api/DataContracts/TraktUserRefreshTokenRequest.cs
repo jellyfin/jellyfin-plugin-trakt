@@ -1,8 +1,5 @@
-
-
 namespace Trakt.Api.DataContracts
 {
-    
     public class TraktUserRefreshTokenRequest
     {
         public string refresh_token { get; set; }

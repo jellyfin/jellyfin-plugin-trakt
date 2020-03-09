@@ -4,7 +4,6 @@ using Trakt.Api.DataContracts.BaseModel;
 
 namespace Trakt.Api.DataContracts.Users.Collection
 {
-    
     public class TraktShowCollected
     {
         public string last_collected_at { get; set; }
@@ -13,14 +12,12 @@ namespace Trakt.Api.DataContracts.Users.Collection
 
         public List<TraktSeasonCollected> seasons { get; set; }
 
-        
         public class TraktSeasonCollected
         {
             public int number { get; set; }
 
             public List<TraktEpisodeCollected> episodes { get; set; }
 
-            
             public class TraktEpisodeCollected
             {
                 public int number { get; set; }
