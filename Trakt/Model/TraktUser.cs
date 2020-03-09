@@ -1,15 +1,15 @@
 ﻿using System;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Trakt.Model
 {
     public class TraktUser
-    {        
-        public String AccessToken { get; set; }
+    {
+        public string AccessToken { get; set; }
 
-        public String RefreshToken { get; set; }
+        public string RefreshToken { get; set; }
 
-        public String LinkedMbUserId { get; set; }
+        public string LinkedMbUserId { get; set; }
 
         public bool UsesAdvancedRating { get; set; }
 
@@ -25,7 +25,8 @@ namespace Trakt.Model
 
         public bool Scrobble { get; set; }
 
-        public String[] LocationsExcluded { get; set; }
+        public IReadOnlyList<string> LocationsExcluded { get; set; }
+
         public DateTime AccessTokenExpiration { get; set; }
 
         public TraktUser()

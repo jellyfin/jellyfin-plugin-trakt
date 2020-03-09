@@ -1,18 +1,22 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
-using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Threading.Tasks;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Model.Entities;
+using MediaBrowser.Model.IO;
+using MediaBrowser.Model.Net;
 using MediaBrowser.Model.Serialization;
+using Microsoft.Extensions.Logging;
 using Trakt.Api.DataContracts;
 using Trakt.Api.DataContracts.BaseModel;
 using Trakt.Api.DataContracts.Scrobble;
@@ -21,13 +25,9 @@ using Trakt.Api.DataContracts.Sync.Ratings;
 using Trakt.Api.DataContracts.Sync.Watched;
 using Trakt.Helpers;
 using Trakt.Model;
-using MediaBrowser.Model.Entities;
-using TraktMovieCollected = Trakt.Api.DataContracts.Sync.Collection.TraktMovieCollected;
 using TraktEpisodeCollected = Trakt.Api.DataContracts.Sync.Collection.TraktEpisodeCollected;
+using TraktMovieCollected = Trakt.Api.DataContracts.Sync.Collection.TraktMovieCollected;
 using TraktShowCollected = Trakt.Api.DataContracts.Sync.Collection.TraktShowCollected;
-using MediaBrowser.Model.IO;
-using MediaBrowser.Model.Net;
-using Microsoft.Extensions.Logging;
 
 namespace Trakt.Api
 {
@@ -36,6 +36,8 @@ namespace Trakt.Api
     /// </summary>
     public class TraktApi
     {
+        private static readonly SemaphoreSlim _traktResourcePool = new SemaphoreSlim(1, 1);
+
         private readonly IJsonSerializer _jsonSerializer;
         private readonly ILogger _logger;
         private readonly IHttpClient _httpClient;
@@ -43,8 +45,13 @@ namespace Trakt.Api
         private readonly IUserDataManager _userDataManager;
         private readonly IFileSystem _fileSystem;
 
-        public TraktApi(IJsonSerializer jsonSerializer, ILogger logger, IHttpClient httpClient,
-            IServerApplicationHost appHost, IUserDataManager userDataManager, IFileSystem fileSystem)
+        public TraktApi(
+            IJsonSerializer jsonSerializer,
+            ILogger logger,
+            IHttpClient httpClient,
+            IServerApplicationHost appHost,
+            IUserDataManager userDataManager,
+            IFileSystem fileSystem)
         {
             _httpClient = httpClient;
             _appHost = appHost;
@@ -78,22 +85,21 @@ namespace Trakt.Api
                 return false;
             }
 
-            var movie = item as Movie;
-
-            if (movie != null)
+            if (item is Movie movie)
             {
                 return !string.IsNullOrEmpty(movie.GetProviderId(MetadataProviders.Imdb)) ||
                     !string.IsNullOrEmpty(movie.GetProviderId(MetadataProviders.Tmdb));
             }
 
-            var episode = item as Episode;
-
-            if (episode != null && episode.Series != null && !episode.IsMissingEpisode && (episode.IndexNumber.HasValue || !string.IsNullOrEmpty(episode.GetProviderId(MetadataProviders.Tvdb))))
+            if (item is Episode episode
+                && episode.Series != null
+                && !episode.IsMissingEpisode
+                && (episode.IndexNumber.HasValue || !string.IsNullOrEmpty(episode.GetProviderId(MetadataProviders.Tvdb))))
             {
                 var series = episode.Series;
 
-                return !string.IsNullOrEmpty(series.GetProviderId(MetadataProviders.Imdb)) ||
-                    !string.IsNullOrEmpty(series.GetProviderId(MetadataProviders.Tvdb));
+                return !string.IsNullOrEmpty(series.GetProviderId(MetadataProviders.Imdb))
+                    || !string.IsNullOrEmpty(series.GetProviderId(MetadataProviders.Tvdb));
             }
 
             return false;
@@ -112,7 +118,7 @@ namespace Trakt.Api
             var movieData = new TraktScrobbleMovie
             {
                 app_date = DateTimeOffset.Now.Date.ToString("yyyy-MM-dd"),
-                app_version = _appHost.ApplicationVersion.ToString(),
+                app_version = _appHost.ApplicationVersion.ToString(CultureInfo.InvariantCulture),
                 progress = progressPercent,
                 movie = new TraktMovie
                 {
@@ -164,8 +170,8 @@ namespace Trakt.Api
             {
                 episodeDatas.Add(new TraktScrobbleEpisode
                 {
-                    app_date = DateTimeOffset.Now.Date.ToString("yyyy-MM-dd"),
-                    app_version = _appHost.ApplicationVersion.ToString(),
+                    app_date = DateTimeOffset.Now.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                    app_version = _appHost.ApplicationVersion.ToString(CultureInfo.InvariantCulture),
                     progress = progressPercent,
                     episode = new TraktEpisode
                     {
@@ -185,8 +191,8 @@ namespace Trakt.Api
                 {
                     episodeDatas.Add(new TraktScrobbleEpisode
                     {
-                        app_date = DateTimeOffset.Now.Date.ToString("yyyy-MM-dd"),
-                        app_version = _appHost.ApplicationVersion.ToString(),
+                        app_date = DateTimeOffset.Now.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                        app_version = _appHost.ApplicationVersion.ToString(CultureInfo.InvariantCulture),
                         progress = progressPercent,
                         episode = new TraktEpisode
                         {
@@ -240,15 +246,26 @@ namespace Trakt.Api
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <param name="eventType"></param>
         /// <returns>Task{TraktResponseDataContract}.</returns>
-        public async Task<IEnumerable<TraktSyncResponse>> SendLibraryUpdateAsync(List<Movie> movies, TraktUser traktUser,
-            CancellationToken cancellationToken, EventType eventType)
+        public async Task<IEnumerable<TraktSyncResponse>> SendLibraryUpdateAsync(
+            IList<Movie> movies,
+            TraktUser traktUser,
+            CancellationToken cancellationToken,
+            EventType eventType)
         {
             if (movies == null)
-                throw new ArgumentNullException("movies");
-            if (traktUser == null)
-                throw new ArgumentNullException("traktUser");
+            {
+                throw new ArgumentNullException(nameof(movies));
+            }
 
-            if (eventType == EventType.Update) return null;
+            if (traktUser == null)
+            {
+                throw new ArgumentNullException(nameof(traktUser));
+            }
+
+            if (eventType == EventType.Update)
+            {
+                return null;
+            }
 
             var moviesPayload = movies.Select(m =>
             {
@@ -270,6 +287,7 @@ namespace Trakt.Api
                     traktMovieCollected.audio = audioStream.GetCodecRepresetation();
                     traktMovieCollected.resolution = m.GetDefaultVideoStream().GetResolution();
                 }
+
                 return traktMovieCollected;
             }).ToList();
             var url = eventType == EventType.Add ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
@@ -287,6 +305,7 @@ namespace Trakt.Api
                     responses.Add(_jsonSerializer.DeserializeFromStream<TraktSyncResponse>(response));
                 }
             }
+
             return responses;
         }
 
@@ -298,16 +317,27 @@ namespace Trakt.Api
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <param name="eventType"></param>
         /// <returns>Task{TraktResponseDataContract}.</returns>
-        public async Task<IEnumerable<TraktSyncResponse>> SendLibraryUpdateAsync(IReadOnlyList<Episode> episodes,
-            TraktUser traktUser, CancellationToken cancellationToken, EventType eventType)
+        public async Task<IEnumerable<TraktSyncResponse>> SendLibraryUpdateAsync(
+            IReadOnlyList<Episode> episodes,
+            TraktUser traktUser,
+            CancellationToken cancellationToken,
+            EventType eventType)
         {
             if (episodes == null)
-                throw new ArgumentNullException("episodes");
+            {
+                throw new ArgumentNullException(nameof(episodes));
+            }
 
             if (traktUser == null)
-                throw new ArgumentNullException("traktUser");
+            {
+                throw new ArgumentNullException(nameof(traktUser));
+            }
 
-            if (eventType == EventType.Update) return null;
+            if (eventType == EventType.Update)
+            {
+                return null;
+            }
+
             var responses = new List<TraktSyncResponse>();
             var chunks = episodes.ToChunks(100);
             foreach (var chunk in chunks)
@@ -317,8 +347,11 @@ namespace Trakt.Api
             return responses;
         }
 
-        private async Task<TraktSyncResponse> SendLibraryUpdateInternalAsync(IEnumerable<Episode> episodes,
-            TraktUser traktUser, CancellationToken cancellationToken, EventType eventType)
+        private async Task<TraktSyncResponse> SendLibraryUpdateInternalAsync(
+            IEnumerable<Episode> episodes,
+            TraktUser traktUser,
+            CancellationToken cancellationToken,
+            EventType eventType)
         {
             var episodesPayload = new List<TraktEpisodeCollected>();
             var showPayload = new List<TraktShowCollected>();
@@ -346,6 +379,7 @@ namespace Trakt.Api
                         traktEpisodeCollected.audio = audioStream.GetCodecRepresetation();
                         traktEpisodeCollected.resolution = episode.GetDefaultVideoStream().GetResolution();
                     }
+
                     episodesPayload.Add(traktEpisodeCollected);
                 }
                 else if (episode.IndexNumber.HasValue)
@@ -369,6 +403,7 @@ namespace Trakt.Api
                             },
                             seasons = new List<TraktShowCollected.TraktSeasonCollected>()
                         };
+
                         showPayload.Add(syncShow);
                     }
                     var syncSeason =
@@ -380,6 +415,7 @@ namespace Trakt.Api
                             number = episode.GetSeasonNumber(),
                             episodes = new List<TraktEpisodeCollected>()
                         };
+
                         syncShow.seasons.Add(syncSeason);
                     }
                     for (var number = indexNumber; number <= finalNumber; number++)
@@ -390,8 +426,8 @@ namespace Trakt.Api
                         {
                             // Omit this from the rest because then we end up attaching the tvdb of the first episode to the subsequent ones
                             ids.tvdb = tvDbId.ConvertToInt();
-
                         }
+
                         var traktEpisodeCollected = new TraktEpisodeCollected
                         {
                             number = number,
@@ -405,6 +441,7 @@ namespace Trakt.Api
                             traktEpisodeCollected.audio = audioStream.GetCodecRepresetation();
                             traktEpisodeCollected.resolution = episode.GetDefaultVideoStream().GetResolution();
                         }
+
                         syncSeason.episodes.Add(traktEpisodeCollected);
                     }
                 }
@@ -423,8 +460,6 @@ namespace Trakt.Api
             }
         }
 
-
-
         /// <summary>
         /// Add or remove a Show(Series) to/from the users trakt.tv library
         /// </summary>
@@ -433,14 +468,26 @@ namespace Trakt.Api
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <param name="eventType"></param>
         /// <returns>Task{TraktResponseDataContract}.</returns>
-        public async Task<TraktSyncResponse> SendLibraryUpdateAsync(Series show, TraktUser traktUser, CancellationToken cancellationToken, EventType eventType)
+        public async Task<TraktSyncResponse> SendLibraryUpdateAsync(
+            Series show,
+            TraktUser traktUser,
+            CancellationToken cancellationToken,
+            EventType eventType)
         {
             if (show == null)
-                throw new ArgumentNullException("show");
-            if (traktUser == null)
-                throw new ArgumentNullException("traktUser");
+            {
+                throw new ArgumentNullException(nameof(show));
+            }
 
-            if (eventType == EventType.Update) return null;
+            if (traktUser == null)
+            {
+                throw new ArgumentNullException(nameof(traktUser));
+            }
+
+            if (eventType == EventType.Update)
+            {
+                return null;
+            }
 
             var showPayload = new List<TraktShowCollected>
             {
@@ -677,22 +724,32 @@ namespace Trakt.Api
             return null;
         }
 
+
         /// <summary>
-        /// Send a list of movies to trakt.tv that have been marked watched or unwatched
+        /// Send a list of movies to trakt.tv that have been marked watched or unwatched.
         /// </summary>
         /// <param name="movies">The list of movies to send</param>
         /// <param name="traktUser">The trakt user profile that is being updated</param>
         /// <param name="seen">True if movies are being marked seen, false otherwise</param>
         /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns></returns>
+        // TODO: netstandard2.1: use IAsyncEnumerable
         public async Task<List<TraktSyncResponse>> SendMoviePlaystateUpdates(List<Movie> movies, TraktUser traktUser, bool forceUpdate, bool seen, CancellationToken cancellationToken)
         {
             if (movies == null)
-                throw new ArgumentNullException("movies");
+            {
+                throw new ArgumentNullException(nameof(movies));
+            }
+
             if (traktUser == null)
-                throw new ArgumentNullException("traktUser");
+            {
+                throw new ArgumentNullException(nameof(traktUser));
+            }
+
             if (!forceUpdate && !traktUser.PostWatchedHistory)
+            {
                 return new List<TraktSyncResponse>();
+            }
 
             var moviesPayload = movies.Select(m =>
             {
@@ -728,9 +785,12 @@ namespace Trakt.Api
                 using (var response = await PostToTrakt(url, data, cancellationToken, traktUser).ConfigureAwait(false))
                 {
                     if (response != null)
+                    {
                         traktResponses.Add(_jsonSerializer.DeserializeFromStream<TraktSyncResponse>(response));
+                    }
                 }
             }
+
             return traktResponses;
         }
 
@@ -745,12 +805,19 @@ namespace Trakt.Api
         public async Task<List<TraktSyncResponse>> SendEpisodePlaystateUpdates(List<Episode> episodes, TraktUser traktUser, bool forceUpdate, bool seen, CancellationToken cancellationToken)
         {
             if (episodes == null)
-                throw new ArgumentNullException("episodes");
+            {
+                throw new ArgumentNullException(nameof(episodes));
+            }
 
             if (traktUser == null)
-                throw new ArgumentNullException("traktUser");
+            {
+                throw new ArgumentNullException(nameof(traktUser));
+            }
+
             if (!forceUpdate && !traktUser.PostWatchedHistory)
+            {
                 return new List<TraktSyncResponse>();
+            }
 
             var chunks = episodes.ToChunks(100).ToList();
             var traktResponses = new List<TraktSyncResponse>();
@@ -760,7 +827,9 @@ namespace Trakt.Api
                 var response = await SendEpisodePlaystateUpdatesInternalAsync(chunk, traktUser, seen, cancellationToken).ConfigureAwait(false);
 
                 if (response != null)
+                {
                     traktResponses.Add(response);
+                }
             }
             return traktResponses;
         }
@@ -777,7 +846,6 @@ namespace Trakt.Api
                     : null;
                 if (!string.IsNullOrEmpty(tvDbId) && (!episode.IndexNumber.HasValue || !episode.IndexNumberEnd.HasValue || episode.IndexNumberEnd <= episode.IndexNumber))
                 {
-
                     data.episodes.Add(new TraktEpisodeWatched
                     {
                         ids = new TraktEpisodeId
@@ -807,6 +875,7 @@ namespace Trakt.Api
                         };
                         data.shows.Add(syncShow);
                     }
+
                     var syncSeason = syncShow.seasons.FirstOrDefault(ss => ss.number == episode.GetSeasonNumber());
                     if (syncSeason == null)
                     {
@@ -817,6 +886,7 @@ namespace Trakt.Api
                         };
                         syncShow.seasons.Add(syncSeason);
                     }
+
                     for (var number = indexNumber; number <= finalNumber; number++)
                     {
                         syncSeason.episodes.Add(new TraktEpisodeWatched
@@ -901,10 +971,10 @@ namespace Trakt.Api
                         case HttpStatusCode.Gone:
                             _logger.LogError("Expired - the tokens have expired, restart the process");
                             break;
-                        case (HttpStatusCode) 418:
+                        case (HttpStatusCode)418:
                             _logger.LogInformation("Denied - user explicitly denied this code");
                             return false;
-                        case (HttpStatusCode) 429:
+                        case (HttpStatusCode)429:
                             _logger.LogWarning("Polling too quickly. Slowing down");
                             pollingInterval += 1;
                             break;
@@ -913,7 +983,8 @@ namespace Trakt.Api
                             break;
                     }
                 }
-                await Task.Delay(pollingInterval * 1000);
+
+                await Task.Delay(pollingInterval * 1000).ConfigureAwait(false);
             }
             return false;
         }
@@ -976,7 +1047,7 @@ namespace Trakt.Api
                 await SetRequestHeaders(options, traktUser).ConfigureAwait(false);
             }
 
-            await Plugin.Instance.TraktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _traktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             try
             {
@@ -984,7 +1055,7 @@ namespace Trakt.Api
             }
             finally
             {
-                Plugin.Instance.TraktResourcePool.Release();
+                _traktResourcePool.Release();
             }
         }
 
@@ -996,7 +1067,7 @@ namespace Trakt.Api
             options.CancellationToken = CancellationToken.None;
             options.RequestContent = requestContent;
 
-            await Plugin.Instance.TraktResourcePool.WaitAsync(options.CancellationToken).ConfigureAwait(false);
+            await _traktResourcePool.WaitAsync(options.CancellationToken).ConfigureAwait(false);
 
             try
             {
@@ -1004,7 +1075,7 @@ namespace Trakt.Api
             }
             finally
             {
-                Plugin.Instance.TraktResourcePool.Release();
+                _traktResourcePool.Release();
             }
         }
 
@@ -1017,11 +1088,18 @@ namespace Trakt.Api
         ///     Posts data to url, authenticating with <see cref="TraktUser"/>.
         /// </summary>
         /// <param name="traktUser">If null, authentication headers not added.</param>
-        private async Task<Stream> PostToTrakt(string url, object data, CancellationToken cancellationToken,
+        private async Task<Stream> PostToTrakt(
+            string url,
+            object data,
+            CancellationToken cancellationToken,
             TraktUser traktUser)
         {
             var requestContent = data == null ? string.Empty : _jsonSerializer.SerializeToString(data);
-            if (traktUser != null && traktUser.ExtraLogging) _logger.LogDebug(requestContent);
+            if (traktUser != null && traktUser.ExtraLogging)
+            {
+                _logger.LogDebug(requestContent);
+            }
+
             var options = GetHttpRequestOptions();
             options.Url = url;
             options.CancellationToken = cancellationToken;
@@ -1032,7 +1110,7 @@ namespace Trakt.Api
                 await SetRequestHeaders(options, traktUser).ConfigureAwait(false);
             }
 
-            await Plugin.Instance.TraktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _traktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             try
             {
@@ -1041,7 +1119,7 @@ namespace Trakt.Api
             }
             finally
             {
-                Plugin.Instance.TraktResourcePool.Release();
+                _traktResourcePool.Release();
             }
         }
 
@@ -1053,7 +1131,6 @@ namespace Trakt.Api
             }
             catch
             {
-
             }
 
             await Task.Delay(500).ConfigureAwait(false);
@@ -1063,7 +1140,6 @@ namespace Trakt.Api
             }
             catch
             {
-
             }
 
             await Task.Delay(500).ConfigureAwait(false);

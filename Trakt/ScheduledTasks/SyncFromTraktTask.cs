@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
@@ -13,22 +12,21 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
+using MediaBrowser.Model.IO;
+using MediaBrowser.Model.Querying;
 using MediaBrowser.Model.Serialization;
-
+using MediaBrowser.Model.Tasks;
+using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Api.DataContracts.BaseModel;
 using Trakt.Api.DataContracts.Users.Collection;
 using Trakt.Api.DataContracts.Users.Watched;
 using Trakt.Helpers;
-using MediaBrowser.Model.IO;
-using MediaBrowser.Model.Querying;
-using MediaBrowser.Model.Tasks;
-using Microsoft.Extensions.Logging;
 
 namespace Trakt.ScheduledTasks
 {
     /// <summary>
-    /// Task that will Sync each users trakt.tv profile with their local library. This task will only include 
+    /// Task that will Sync each users trakt.tv profile with their local library. This task will only include
     /// watched states.
     /// </summary>
     public class SyncFromTraktTask : IScheduledTask
@@ -40,7 +38,7 @@ namespace Trakt.ScheduledTasks
         private readonly TraktApi _traktApi;
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="jsonSerializer"></param>
@@ -57,6 +55,16 @@ namespace Trakt.ScheduledTasks
             _logger = logger.CreateLogger("Trakt");
             _traktApi = new TraktApi(jsonSerializer, _logger, httpClient, appHost, userDataManager, fileSystem);
         }
+
+        public string Key => "TraktSyncFromTraktTask";
+
+        public IEnumerable<TaskTriggerInfo> GetDefaultTriggers() => Enumerable.Empty<TaskTriggerInfo>();
+
+        public string Name => "Import playstates from Trakt.tv";
+
+        public string Description => "Sync Watched/Unwatched status from Trakt.tv for each Jellyfin user that has a configured Trakt account";
+
+        public string Category => "Trakt";
 
         /// <summary>
         /// Gather users and call <see cref="SyncTraktDataForUser"/>
@@ -126,12 +134,14 @@ namespace Trakt.ScheduledTasks
                         {
                             IncludeItemTypes = new[] { typeof(Movie).Name, typeof(Episode).Name },
                             IsVirtualItem = false,
+
                             // hotfix for issue #33
                             // OrderBy = new []
                             // {
                             //     new ValueTuple<string, SortOrder>(ItemSortBy.SeriesSortName, SortOrder.Ascending),
                             //     new ValueTuple<string, SortOrder>(ItemSortBy.SortName, SortOrder.Ascending)
                             // }
+
                         })
                     .Where(i => _traktApi.CanSync(i, traktUser)).ToList();
 
@@ -214,7 +224,7 @@ namespace Trakt.ScheduledTasks
                                 tSeason.number
                                 == (episode.ParentIndexNumber == 0
                                         ? 0
-                                        : ((episode.ParentIndexNumber ?? 1))));
+                                        : (episode.ParentIndexNumber ?? 1)));
 
                     // if it's not a match then it means trakt doesn't know about the season, leave the watched state alone and move on
                     if (matchedSeason != null)
@@ -259,7 +269,6 @@ namespace Trakt.ScheduledTasks
                         // only process if changed
                         if (changed)
                         {
-
                             _userDataManager.SaveUserData(
                                 user.Id,
                                 episode,
@@ -288,17 +297,19 @@ namespace Trakt.ScheduledTasks
 
         private static string GetVerboseEpisodeData(Episode episode)
         {
-            var episodeString = new StringBuilder();
-            episodeString.Append("Episode: ");
-            episodeString.Append(episode.ParentIndexNumber != null ? episode.ParentIndexNumber.ToString() : "null");
-            episodeString.Append("x");
-            episodeString.Append(episode.IndexNumber != null ? episode.IndexNumber.ToString() : "null");
-            episodeString.Append(" '").Append(episode.Name).Append("' ");
-            episodeString.Append("Series: '");
-            episodeString.Append(episode.Series != null
-                       ? !string.IsNullOrWhiteSpace(episode.Series.Name) ? episode.Series.Name : "null property"
-                       : "null class");
-            episodeString.Append("'");
+            var episodeString = new StringBuilder()
+                .Append("Episode: ")
+                .Append(episode.ParentIndexNumber != null ? episode.ParentIndexNumber.ToString() : "null")
+                .Append("x")
+                .Append(episode.IndexNumber != null ? episode.IndexNumber.ToString() : "null")
+                .Append(" '").Append(episode.Name).Append("' ")
+                .Append("Series: '")
+                .Append(episode.Series != null
+                    ? !string.IsNullOrWhiteSpace(episode.Series.Name)
+                        ? episode.Series.Name
+                        : "null property"
+                    : "null class")
+                .Append('\'');
 
             return episodeString.ToString();
         }
@@ -366,16 +377,5 @@ namespace Trakt.ScheduledTasks
 
             return false;
         }
-
-        public string Key => "TraktSyncFromTraktTask";
-
-        public IEnumerable<TaskTriggerInfo> GetDefaultTriggers() => new List<TaskTriggerInfo>();
-
-
-        public string Name => "Import playstates from Trakt.tv";
-
-        public string Description => "Sync Watched/Unwatched status from Trakt.tv for each Jellyfin user that has a configured Trakt account";
-
-        public string Category => "Trakt";
     }
 }
