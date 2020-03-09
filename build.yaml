@@ -1,8 +1,8 @@
 ---
 name: "jellyfin-plugin-trakt"
 guid: "4fe3201e-d6ae-4f2e-8917-e12bda571281"
-version: "7" # Please increment with each pull request
-jellyfin_version: "10.4.0" # The earliest binary-compatible version
+version: "8" # Please increment with each pull request
+jellyfin_version: "10.5.0" # The earliest binary-compatible version
 nicename: "Trakt"
 owner: "jellyfin"
 description: "Record your watched media with Trakt"
@@ -13,4 +13,4 @@ artifacts:
   - "Trakt.dll"
 build_type: "dotnet"
 dotnet_configuration: "Release"
-dotnet_framework: "netstandard2.0"
+dotnet_framework: "netstandard2.1"
