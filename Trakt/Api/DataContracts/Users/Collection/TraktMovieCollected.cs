@@ -3,7 +3,6 @@ using Trakt.Api.DataContracts.BaseModel;
 
 namespace Trakt.Api.DataContracts.Users.Collection
 {
-    
     public class TraktMovieCollected
     {
         public string collected_at { get; set; }

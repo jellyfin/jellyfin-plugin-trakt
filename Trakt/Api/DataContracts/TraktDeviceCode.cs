@@ -1,8 +1,5 @@
-
-
 namespace Trakt.Api.DataContracts
 {
-    
     public class TraktDeviceCode
     {
         public string device_code { get; set; }

@@ -26,7 +26,7 @@ namespace Trakt
 
         /// <inheritdoc />
         public override string Description
-            => "Watch, rate and discover media using Trakt. The htpc just got more social";
+            => "Watch, rate, and discover media using Trakt. The HTPC just got more social.";
 
         public static Plugin Instance { get; private set; }
 

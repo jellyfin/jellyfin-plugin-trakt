@@ -1,4 +1,3 @@
-
 namespace Trakt.Api.DataContracts.BaseModel
 {
     public abstract class TraktRated
