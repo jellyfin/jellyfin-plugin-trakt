@@ -118,7 +118,7 @@ namespace Trakt.Api
             var movieData = new TraktScrobbleMovie
             {
                 app_date = DateTimeOffset.Now.Date.ToString("yyyy-MM-dd"),
-                app_version = _appHost.ApplicationVersion.ToString(),
+                app_version = _appHost.ApplicationVersionString,
                 progress = progressPercent,
                 movie = new TraktMovie
                 {
@@ -171,7 +171,7 @@ namespace Trakt.Api
                 episodeDatas.Add(new TraktScrobbleEpisode
                 {
                     app_date = DateTimeOffset.Now.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                    app_version = _appHost.ApplicationVersion.ToString(),
+                    app_version = _appHost.ApplicationVersionString,
                     progress = progressPercent,
                     episode = new TraktEpisode
                     {
@@ -192,7 +192,7 @@ namespace Trakt.Api
                     episodeDatas.Add(new TraktScrobbleEpisode
                     {
                         app_date = DateTimeOffset.Now.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                        app_version = _appHost.ApplicationVersion.ToString(),
+                        app_version = _appHost.ApplicationVersionString,
                         progress = progressPercent,
                         episode = new TraktEpisode
                         {
