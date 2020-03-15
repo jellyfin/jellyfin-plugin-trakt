@@ -87,7 +87,13 @@ namespace Trakt
                     return;
                 }
 
-                // We have a user and the item is in a trakt monitored location.
+                if (!traktUser.PostSetWatched && !traktUser.PostSetUnwatched)
+                {
+                    // User doesn't want to post any status changes at all.
+                    return;
+                }
+
+                // We have a user who wants to post updates and the item is in a trakt monitored location.
                 _userDataManagerEventsHelper.ProcessUserDataSaveEventArgs(e, traktUser);
             }
         }

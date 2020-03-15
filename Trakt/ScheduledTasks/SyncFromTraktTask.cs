@@ -237,23 +237,26 @@ namespace Trakt.ScheduledTasks
                         {
                             _logger.LogDebug("Episode is in Watched list " + GetVerboseEpisodeData(episode));
 
-                            // Set episode as watched
-                            if (!userData.Played)
+                            if(!traktUser.SkipWatchedImportFromTrakt)
                             {
-                                userData.Played = true;
-                                userData.LastPlayedDate = DateTimeOffset.UtcNow.UtcDateTime;
-                                changed = true;
-                            }
+                                // Set episode as watched
+                                if (!userData.Played)
+                                {
+                                    userData.Played = true;
+                                    userData.LastPlayedDate = DateTimeOffset.UtcNow.UtcDateTime;
+                                    changed = true;
+                                }
 
-                            // keep the highest play count
-                            int playcount = Math.Max(matchedEpisode.plays, userData.PlayCount);
+                                // keep the highest play count
+                                int playcount = Math.Max(matchedEpisode.plays, userData.PlayCount);
 
-                            // set episode playcount
-                            if (userData.PlayCount != playcount)
-                            {
-                                userData.PlayCount = playcount;
-                                changed = true;
-                            }
+                                // set episode playcount
+                                if (userData.PlayCount != playcount)
+                                {
+                                    userData.PlayCount = playcount;
+                                    changed = true;
+                                }
+                            }                         
                         }
                         else if (!traktUser.SkipUnwatchedImportFromTrakt)
                         {

@@ -734,7 +734,7 @@ namespace Trakt.Api
         /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns></returns>
         // TODO: netstandard2.1: use IAsyncEnumerable
-        public async Task<List<TraktSyncResponse>> SendMoviePlaystateUpdates(List<Movie> movies, TraktUser traktUser, bool forceUpdate, bool seen, CancellationToken cancellationToken)
+        public async Task<List<TraktSyncResponse>> SendMoviePlaystateUpdates(List<Movie> movies, TraktUser traktUser, bool seen, CancellationToken cancellationToken)
         {
             if (movies == null)
             {
@@ -744,11 +744,6 @@ namespace Trakt.Api
             if (traktUser == null)
             {
                 throw new ArgumentNullException(nameof(traktUser));
-            }
-
-            if (!forceUpdate && !traktUser.PostWatchedHistory)
-            {
-                return new List<TraktSyncResponse>();
             }
 
             var moviesPayload = movies.Select(m =>
@@ -802,7 +797,7 @@ namespace Trakt.Api
         /// <param name="seen">True if episodes are being marked seen, false otherwise</param>
         /// <param name="cancellationToken">The Cancellation Token</param>
         /// <returns></returns>
-        public async Task<List<TraktSyncResponse>> SendEpisodePlaystateUpdates(List<Episode> episodes, TraktUser traktUser, bool forceUpdate, bool seen, CancellationToken cancellationToken)
+        public async Task<List<TraktSyncResponse>> SendEpisodePlaystateUpdates(List<Episode> episodes, TraktUser traktUser, bool seen, CancellationToken cancellationToken)
         {
             if (episodes == null)
             {
@@ -812,11 +807,6 @@ namespace Trakt.Api
             if (traktUser == null)
             {
                 throw new ArgumentNullException(nameof(traktUser));
-            }
-
-            if (!forceUpdate && !traktUser.PostWatchedHistory)
-            {
-                return new List<TraktSyncResponse>();
             }
 
             var chunks = episodes.ToChunks(100).ToList();

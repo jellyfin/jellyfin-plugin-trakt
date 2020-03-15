@@ -24,7 +24,7 @@
                         </div>
                         <button is="emby-button" type="button" id="authorizeDevice" class="raised block">Authorize device</button>
                         <div id="activateWithCode" class="hide">
-                            Please visit <a href="https://trakt.tv/activate"  class="button-link emby-button"target="_blank">https://trakt.tv/activate</a> and authorize Jellyfin to access your account.<br/>
+                            Please visit <a href="https://trakt.tv/activate" class="button-link emby-button" target="_blank">https://trakt.tv/activate</a> and authorize Jellyfin to access your account.<br />
                             Your device code is <span id="userCode"></span>.
                         </div>
                     </div>
@@ -40,16 +40,52 @@
                             <span>Skip unwatched import from Trakt</span>
                         </label>
                         <div class="fieldDescription checkboxFieldDescription">
-                            The Import from Trakt scheduled task will overwrite any watched status if item is marked as unwached on Trakt. If checked, only watched status will be imported.
+                            The Import from Trakt scheduled task will set local items unwatched if item is marked as unwached on Trakt. If checked, do not import unwatched status.
+                        </div>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="chkSkipWatchedImportFromTrakt" name="chkSkipWatchedImportFromTrakt" />
+                            <span>Skip watched import from Trakt</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">
+                            The Import from Trakt scheduled task will set local items as watched if item is marked as watched on Trakt. If checked, do not import watched status.
                         </div>
                     </div>
                     <div class="checkboxContainer checkboxContainer-withDescription">
                         <label>
                             <input is="emby-checkbox" type="checkbox" id="chkPostWatchedHistory" name="chkPostWatchedHistory" />
-                            <span>Update Trakt watched history during Scheduled Task</span>
+                            <span>During Scheduled Task, set Trakt items to watched if local item is watched</span>
                         </label>
                         <div class="fieldDescription checkboxFieldDescription">
-                            If checked, Jellyfin will only sync from Trakt during the Trakt scheduled tasks.
+                            Controls what is synced to Trakt when when scheduled task is run.
+                        </div>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="chkPostUnwatchedHistory" name="chkPostUnwatchedHistory" />
+                            <span>During Scheduled Task, set Trakt items to unwatched if local item is unwatched</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">
+                            Controls what is synced to Trakt when when scheduled task is run.
+                        </div>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="chkPostSetWatched" name="chkPostSetWatched" />
+                            <span>Set Trakt item to Watched when local item is changed to Watched.</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">
+                            Controls what is synced to Trakt when item statuses are changed during normal use.
+                        </div>
+                    </div>
+                    <div class="checkboxContainer checkboxContainer-withDescription">
+                        <label>
+                            <input is="emby-checkbox" type="checkbox" id="chkPostSetUnwatched" name="chkPostSetUnwatched" />
+                            <span>Set Trakt item to Unwatched when local item is changed to Unwatched.</span>
+                        </label>
+                        <div class="fieldDescription checkboxFieldDescription">
+                            Controls what is synced to Trakt when item statuses are changed during normal use.
                         </div>
                     </div>
                     <div class="checkboxContainer checkboxContainer-withDescription">
@@ -137,7 +173,11 @@
                                 currentUserConfig = {
                                     AccessToken: null,
                                     SkipUnwatchedImportFromTrakt: true,
+                                    SkipWatchedImportFromTrakt: false,
                                     PostWatchedHistory: true,
+                                    PostUnwatchedHistory: true,
+                                    PostSetWatched: true,
+                                    PostSetUnwatched: true,
                                     ExtraLogging: false,
                                     ExportMediaInfo: false,
                                     SynchronizeCollections: true,
@@ -147,7 +187,11 @@
                             // Default this to an empty array so the rendering code doesn't have to worry about it
                             currentUserConfig.LocationsExcluded = currentUserConfig.LocationsExcluded || [];
                             $('#chkSkipUnwatchedImportFromTrakt', page).checked(currentUserConfig.SkipUnwatchedImportFromTrakt).checkboxradio("refresh");
+                            $('#chkSkipWatchedImportFromTrakt', page).checked(currentUserConfig.SkipWatchedImportFromTrakt).checkboxradio("refresh");
                             $('#chkPostWatchedHistory', page).checked(currentUserConfig.PostWatchedHistory).checkboxradio("refresh");
+                            $('#chkPostUnwatchedHistory', page).checked(currentUserConfig.PostUnwatchedHistory).checkboxradio("refresh");
+                            $('#chkPostSetWatched', page).checked(currentUserConfig.PostSetWatched).checkboxradio("refresh");
+                            $('#chkPostSetUnwatched', page).checked(currentUserConfig.PostSetUnwatched).checkboxradio("refresh");
                             $('#chkExtraLogging', page).checked(currentUserConfig.ExtraLogging).checkboxradio("refresh");
                             $('#chkExportMediaInfo', page).checked(currentUserConfig.ExportMediaInfo).checkboxradio("refresh");
                             $('#chkSyncCollections', page).checked(currentUserConfig.SynchronizeCollections).checkboxradio("refresh");
@@ -208,7 +252,11 @@
                         config.TraktUsers.push(currentUserConfig);
                     }
                     currentUserConfig.SkipUnwatchedImportFromTrakt = $('#chkSkipUnwatchedImportFromTrakt', page).checked();
+                    currentUserConfig.SkipWatchedImportFromTrakt = $('#chkSkipWatchedImportFromTrakt', page).checked();
                     currentUserConfig.PostWatchedHistory = $('#chkPostWatchedHistory', page).checked();
+                    currentUserConfig.PostUnwatchedHistory = $('#chkPostUnwatchedHistory', page).checked();
+                    currentUserConfig.PostSetWatched = $('#chkPostSetWatched', page).checked();
+                    currentUserConfig.PostSetUnwatched = $('#chkPostSetUnwatched', page).checked();
                     currentUserConfig.ExtraLogging = $('#chkExtraLogging', page).checked();
                     currentUserConfig.ExportMediaInfo = $('#chkExportMediaInfo', page).checked();
                     currentUserConfig.SynchronizeCollections = $('#chkSyncCollections', page).checked();
