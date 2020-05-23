@@ -1,7 +1,7 @@
 ---
 name: "jellyfin-plugin-trakt"
 guid: "4fe3201e-d6ae-4f2e-8917-e12bda571281"
-version: "9"
+version: "10"
 jellyfin_version: "10.5.0"
 nicename: "Trakt"
 owner: "jellyfin"

@@ -171,55 +171,58 @@ namespace Trakt
                     return;
                 }
 
-                // Since Emby is user profile friendly, I'm going to need to do a user lookup every time something starts
-                var traktUser = UserHelper.GetTraktUser(e.Users.FirstOrDefault());
-
-                if (traktUser == null)
+                foreach (var user in e.Users)
                 {
-                    _logger.LogInformation("Could not match user with any stored credentials");
-                    return;
-                }
+                    // Since Emby is user profile friendly, I'm going to need to do a user lookup every time something starts
+                    var traktUser = UserHelper.GetTraktUser(user);
 
-                if (!traktUser.Scrobble)
-                {
-                    return;
-                }
-
-                if (!_traktApi.CanSync(e.Item, traktUser))
-                {
-                    return;
-                }
-
-                _logger.LogDebug(traktUser.LinkedMbUserId + " appears to be monitoring " + e.Item.Path);
-
-                var video = e.Item as Video;
-                var progressPercent = video.RunTimeTicks.HasValue && video.RunTimeTicks != 0 ?
-                    (float)(e.PlaybackPositionTicks ?? 0) / video.RunTimeTicks.Value * 100.0f : 0.0f;
-
-                try
-                {
-                    if (video is Movie movie)
+                    if (traktUser == null)
                     {
-                        _logger.LogDebug("Send movie status update");
-                        await _traktApi.SendMovieStatusUpdateAsync(
-                            movie,
-                            MediaStatus.Watching,
-                            traktUser,
-                            progressPercent).ConfigureAwait(false);
+                        _logger.LogInformation("Could not match user with any stored credentials");
+                        return;
                     }
-                    else if (video is Episode episode)
+
+                    if (!traktUser.Scrobble)
                     {
-                        _logger.LogDebug("Send episode status update");
-                        await _traktApi.SendEpisodeStatusUpdateAsync(
-                            episode,
-                            MediaStatus.Watching,
-                            traktUser,
-                            progressPercent).ConfigureAwait(false);
+                        return;
                     }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Exception handled sending status update");
+
+                    if (!_traktApi.CanSync(e.Item, traktUser))
+                    {
+                        return;
+                    }
+
+                    _logger.LogDebug(traktUser.LinkedMbUserId + " appears to be monitoring " + e.Item.Path);
+
+                    var video = e.Item as Video;
+                    var progressPercent = video.RunTimeTicks.HasValue && video.RunTimeTicks != 0 ?
+                        (float)(e.PlaybackPositionTicks ?? 0) / video.RunTimeTicks.Value * 100.0f : 0.0f;
+
+                    try
+                    {
+                        if (video is Movie movie)
+                        {
+                            _logger.LogDebug("Send movie status update");
+                            await _traktApi.SendMovieStatusUpdateAsync(
+                                movie,
+                                MediaStatus.Watching,
+                                traktUser,
+                                progressPercent).ConfigureAwait(false);
+                        }
+                        else if (video is Episode episode)
+                        {
+                            _logger.LogDebug("Send episode status update");
+                            await _traktApi.SendEpisodeStatusUpdateAsync(
+                                episode,
+                                MediaStatus.Watching,
+                                traktUser,
+                                progressPercent).ConfigureAwait(false);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Exception handled sending status update");
+                    }
                 }
             }
             catch (Exception ex)
@@ -245,67 +248,71 @@ namespace Trakt
             try
             {
                 _logger.LogInformation("Playback Stopped");
-                var traktUser = UserHelper.GetTraktUser(e.Users.FirstOrDefault());
-
-                if (traktUser == null)
+                
+                foreach (var user in e.Users)
                 {
-                    _logger.LogError("Could not match trakt user");
-                    return;
-                }
+                    var traktUser = UserHelper.GetTraktUser(user);
 
-                if (!traktUser.Scrobble)
-                {
-                    return;
-                }
-
-                if (!_traktApi.CanSync(e.Item, traktUser))
-                {
-                    return;
-                }
-
-                var video = e.Item as Video;
-
-                if (e.PlayedToCompletion)
-                {
-                    _logger.LogInformation("Item is played. Scrobble");
-
-                    try
+                    if (traktUser == null)
                     {
-                        if (video is Movie movie)
-                        {
-                            await _traktApi.SendMovieStatusUpdateAsync(
-                                movie,
-                                MediaStatus.Stop,
-                                traktUser,
-                                100).ConfigureAwait(false);
-                        }
-                        else if (video is Episode episode)
-                        {
-                            await _traktApi.SendEpisodeStatusUpdateAsync(
-                                episode,
-                                MediaStatus.Stop,
-                                traktUser,
-                                100).ConfigureAwait(false);
-                        }
+                        _logger.LogError("Could not match trakt user");
+                        return;
                     }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Exception handled sending status update");
-                    }
-                }
-                else
-                {
-                    var progressPercent = video.RunTimeTicks.HasValue && video.RunTimeTicks != 0 ?
-                    (float)(e.PlaybackPositionTicks ?? 0) / video.RunTimeTicks.Value * 100.0f : 0.0f;
-                    _logger.LogInformation("Item Not fully played. Tell trakt.tv we are no longer watching but don't scrobble");
 
-                    if (video is Movie movie)
+                    if (!traktUser.Scrobble)
                     {
-                        await _traktApi.SendMovieStatusUpdateAsync(movie, MediaStatus.Stop, traktUser, progressPercent).ConfigureAwait(false);
+                        return;
+                    }
+
+                    if (!_traktApi.CanSync(e.Item, traktUser))
+                    {
+                        return;
+                    }
+
+                    var video = e.Item as Video;
+
+                    if (e.PlayedToCompletion)
+                    {
+                        _logger.LogInformation("Item is played. Scrobble");
+
+                        try
+                        {
+                            if (video is Movie movie)
+                            {
+                                await _traktApi.SendMovieStatusUpdateAsync(
+                                    movie,
+                                    MediaStatus.Stop,
+                                    traktUser,
+                                    100).ConfigureAwait(false);
+                            }
+                            else if (video is Episode episode)
+                            {
+                                await _traktApi.SendEpisodeStatusUpdateAsync(
+                                    episode,
+                                    MediaStatus.Stop,
+                                    traktUser,
+                                    100).ConfigureAwait(false);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Exception handled sending status update");
+                        }
                     }
                     else
                     {
-                        await _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Stop, traktUser, progressPercent).ConfigureAwait(false);
+                        var progressPercent = video.RunTimeTicks.HasValue && video.RunTimeTicks != 0 ?
+                        (float)(e.PlaybackPositionTicks ?? 0) / video.RunTimeTicks.Value * 100.0f : 0.0f;
+                        _logger.LogInformation("Item Not fully played. Tell trakt.tv we are no longer watching but don't scrobble");
+
+                        if (video is Movie movie)
+                        {
+                            await _traktApi.SendMovieStatusUpdateAsync(movie, MediaStatus.Stop, traktUser, progressPercent).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            await _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Stop, traktUser, progressPercent).ConfigureAwait(false);
+                        }
                     }
                 }
             }
