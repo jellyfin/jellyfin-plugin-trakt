@@ -179,17 +179,17 @@ namespace Trakt
                     if (traktUser == null)
                     {
                         _logger.LogInformation("Could not match user with any stored credentials");
-                        return;
+                        continue;
                     }
 
                     if (!traktUser.Scrobble)
                     {
-                        return;
+                        continue;
                     }
 
                     if (!_traktApi.CanSync(e.Item, traktUser))
                     {
-                        return;
+                        continue;
                     }
 
                     _logger.LogDebug(traktUser.LinkedMbUserId + " appears to be monitoring " + e.Item.Path);
@@ -256,17 +256,17 @@ namespace Trakt
                     if (traktUser == null)
                     {
                         _logger.LogError("Could not match trakt user");
-                        return;
+                        continue;
                     }
 
                     if (!traktUser.Scrobble)
                     {
-                        return;
+                        continue;
                     }
 
                     if (!_traktApi.CanSync(e.Item, traktUser))
                     {
-                        return;
+                        continue;
                     }
 
                     var video = e.Item as Video;
