@@ -1,16 +1,14 @@
 ---
-name: "jellyfin-plugin-trakt"
+name: "Trakt"
 guid: "4fe3201e-d6ae-4f2e-8917-e12bda571281"
-version: "9"
-jellyfin_version: "10.5.0"
-nicename: "Trakt"
+version: "9.0.0.0"
+targetAbi: "10.5.0.0"
 owner: "jellyfin"
-description: "Record your watched media with Trakt"
-overview: >
+overview: "Record your watched media with Trakt"
+description: >
   Record your watched media with Trakt.
 category: "General"
 artifacts:
-  - "Trakt.dll"
-build_type: "dotnet"
-dotnet_configuration: "Release"
-dotnet_framework: "netstandard2.1"
+- "Trakt.dll"
+changelog: >
+  changelog
