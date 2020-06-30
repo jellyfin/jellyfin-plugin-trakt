@@ -106,7 +106,7 @@ namespace Trakt.ScheduledTasks
         /// </summary>
         /// <returns></returns>
         private async Task SyncUserLibrary(
-            User user,
+            Jellyfin.Data.Entities.User user,
             TraktUser traktUser,
             ISplittableProgress<double> progress,
             CancellationToken cancellationToken)
@@ -119,7 +119,7 @@ namespace Trakt.ScheduledTasks
         /// Sync watched and collected status of <see cref="Movie"/>s with trakt.
         /// </summary>
         private async Task SyncMovies(
-            User user,
+            Jellyfin.Data.Entities.User user,
             TraktUser traktUser,
             ISplittableProgress<double> progress,
             CancellationToken cancellationToken)
@@ -294,7 +294,7 @@ namespace Trakt.ScheduledTasks
         /// Sync watched and collected status of <see cref="Movie"/>s with trakt.
         /// </summary>
         private async Task SyncShows(
-            User user,
+            Jellyfin.Data.Entities.User user,
             TraktUser traktUser,
             ISplittableProgress<double> progress,
             CancellationToken cancellationToken)

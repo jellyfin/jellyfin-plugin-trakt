@@ -184,7 +184,7 @@ namespace Trakt.Helpers
         private async Task ProcessQueuedShowEvents(IEnumerable<LibraryEvent> events, TraktUser traktUser, EventType eventType)
         {
             var shows = events.Select(lev => (Series)lev.Item)
-                .Where(lev => !string.IsNullOrEmpty(lev.Name) && !string.IsNullOrEmpty(lev.GetProviderId(MetadataProviders.Tvdb)))
+                .Where(lev => !string.IsNullOrEmpty(lev.Name) && !string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Tvdb)))
                 .ToList();
             try
             {
@@ -210,7 +210,7 @@ namespace Trakt.Helpers
         private async Task ProcessQueuedMovieEvents(IEnumerable<LibraryEvent> events, TraktUser traktUser, EventType eventType)
         {
             var movies = events.Select(lev => (Movie)lev.Item)
-                .Where(lev => !string.IsNullOrEmpty(lev.Name) && !string.IsNullOrEmpty(lev.GetProviderId(MetadataProviders.Imdb)))
+                .Where(lev => !string.IsNullOrEmpty(lev.Name) && !string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Imdb)))
                 .ToList();
             try
             {
@@ -233,7 +233,7 @@ namespace Trakt.Helpers
         private async Task ProcessQueuedEpisodeEvents(IEnumerable<LibraryEvent> events, TraktUser traktUser, EventType eventType)
         {
             var episodes = events.Select(lev => (Episode)lev.Item)
-                .Where(lev => lev.Series != null && (!string.IsNullOrEmpty(lev.Series.Name) && !string.IsNullOrEmpty(lev.Series.GetProviderId(MetadataProviders.Tvdb))))
+                .Where(lev => lev.Series != null && (!string.IsNullOrEmpty(lev.Series.Name) && !string.IsNullOrEmpty(lev.Series.GetProviderId(MetadataProvider.Tvdb))))
                 .OrderBy(i => i.Series.Id)
                 .ToList();
 

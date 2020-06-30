@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using Jellyfin.Data.Entities;
 using MediaBrowser.Controller.Entities;
 using Trakt.Model;
 
