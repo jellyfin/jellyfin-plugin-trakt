@@ -211,7 +211,7 @@
                             var user = users[i];
                             html += '<option value="' + user.Id + '">' + user.Name + '</option>';
                         }
-                        $('#selectUser', $.mobile.activePage).html(html).selectmenu("refresh");
+                        document.getElementById('#selectUser').innerHTML = html;
                     },
                     loadFolders: function (currentUserConfig, virtualFolders) {
                         var page = $.mobile.activePage;
