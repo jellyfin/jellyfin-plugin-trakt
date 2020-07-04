@@ -186,16 +186,16 @@
                             }
                             // Default this to an empty array so the rendering code doesn't have to worry about it
                             currentUserConfig.LocationsExcluded = currentUserConfig.LocationsExcluded || [];
-                            $('#chkSkipUnwatchedImportFromTrakt', page).checked = currentUserConfig.SkipUnwatchedImportFromTrakt;
-                            $('#chkSkipWatchedImportFromTrakt', page).checked = currentUserConfig.SkipWatchedImportFromTrakt;
-                            $('#chkPostWatchedHistory', page).checked = currentUserConfig.PostWatchedHistory;
-                            $('#chkPostUnwatchedHistory', page).checked = currentUserConfig.PostUnwatchedHistory;
-                            $('#chkPostSetWatched', page).checked = currentUserConfig.PostSetWatched;
-                            $('#chkPostSetUnwatched', page).checked = currentUserConfig.PostSetUnwatched;
-                            $('#chkExtraLogging', page).checked = currentUserConfig.ExtraLogging;
-                            $('#chkExportMediaInfo', page).checked = currentUserConfig.ExportMediaInfo;
-                            $('#chkSyncCollections', page).checked = currentUserConfig.SynchronizeCollections;
-                            $('#chkScrobble', page).checked = currentUserConfig.Scrobble;
+                            document.getElementById('chkSkipUnwatchedImportFromTrakt').checked = currentUserConfig.SkipUnwatchedImportFromTrakt;
+                            document.getElementById('chkSkipWatchedImportFromTrakt').checked = currentUserConfig.SkipWatchedImportFromTrakt;
+                            document.getElementById('chkPostWatchedHistory').checked = currentUserConfig.PostWatchedHistory;
+                            document.getElementById('chkPostUnwatchedHistory').checked = currentUserConfig.PostUnwatchedHistory;
+                            document.getElementById('chkPostSetWatched').checked = currentUserConfig.PostSetWatched;
+                            document.getElementById('chkPostSetUnwatched').checked = currentUserConfig.PostSetUnwatched;
+                            document.getElementById('chkExtraLogging').checked = currentUserConfig.ExtraLogging;
+                            document.getElementById('chkExportMediaInfo').checked = currentUserConfig.ExportMediaInfo;
+                            document.getElementById('chkSyncCollections').checked = currentUserConfig.SynchronizeCollections;
+                            document.getElementById('chkScrobble').checked = currentUserConfig.Scrobble;
                             // List the folders the user can access
                             ApiClient.getVirtualFolders(userId).then(function (result) {
                                 TraktConfigurationPage.loadFolders(currentUserConfig, result);
@@ -251,16 +251,16 @@
                         currentUserConfig = {};
                         config.TraktUsers.push(currentUserConfig);
                     }
-                    currentUserConfig.SkipUnwatchedImportFromTrakt = $('#chkSkipUnwatchedImportFromTrakt', page).checked;
-                    currentUserConfig.SkipWatchedImportFromTrakt = $('#chkSkipWatchedImportFromTrakt', page).checked;
-                    currentUserConfig.PostWatchedHistory = $('#chkPostWatchedHistory', page).checked;
-                    currentUserConfig.PostUnwatchedHistory = $('#chkPostUnwatchedHistory', page).checked;
-                    currentUserConfig.PostSetWatched = $('#chkPostSetWatched', page).checked;
-                    currentUserConfig.PostSetUnwatched = $('#chkPostSetUnwatched', page).checked;
-                    currentUserConfig.ExtraLogging = $('#chkExtraLogging', page).checked;
-                    currentUserConfig.ExportMediaInfo = $('#chkExportMediaInfo', page).checked;
-                    currentUserConfig.SynchronizeCollections = $('#chkSyncCollections', page).checked;
-                    currentUserConfig.Scrobble = $('#chkScrobble', page).checked;
+                    currentUserConfig.SkipUnwatchedImportFromTrakt = document.getElementById('chkSkipUnwatchedImportFromTrakt').checked;
+                    currentUserConfig.SkipWatchedImportFromTrakt = document.getElementById('chkSkipWatchedImportFromTrakt').checked;
+                    currentUserConfig.PostWatchedHistory = document.getElementById('chkPostWatchedHistory').checked;
+                    currentUserConfig.PostUnwatchedHistory = document.getElementById('chkPostUnwatchedHistory').checked;
+                    currentUserConfig.PostSetWatched = document.getElementById('chkPostSetWatched').checked;
+                    currentUserConfig.PostSetUnwatched = document.getElementById('chkPostSetUnwatched').checked;
+                    currentUserConfig.ExtraLogging = document.getElementById('chkExtraLogging').checked;
+                    currentUserConfig.ExportMediaInfo = document.getElementById('chkExportMediaInfo').checked;
+                    currentUserConfig.SynchronizeCollections = document.getElementById('chkSyncCollections').checked;
+                    currentUserConfig.Scrobble = document.getElementById('chkScrobble').checked;
                     currentUserConfig.LinkedMbUserId = currentUserId;
                     currentUserConfig.LocationsExcluded = $('.chkTraktLocation:checked', page).map(function () {
                         return this.getAttribute('data-location');
