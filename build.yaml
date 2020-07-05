@@ -1,8 +1,8 @@
 ---
 name: "Trakt"
 guid: "4fe3201e-d6ae-4f2e-8917-e12bda571281"
-version: "9.0.0.0"
-targetAbi: "10.5.0.0"
+version: "10.0.0.0"
+targetAbi: "10.6.0.0"
 owner: "jellyfin"
 overview: "Record your watched media with Trakt"
 description: >
