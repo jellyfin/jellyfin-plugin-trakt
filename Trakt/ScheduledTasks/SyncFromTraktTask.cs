@@ -97,12 +97,12 @@ namespace Trakt.ScheduledTasks
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error syncing trakt data for user {UserName}", user.Name);
+                    _logger.LogError(ex, "Error syncing trakt data for user {UserName}", user.Username);
                 }
             }
         }
 
-        private async Task SyncTraktDataForUser(User user, double currentProgress, CancellationToken cancellationToken, IProgress<double> progress, double percentPerUser)
+        private async Task SyncTraktDataForUser(Jellyfin.Data.Entities.User user, double currentProgress, CancellationToken cancellationToken, IProgress<double> progress, double percentPerUser)
         {
             var traktUser = UserHelper.GetTraktUser(user);
 
@@ -336,7 +336,7 @@ namespace Trakt.ScheduledTasks
 
         public static bool IsMatch(BaseItem item, TraktMovie movie)
         {
-            var imdb = item.GetProviderId(MetadataProviders.Imdb);
+            var imdb = item.GetProviderId(MetadataProvider.Imdb);
 
             if (!string.IsNullOrWhiteSpace(imdb) &&
                 string.Equals(imdb, movie.ids.imdb, StringComparison.OrdinalIgnoreCase))
@@ -344,7 +344,7 @@ namespace Trakt.ScheduledTasks
                 return true;
             }
 
-            var tmdb = item.GetProviderId(MetadataProviders.Tmdb);
+            var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
 
             if (movie.ids.tmdb.HasValue && string.Equals(tmdb, movie.ids.tmdb.Value.ToString(CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase))
             {
@@ -361,14 +361,14 @@ namespace Trakt.ScheduledTasks
 
         public static bool IsMatch(Series item, TraktShow show)
         {
-            var tvdb = item.GetProviderId(MetadataProviders.Tvdb);
+            var tvdb = item.GetProviderId(MetadataProvider.Tvdb);
             if (!string.IsNullOrWhiteSpace(tvdb) &&
                 string.Equals(tvdb, show.ids.tvdb.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
-            var imdb = item.GetProviderId(MetadataProviders.Imdb);
+            var imdb = item.GetProviderId(MetadataProvider.Imdb);
             if (!string.IsNullOrWhiteSpace(imdb) &&
                 string.Equals(imdb, show.ids.imdb, StringComparison.OrdinalIgnoreCase))
             {
