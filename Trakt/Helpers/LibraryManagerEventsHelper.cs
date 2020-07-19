@@ -17,7 +17,7 @@ namespace Trakt.Helpers
     {
         private readonly List<LibraryEvent> _queuedEvents;
         private Timer _queueTimer;
-        private readonly ILogger _logger;
+        private readonly ILogger<LibraryManagerEventsHelper> _logger;
         private readonly TraktApi _traktApi;
 
         /// <summary>
@@ -25,7 +25,7 @@ namespace Trakt.Helpers
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="traktApi"></param>
-        public LibraryManagerEventsHelper(ILogger logger, TraktApi traktApi)
+        public LibraryManagerEventsHelper(ILogger<LibraryManagerEventsHelper> logger, TraktApi traktApi)
         {
             _queuedEvents = new List<LibraryEvent>();
             _logger = logger;

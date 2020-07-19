@@ -33,7 +33,7 @@ namespace Trakt.ScheduledTasks
 
         private readonly IUserManager _userManager;
 
-        private readonly ILogger _logger;
+        private readonly ILogger<SyncLibraryTask> _logger;
 
         private readonly TraktApi _traktApi;
 
@@ -42,7 +42,7 @@ namespace Trakt.ScheduledTasks
         private readonly ILibraryManager _libraryManager;
 
         public SyncLibraryTask(
-            ILoggerFactory logger,
+            ILoggerFactory loggerFactory,
             IJsonSerializer jsonSerializer,
             IUserManager userManager,
             IUserDataManager userDataManager,
@@ -55,8 +55,8 @@ namespace Trakt.ScheduledTasks
             _userManager = userManager;
             _userDataManager = userDataManager;
             _libraryManager = libraryManager;
-            _logger = logger.CreateLogger("Trakt");
-            _traktApi = new TraktApi(jsonSerializer, _logger, httpClient, appHost, userDataManager, fileSystem);
+            _logger = loggerFactory.CreateLogger<SyncLibraryTask>();
+            _traktApi = new TraktApi(jsonSerializer, loggerFactory.CreateLogger<TraktApi>(), httpClient, appHost, userDataManager, fileSystem);
         }
 
         public IEnumerable<TaskTriggerInfo> GetDefaultTriggers() => Enumerable.Empty<TaskTriggerInfo>();

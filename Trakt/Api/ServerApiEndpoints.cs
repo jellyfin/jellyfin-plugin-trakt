@@ -91,13 +91,13 @@ namespace Trakt.Api
     {
         private readonly TraktApi _traktApi;
         private readonly ILibraryManager _libraryManager;
-        private readonly ILogger _logger;
+        private readonly ILogger<TraktUriService> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TraktUriService"/> class.
         /// </summary>
         /// <param name="userDataManager"></param>
-        /// <param name="logger">The logger.</param>
+        /// <param name="loggerFactory">The logger.</param>
         /// <param name="fileSystem"></param>
         /// <param name="libraryManager">The library manager.</param>
         /// <param name="httpClient"></param>
@@ -106,14 +106,14 @@ namespace Trakt.Api
         public TraktUriService(
             IJsonSerializer jsonSerializer,
             IUserDataManager userDataManager,
-            ILogger logger,
+            ILoggerFactory loggerFactory,
             IHttpClient httpClient,
             IServerApplicationHost appHost,
             IFileSystem fileSystem,
             ILibraryManager libraryManager)
         {
-            _logger = logger;
-            _traktApi = new TraktApi(jsonSerializer, _logger, httpClient, appHost, userDataManager, fileSystem);
+            _logger = loggerFactory.CreateLogger<TraktUriService>();
+            _traktApi = new TraktApi(jsonSerializer, loggerFactory.CreateLogger<TraktApi>(), httpClient, appHost, userDataManager, fileSystem);
             _libraryManager = libraryManager;
         }
 
