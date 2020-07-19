@@ -39,7 +39,7 @@ namespace Trakt.Api
         private static readonly SemaphoreSlim _traktResourcePool = new SemaphoreSlim(1, 1);
 
         private readonly IJsonSerializer _jsonSerializer;
-        private readonly ILogger _logger;
+        private readonly ILogger<TraktApi> _logger;
         private readonly IHttpClient _httpClient;
         private readonly IServerApplicationHost _appHost;
         private readonly IUserDataManager _userDataManager;
@@ -47,7 +47,7 @@ namespace Trakt.Api
 
         public TraktApi(
             IJsonSerializer jsonSerializer,
-            ILogger logger,
+            ILogger<TraktApi> logger,
             IHttpClient httpClient,
             IServerApplicationHost appHost,
             IUserDataManager userDataManager,

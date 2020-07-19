@@ -25,7 +25,7 @@ namespace Trakt
     {
         private readonly ISessionManager _sessionManager;
         private readonly ILibraryManager _libraryManager;
-        private readonly ILogger _logger;
+        private readonly ILogger<ServerMediator> _logger;
         private TraktApi _traktApi;
         private LibraryManagerEventsHelper _libraryManagerEventsHelper;
         private readonly UserDataManagerEventsHelper _userDataManagerEventsHelper;
@@ -47,7 +47,7 @@ namespace Trakt
             ISessionManager sessionManager,
             IUserDataManager userDataManager,
             ILibraryManager libraryManager,
-            ILoggerFactory logger,
+            ILoggerFactory loggerFactory,
             IHttpClient httpClient,
             IServerApplicationHost appHost,
             IFileSystem fileSystem)
@@ -55,11 +55,12 @@ namespace Trakt
             _sessionManager = sessionManager;
             _libraryManager = libraryManager;
             _userDataManager = userDataManager;
-            _logger = logger.CreateLogger("Trakt");
 
-            _traktApi = new TraktApi(jsonSerializer, _logger, httpClient, appHost, userDataManager, fileSystem);
-            _libraryManagerEventsHelper = new LibraryManagerEventsHelper(_logger, _traktApi);
-            _userDataManagerEventsHelper = new UserDataManagerEventsHelper(_logger, _traktApi);
+            _logger = loggerFactory.CreateLogger<ServerMediator>();
+            
+            _traktApi = new TraktApi(jsonSerializer, loggerFactory.CreateLogger<TraktApi>(), httpClient, appHost, userDataManager, fileSystem);
+            _libraryManagerEventsHelper = new LibraryManagerEventsHelper(loggerFactory.CreateLogger<LibraryManagerEventsHelper>(), _traktApi);
+            _userDataManagerEventsHelper = new UserDataManagerEventsHelper(loggerFactory.CreateLogger<UserDataManagerEventsHelper>(), _traktApi);
 
         }
 

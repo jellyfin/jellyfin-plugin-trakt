@@ -34,26 +34,26 @@ namespace Trakt.ScheduledTasks
         private readonly IUserManager _userManager;
         private readonly IUserDataManager _userDataManager;
         private readonly ILibraryManager _libraryManager;
-        private readonly ILogger _logger;
+        private readonly ILogger<SyncFromTraktTask> _logger;
         private readonly TraktApi _traktApi;
 
         /// <summary>
         ///
         /// </summary>
-        /// <param name="logger"></param>
+        /// <param name="loggerFactory"></param>
         /// <param name="jsonSerializer"></param>
         /// <param name="userManager"></param>
         /// <param name="userDataManager"> </param>
         /// <param name="httpClient"></param>
         /// <param name="appHost"></param>
         /// <param name="fileSystem"></param>
-        public SyncFromTraktTask(ILoggerFactory logger, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataManager userDataManager, IHttpClient httpClient, IServerApplicationHost appHost, IFileSystem fileSystem, ILibraryManager libraryManager)
+        public SyncFromTraktTask(ILoggerFactory loggerFactory, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataManager userDataManager, IHttpClient httpClient, IServerApplicationHost appHost, IFileSystem fileSystem, ILibraryManager libraryManager)
         {
             _userManager = userManager;
             _userDataManager = userDataManager;
             _libraryManager = libraryManager;
-            _logger = logger.CreateLogger("Trakt");
-            _traktApi = new TraktApi(jsonSerializer, _logger, httpClient, appHost, userDataManager, fileSystem);
+            _logger = loggerFactory.CreateLogger<SyncFromTraktTask>();
+            _traktApi = new TraktApi(jsonSerializer, loggerFactory.CreateLogger<TraktApi>(), httpClient, appHost, userDataManager, fileSystem);
         }
 
         public string Key => "TraktSyncFromTraktTask";

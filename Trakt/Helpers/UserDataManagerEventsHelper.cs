@@ -18,7 +18,7 @@ namespace Trakt.Helpers
     internal class UserDataManagerEventsHelper
     {
         private List<UserDataPackage> _userDataPackages;
-        private readonly ILogger _logger;
+        private readonly ILogger<UserDataManagerEventsHelper> _logger;
         private readonly TraktApi _traktApi;
         private Timer _timer;
 
@@ -27,7 +27,7 @@ namespace Trakt.Helpers
         /// </summary>
         /// <param name="logger"></param>
         /// <param name="traktApi"></param>
-        public UserDataManagerEventsHelper(ILogger logger, TraktApi traktApi)
+        public UserDataManagerEventsHelper(ILogger<UserDataManagerEventsHelper> logger, TraktApi traktApi)
         {
             _userDataPackages = new List<UserDataPackage>();
             _logger = logger;
