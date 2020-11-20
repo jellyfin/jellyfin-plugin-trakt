@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Net.Http;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
@@ -16,6 +17,7 @@ using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Querying;
 using MediaBrowser.Model.Serialization;
 using MediaBrowser.Model.Tasks;
+using Jellyfin.Data.Enums;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Api.DataContracts.BaseModel;
@@ -47,13 +49,21 @@ namespace Trakt.ScheduledTasks
         /// <param name="httpClient"></param>
         /// <param name="appHost"></param>
         /// <param name="fileSystem"></param>
-        public SyncFromTraktTask(ILoggerFactory loggerFactory, IJsonSerializer jsonSerializer, IUserManager userManager, IUserDataManager userDataManager, IHttpClient httpClient, IServerApplicationHost appHost, IFileSystem fileSystem, ILibraryManager libraryManager)
+        public SyncFromTraktTask(
+            ILoggerFactory loggerFactory,
+            IJsonSerializer jsonSerializer,
+            IUserManager userManager,
+            IUserDataManager userDataManager,
+            IHttpClientFactory httpClientFactory,
+            IServerApplicationHost appHost,
+            IFileSystem fileSystem,
+            ILibraryManager libraryManager)
         {
             _userManager = userManager;
             _userDataManager = userDataManager;
             _libraryManager = libraryManager;
             _logger = loggerFactory.CreateLogger<SyncFromTraktTask>();
-            _traktApi = new TraktApi(jsonSerializer, loggerFactory.CreateLogger<TraktApi>(), httpClient, appHost, userDataManager, fileSystem);
+            _traktApi = new TraktApi(jsonSerializer, loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, fileSystem);
         }
 
         public string Key => "TraktSyncFromTraktTask";
@@ -256,7 +266,7 @@ namespace Trakt.ScheduledTasks
                                     userData.PlayCount = playcount;
                                     changed = true;
                                 }
-                            }                         
+                            }
                         }
                         else if (!traktUser.SkipUnwatchedImportFromTrakt)
                         {

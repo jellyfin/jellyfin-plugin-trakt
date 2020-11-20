@@ -4,6 +4,9 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Text;
+using Microsoft.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Common.Net;
@@ -40,7 +43,7 @@ namespace Trakt.Api
 
         private readonly IJsonSerializer _jsonSerializer;
         private readonly ILogger<TraktApi> _logger;
-        private readonly IHttpClient _httpClient;
+        private readonly IHttpClientFactory _httpClientFactory;
         private readonly IServerApplicationHost _appHost;
         private readonly IUserDataManager _userDataManager;
         private readonly IFileSystem _fileSystem;
@@ -48,12 +51,12 @@ namespace Trakt.Api
         public TraktApi(
             IJsonSerializer jsonSerializer,
             ILogger<TraktApi> logger,
-            IHttpClient httpClient,
+            IHttpClientFactory httpClientFactory,
             IServerApplicationHost appHost,
             IUserDataManager userDataManager,
             IFileSystem fileSystem)
         {
-            _httpClient = httpClient;
+            _httpClientFactory = httpClientFactory;
             _appHost = appHost;
             _userDataManager = userDataManager;
             _fileSystem = fileSystem;
@@ -928,26 +931,9 @@ namespace Trakt.Api
             _logger.LogInformation("Polling for access token every {PollingInterval}s. Expires at {ExpiresAt} UTC.", pollingInterval, expiresAt);
             while (DateTime.UtcNow < expiresAt)
             {
-                try
+                using (var response = await PostToTrakt(TraktUris.DeviceToken, deviceAccessTokenRequest).ConfigureAwait(false))
                 {
-                    using (var response = await PostToTrakt(TraktUris.DeviceToken, deviceAccessTokenRequest).ConfigureAwait(false))
-                    {
-                        _logger.LogInformation("Device successfully authorized");
-
-                        var userAccessToken = _jsonSerializer.DeserializeFromStream<TraktUserAccessToken>(response.Content);
-                        if (userAccessToken != null)
-                        {
-                            traktUser.AccessToken = userAccessToken.access_token;
-                            traktUser.RefreshToken = userAccessToken.refresh_token;
-                            traktUser.AccessTokenExpiration = DateTime.Now.AddSeconds(userAccessToken.expirationWithBuffer);
-                            Plugin.Instance.SaveConfiguration();
-                            return true;
-                        }
-                    }
-                }
-                catch (HttpException e)
-                {
-                    switch (e.StatusCode)
+                    switch (response.StatusCode)
                     {
                         case HttpStatusCode.BadRequest:
                             // Pending - waiting for the user to authorize your app
@@ -968,8 +954,19 @@ namespace Trakt.Api
                             _logger.LogWarning("Polling too quickly. Slowing down");
                             pollingInterval += 1;
                             break;
-                        default:
-                            _logger.LogError(e, "Unexpected error when authorizing device");
+                        case HttpStatusCode.OK:
+                            _logger.LogInformation("Device successfully authorized");
+
+                            var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                            var userAccessToken = await _jsonSerializer.DeserializeFromStreamAsync<TraktUserAccessToken>(stream).ConfigureAwait(false);
+                            if (userAccessToken != null)
+                            {
+                                traktUser.AccessToken = userAccessToken.access_token;
+                                traktUser.RefreshToken = userAccessToken.refresh_token;
+                                traktUser.AccessTokenExpiration = DateTime.Now.AddSeconds(userAccessToken.expirationWithBuffer);
+                                Plugin.Instance.SaveConfiguration();
+                                return true;
+                            }
                             break;
                     }
                 }
@@ -1001,11 +998,12 @@ namespace Trakt.Api
             {
                 using (var response = await PostToTrakt(TraktUris.AccessToken, data).ConfigureAwait(false))
                 {
-                    userAccessToken = _jsonSerializer.DeserializeFromStream<TraktUserAccessToken>(response.Content);
+                    await using var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                    userAccessToken = await _jsonSerializer.DeserializeFromStreamAsync<TraktUserAccessToken>(stream).ConfigureAwait(false);
                 }
 
             }
-            catch (HttpException ex)
+            catch (HttpRequestException ex)
             {
                 _logger.LogError(ex, "An error occurred during token refresh");
                 return;
@@ -1028,20 +1026,19 @@ namespace Trakt.Api
 
         private async Task<Stream> GetFromTrakt(string url, CancellationToken cancellationToken, TraktUser traktUser)
         {
-            var options = GetHttpRequestOptions();
-            options.Url = url;
-            options.CancellationToken = cancellationToken;
+            var httpClient = GetHttpClient();
 
             if (traktUser != null)
             {
-                await SetRequestHeaders(options, traktUser).ConfigureAwait(false);
+                await SetRequestHeaders(httpClient, traktUser).ConfigureAwait(false);
             }
 
             await _traktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             try
             {
-                return await Retry(async () => await _httpClient.Get(options).ConfigureAwait(false)).ConfigureAwait(false);
+                var response = await Retry(async () => await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+                return await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
             }
             finally
             {
@@ -1049,19 +1046,18 @@ namespace Trakt.Api
             }
         }
 
-        private async Task<HttpResponseInfo> PostToTrakt(string url, object data)
+        private async Task<HttpResponseMessage> PostToTrakt(string url, object data)
         {
-            var requestContent = data == null ? string.Empty : _jsonSerializer.SerializeToString(data);
-            var options = GetHttpRequestOptions();
-            options.Url = url;
-            options.CancellationToken = CancellationToken.None;
-            options.RequestContent = requestContent;
+            var jsonData = data == null ? string.Empty : _jsonSerializer.SerializeToString(data);
+            var requestContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
 
-            await _traktResourcePool.WaitAsync(options.CancellationToken).ConfigureAwait(false);
+            var httpClient = GetHttpClient();
+
+            await _traktResourcePool.WaitAsync().ConfigureAwait(false);
 
             try
             {
-                return await _httpClient.Post(options).ConfigureAwait(false);
+                return await httpClient.PostAsync(url, requestContent).ConfigureAwait(false);
             }
             finally
             {
@@ -1084,28 +1080,27 @@ namespace Trakt.Api
             CancellationToken cancellationToken,
             TraktUser traktUser)
         {
-            var requestContent = data == null ? string.Empty : _jsonSerializer.SerializeToString(data);
+            var jsonData = data == null ? string.Empty : _jsonSerializer.SerializeToString(data);
+            var requestContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
+
             if (traktUser != null && traktUser.ExtraLogging)
             {
-                _logger.LogDebug(requestContent);
+                _logger.LogDebug(jsonData);
             }
 
-            var options = GetHttpRequestOptions();
-            options.Url = url;
-            options.CancellationToken = cancellationToken;
-            options.RequestContent = requestContent;
+            var httpClient = GetHttpClient();
 
             if (traktUser != null)
             {
-                await SetRequestHeaders(options, traktUser).ConfigureAwait(false);
+                await SetRequestHeaders(httpClient, traktUser).ConfigureAwait(false);
             }
 
             await _traktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             try
             {
-                var retryResponse = await Retry(async () => await _httpClient.Post(options).ConfigureAwait(false)).ConfigureAwait(false);
-                return retryResponse.Content;
+                var response = await Retry(async () => await httpClient.PostAsync(url, requestContent, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+                return await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
             }
             finally
             {
@@ -1136,23 +1131,15 @@ namespace Trakt.Api
             return await function().ConfigureAwait(false);
         }
 
-        private HttpRequestOptions GetHttpRequestOptions()
+        private HttpClient GetHttpClient()
         {
-            var options = new HttpRequestOptions
-            {
-                RequestContentType = "application/json",
-                LogErrorResponseBody = false,
-                BufferContent = false,
-                DecompressionMethod = CompressionMethods.None,
-                EnableKeepAlive = false
-            };
-
-            options.RequestHeaders.Add("trakt-api-version", "2");
-            options.RequestHeaders.Add("trakt-api-key", TraktUris.ClientId);
-            return options;
+            var client = _httpClientFactory.CreateClient(NamedClient.Default);
+            client.DefaultRequestHeaders.Add("trakt-api-version", "2");
+            client.DefaultRequestHeaders.Add("trakt-api-key", TraktUris.ClientId);
+            return client;
         }
 
-        private async Task SetRequestHeaders(HttpRequestOptions options, TraktUser traktUser)
+        private async Task SetRequestHeaders(HttpClient httpClient, TraktUser traktUser)
         {
             if (DateTimeOffset.Now > traktUser.AccessTokenExpiration)
             {
@@ -1162,7 +1149,7 @@ namespace Trakt.Api
 
             if (!string.IsNullOrEmpty(traktUser.AccessToken))
             {
-                options.RequestHeaders.Add("Authorization", "Bearer " + traktUser.AccessToken);
+                httpClient.DefaultRequestHeaders.Add(HeaderNames.Authorization, "Bearer " + traktUser.AccessToken);
             }
         }
     }
