@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Net.Http;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
@@ -14,6 +15,7 @@ using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Querying;
 using MediaBrowser.Model.Serialization;
 using MediaBrowser.Model.Tasks;
+using Jellyfin.Data.Enums;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Api.DataContracts.Sync;
@@ -46,7 +48,7 @@ namespace Trakt.ScheduledTasks
             IJsonSerializer jsonSerializer,
             IUserManager userManager,
             IUserDataManager userDataManager,
-            IHttpClient httpClient,
+            IHttpClientFactory httpClientFactory,
             IServerApplicationHost appHost,
             IFileSystem fileSystem,
             ILibraryManager libraryManager)
@@ -56,7 +58,7 @@ namespace Trakt.ScheduledTasks
             _userDataManager = userDataManager;
             _libraryManager = libraryManager;
             _logger = loggerFactory.CreateLogger<SyncLibraryTask>();
-            _traktApi = new TraktApi(jsonSerializer, loggerFactory.CreateLogger<TraktApi>(), httpClient, appHost, userDataManager, fileSystem);
+            _traktApi = new TraktApi(jsonSerializer, loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, fileSystem);
         }
 
         public IEnumerable<TaskTriggerInfo> GetDefaultTriggers() => Enumerable.Empty<TaskTriggerInfo>();

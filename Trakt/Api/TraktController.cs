@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Mime;
+using System.Net.Http;
 using System.Threading.Tasks;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
@@ -42,13 +43,13 @@ namespace Trakt.Api
             IJsonSerializer jsonSerializer,
             IUserDataManager userDataManager,
             ILoggerFactory loggerFactory,
-            IHttpClient httpClient,
+            IHttpClientFactory httpClientFactory,
             IServerApplicationHost appHost,
             IFileSystem fileSystem,
             ILibraryManager libraryManager)
         {
             _logger = loggerFactory.CreateLogger<TraktController>();
-            _traktApi = new TraktApi(jsonSerializer, loggerFactory.CreateLogger<TraktApi>(), httpClient, appHost, userDataManager, fileSystem);
+            _traktApi = new TraktApi(jsonSerializer, loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, fileSystem);
             _libraryManager = libraryManager;
         }
 
@@ -86,7 +87,7 @@ namespace Trakt.Api
         /// <param name="userId">The user id.</param>
         /// <response code="200">Polling successful.</response>
         /// <returns>A value indicating whether the authorization code was connected to a trakt account.</returns>
-        [HttpPost("Users/{userId}/PollAuthorizationStatus")]
+        [HttpGet("Users/{userId}/PollAuthorizationStatus")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<object> TraktPollAuthorizationStatus([FromRoute] string userId)
         {

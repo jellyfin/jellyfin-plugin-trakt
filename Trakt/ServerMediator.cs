@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Net.Http;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
@@ -48,7 +49,7 @@ namespace Trakt
             IUserDataManager userDataManager,
             ILibraryManager libraryManager,
             ILoggerFactory loggerFactory,
-            IHttpClient httpClient,
+            IHttpClientFactory httpClientFactory,
             IServerApplicationHost appHost,
             IFileSystem fileSystem)
         {
@@ -57,8 +58,8 @@ namespace Trakt
             _userDataManager = userDataManager;
 
             _logger = loggerFactory.CreateLogger<ServerMediator>();
-            
-            _traktApi = new TraktApi(jsonSerializer, loggerFactory.CreateLogger<TraktApi>(), httpClient, appHost, userDataManager, fileSystem);
+
+            _traktApi = new TraktApi(jsonSerializer, loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, fileSystem);
             _libraryManagerEventsHelper = new LibraryManagerEventsHelper(loggerFactory.CreateLogger<LibraryManagerEventsHelper>(), _traktApi);
             _userDataManagerEventsHelper = new UserDataManagerEventsHelper(loggerFactory.CreateLogger<UserDataManagerEventsHelper>(), _traktApi);
 
@@ -249,7 +250,7 @@ namespace Trakt
             try
             {
                 _logger.LogInformation("Playback Stopped");
-                
+
                 foreach (var user in e.Users)
                 {
                     var traktUser = UserHelper.GetTraktUser(user);
