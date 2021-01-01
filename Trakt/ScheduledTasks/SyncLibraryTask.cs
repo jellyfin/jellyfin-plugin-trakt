@@ -20,6 +20,7 @@ using Trakt.Api.DataContracts.Sync;
 using Trakt.Helpers;
 using Trakt.Model;
 using System.Text.Json;
+using MediaBrowser.Common.Json;
 
 namespace Trakt.ScheduledTasks
 {
@@ -467,22 +468,22 @@ namespace Trakt.ScheduledTasks
             _logger.LogDebug("TraktResponse Added Episodes: " + dataContract.added.episodes);
             foreach (var traktMovie in dataContract.not_found.movies)
             {
-                _logger.LogError("TraktResponse not Found: {TraktMovie}", JsonSerializer.Serialize(traktMovie));
+                _logger.LogError("TraktResponse not Found: {TraktMovie}", JsonSerializer.Serialize(traktMovie, JsonDefaults.GetOptions()));
             }
 
             foreach (var traktShow in dataContract.not_found.shows)
             {
-                _logger.LogError("TraktResponse not Found: {TraktShow}", JsonSerializer.Serialize(traktShow));
+                _logger.LogError("TraktResponse not Found: {TraktShow}", JsonSerializer.Serialize(traktShow, JsonDefaults.GetOptions()));
             }
 
             foreach (var traktSeason in dataContract.not_found.seasons)
             {
-                _logger.LogError("TraktResponse not Found: {TraktSeason}", JsonSerializer.Serialize(traktSeason));
+                _logger.LogError("TraktResponse not Found: {TraktSeason}", JsonSerializer.Serialize(traktSeason, JsonDefaults.GetOptions()));
             }
 
             foreach (var traktEpisode in dataContract.not_found.episodes)
             {
-                _logger.LogError("TraktResponse not Found: {TraktEpisode}", JsonSerializer.Serialize(traktEpisode));
+                _logger.LogError("TraktResponse not Found: {TraktEpisode}", JsonSerializer.Serialize(traktEpisode, JsonDefaults.GetOptions()));
             }
         }
     }
