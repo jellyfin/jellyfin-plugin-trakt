@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Threading.Tasks;
 using System.Net.Http;
-using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
@@ -12,7 +11,6 @@ using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Session;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.IO;
-using MediaBrowser.Model.Serialization;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Helpers;
@@ -35,7 +33,6 @@ namespace Trakt
         /// <summary>
         ///
         /// </summary>
-        /// <param name="jsonSerializer"></param>
         /// <param name="sessionManager"> </param>
         /// <param name="userDataManager"></param>
         /// <param name="libraryManager"> </param>
@@ -44,7 +41,6 @@ namespace Trakt
         /// <param name="appHost"></param>
         /// <param name="fileSystem"></param>
         public ServerMediator(
-            IJsonSerializer jsonSerializer,
             ISessionManager sessionManager,
             IUserDataManager userDataManager,
             ILibraryManager libraryManager,
@@ -59,7 +55,7 @@ namespace Trakt
 
             _logger = loggerFactory.CreateLogger<ServerMediator>();
 
-            _traktApi = new TraktApi(jsonSerializer, loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, fileSystem);
+            _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, fileSystem);
             _libraryManagerEventsHelper = new LibraryManagerEventsHelper(loggerFactory.CreateLogger<LibraryManagerEventsHelper>(), _traktApi);
             _userDataManagerEventsHelper = new UserDataManagerEventsHelper(loggerFactory.CreateLogger<UserDataManagerEventsHelper>(), _traktApi);
 

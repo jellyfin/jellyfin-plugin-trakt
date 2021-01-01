@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Net.Http;
-using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
@@ -13,7 +12,6 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Querying;
-using MediaBrowser.Model.Serialization;
 using MediaBrowser.Model.Tasks;
 using Jellyfin.Data.Enums;
 using Microsoft.Extensions.Logging;
@@ -21,6 +19,7 @@ using Trakt.Api;
 using Trakt.Api.DataContracts.Sync;
 using Trakt.Helpers;
 using Trakt.Model;
+using System.Text.Json;
 
 namespace Trakt.ScheduledTasks
 {
@@ -31,7 +30,6 @@ namespace Trakt.ScheduledTasks
     public class SyncLibraryTask : IScheduledTask
     {
         //private readonly IHttpClient _httpClient;
-        private readonly IJsonSerializer _jsonSerializer;
 
         private readonly IUserManager _userManager;
 
@@ -45,7 +43,6 @@ namespace Trakt.ScheduledTasks
 
         public SyncLibraryTask(
             ILoggerFactory loggerFactory,
-            IJsonSerializer jsonSerializer,
             IUserManager userManager,
             IUserDataManager userDataManager,
             IHttpClientFactory httpClientFactory,
@@ -53,12 +50,11 @@ namespace Trakt.ScheduledTasks
             IFileSystem fileSystem,
             ILibraryManager libraryManager)
         {
-            _jsonSerializer = jsonSerializer;
             _userManager = userManager;
             _userDataManager = userDataManager;
             _libraryManager = libraryManager;
             _logger = loggerFactory.CreateLogger<SyncLibraryTask>();
-            _traktApi = new TraktApi(jsonSerializer, loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, fileSystem);
+            _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, fileSystem);
         }
 
         public IEnumerable<TaskTriggerInfo> GetDefaultTriggers() => Enumerable.Empty<TaskTriggerInfo>();
@@ -471,22 +467,22 @@ namespace Trakt.ScheduledTasks
             _logger.LogDebug("TraktResponse Added Episodes: " + dataContract.added.episodes);
             foreach (var traktMovie in dataContract.not_found.movies)
             {
-                _logger.LogError("TraktResponse not Found: {TraktMovie}", _jsonSerializer.SerializeToString(traktMovie));
+                _logger.LogError("TraktResponse not Found: {TraktMovie}", JsonSerializer.Serialize(traktMovie));
             }
 
             foreach (var traktShow in dataContract.not_found.shows)
             {
-                _logger.LogError("TraktResponse not Found: {TraktShow}", _jsonSerializer.SerializeToString(traktShow));
+                _logger.LogError("TraktResponse not Found: {TraktShow}", JsonSerializer.Serialize(traktShow));
             }
 
             foreach (var traktSeason in dataContract.not_found.seasons)
             {
-                _logger.LogError("TraktResponse not Found: {TraktSeason}", _jsonSerializer.SerializeToString(traktSeason));
+                _logger.LogError("TraktResponse not Found: {TraktSeason}", JsonSerializer.Serialize(traktSeason));
             }
 
             foreach (var traktEpisode in dataContract.not_found.episodes)
             {
-                _logger.LogError("TraktResponse not Found: {TraktEpisode}", _jsonSerializer.SerializeToString(traktEpisode));
+                _logger.LogError("TraktResponse not Found: {TraktEpisode}", JsonSerializer.Serialize(traktEpisode));
             }
         }
     }

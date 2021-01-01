@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Net.Http;
-using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
@@ -15,7 +14,6 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Querying;
-using MediaBrowser.Model.Serialization;
 using MediaBrowser.Model.Tasks;
 using Jellyfin.Data.Enums;
 using Microsoft.Extensions.Logging;
@@ -43,7 +41,6 @@ namespace Trakt.ScheduledTasks
         ///
         /// </summary>
         /// <param name="loggerFactory"></param>
-        /// <param name="jsonSerializer"></param>
         /// <param name="userManager"></param>
         /// <param name="userDataManager"> </param>
         /// <param name="httpClient"></param>
@@ -51,7 +48,6 @@ namespace Trakt.ScheduledTasks
         /// <param name="fileSystem"></param>
         public SyncFromTraktTask(
             ILoggerFactory loggerFactory,
-            IJsonSerializer jsonSerializer,
             IUserManager userManager,
             IUserDataManager userDataManager,
             IHttpClientFactory httpClientFactory,
@@ -63,7 +59,7 @@ namespace Trakt.ScheduledTasks
             _userDataManager = userDataManager;
             _libraryManager = libraryManager;
             _logger = loggerFactory.CreateLogger<SyncFromTraktTask>();
-            _traktApi = new TraktApi(jsonSerializer, loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, fileSystem);
+            _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, fileSystem);
         }
 
         public string Key => "TraktSyncFromTraktTask";

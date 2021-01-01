@@ -7,7 +7,6 @@ using MediaBrowser.Common.Net;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.IO;
-using MediaBrowser.Model.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -38,9 +37,7 @@ namespace Trakt.Api
         /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
         /// <param name="httpClient">Instance of the <see cref="IHttpClient"/> interface.</param>
         /// <param name="appHost">Instance of the <see cref="IServerApplicationHost"/> interface.</param>
-        /// <param name="jsonSerializer">Instance of the <see cref="IJsonSerializer"/> interface.</param>
         public TraktController(
-            IJsonSerializer jsonSerializer,
             IUserDataManager userDataManager,
             ILoggerFactory loggerFactory,
             IHttpClientFactory httpClientFactory,
@@ -49,7 +46,7 @@ namespace Trakt.Api
             ILibraryManager libraryManager)
         {
             _logger = loggerFactory.CreateLogger<TraktController>();
-            _traktApi = new TraktApi(jsonSerializer, loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, fileSystem);
+            _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, fileSystem);
             _libraryManager = libraryManager;
         }
 
@@ -61,7 +58,7 @@ namespace Trakt.Api
         /// <returns>The trakt authorization code.</returns>
         [HttpPost("Users/{userId}/Authorize")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<object> TraktDeviceAuthorization([FromRoute] string userId)
+        public async Task<ActionResult<object>> TraktDeviceAuthorization([FromRoute] string userId)
         {
             _logger.LogInformation("TraktDeviceAuthorization request received");
 
@@ -73,7 +70,7 @@ namespace Trakt.Api
                 traktUser = UserHelper.GetTraktUser(userId);
                 Plugin.Instance.SaveConfiguration();
             }
-            string userCode = _traktApi.AuthorizeDevice(traktUser);
+            string userCode = await _traktApi.AuthorizeDevice(traktUser).ConfigureAwait(false);
 
             return new
             {

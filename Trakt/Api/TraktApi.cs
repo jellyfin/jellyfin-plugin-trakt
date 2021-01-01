@@ -17,8 +17,6 @@ using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.IO;
-using MediaBrowser.Model.Net;
-using MediaBrowser.Model.Serialization;
 using Microsoft.Extensions.Logging;
 using Trakt.Api.DataContracts;
 using Trakt.Api.DataContracts.BaseModel;
@@ -31,6 +29,7 @@ using Trakt.Model;
 using TraktEpisodeCollected = Trakt.Api.DataContracts.Sync.Collection.TraktEpisodeCollected;
 using TraktMovieCollected = Trakt.Api.DataContracts.Sync.Collection.TraktMovieCollected;
 using TraktShowCollected = Trakt.Api.DataContracts.Sync.Collection.TraktShowCollected;
+using System.Text.Json;
 
 namespace Trakt.Api
 {
@@ -41,7 +40,6 @@ namespace Trakt.Api
     {
         private static readonly SemaphoreSlim _traktResourcePool = new SemaphoreSlim(1, 1);
 
-        private readonly IJsonSerializer _jsonSerializer;
         private readonly ILogger<TraktApi> _logger;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IServerApplicationHost _appHost;
@@ -49,7 +47,6 @@ namespace Trakt.Api
         private readonly IFileSystem _fileSystem;
 
         public TraktApi(
-            IJsonSerializer jsonSerializer,
             ILogger<TraktApi> logger,
             IHttpClientFactory httpClientFactory,
             IServerApplicationHost appHost,
@@ -60,7 +57,6 @@ namespace Trakt.Api
             _appHost = appHost;
             _userDataManager = userDataManager;
             _fileSystem = fileSystem;
-            _jsonSerializer = jsonSerializer;
             _logger = logger;
         }
 
@@ -151,7 +147,7 @@ namespace Trakt.Api
 
             using (var response = await PostToTrakt(url, movieData, CancellationToken.None, traktUser).ConfigureAwait(false))
             {
-                return _jsonSerializer.DeserializeFromStream<TraktScrobbleResponse>(response);
+                return await JsonSerializer.DeserializeAsync<TraktScrobbleResponse>(response).ConfigureAwait(false);
             }
         }
 
@@ -235,7 +231,7 @@ namespace Trakt.Api
             {
                 using (var response = await PostToTrakt(url, traktScrobbleEpisode, CancellationToken.None, traktUser).ConfigureAwait(false))
                 {
-                    responses.Add(_jsonSerializer.DeserializeFromStream<TraktScrobbleResponse>(response));
+                    responses.Add(await JsonSerializer.DeserializeAsync<TraktScrobbleResponse>(response).ConfigureAwait(false));
                 }
             }
             return responses;
@@ -305,7 +301,7 @@ namespace Trakt.Api
                 };
                 using (var response = await PostToTrakt(url, data, cancellationToken, traktUser).ConfigureAwait(false))
                 {
-                    responses.Add(_jsonSerializer.DeserializeFromStream<TraktSyncResponse>(response));
+                    responses.Add(await JsonSerializer.DeserializeAsync<TraktSyncResponse>(response).ConfigureAwait(false));
                 }
             }
 
@@ -459,7 +455,7 @@ namespace Trakt.Api
             var url = eventType == EventType.Add ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
             using (var response = await PostToTrakt(url, data, cancellationToken, traktUser).ConfigureAwait(false))
             {
-                return _jsonSerializer.DeserializeFromStream<TraktSyncResponse>(response);
+                return await JsonSerializer.DeserializeAsync<TraktSyncResponse>(response).ConfigureAwait(false);
             }
         }
 
@@ -515,7 +511,7 @@ namespace Trakt.Api
             var url = eventType == EventType.Add ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
             using (var response = await PostToTrakt(url, data, cancellationToken, traktUser).ConfigureAwait(false))
             {
-                return _jsonSerializer.DeserializeFromStream<TraktSyncResponse>(response);
+                return await JsonSerializer.DeserializeAsync<TraktSyncResponse>(response).ConfigureAwait(false);
             }
         }
 
@@ -635,7 +631,7 @@ namespace Trakt.Api
 
             using (var response = await PostToTrakt(TraktUris.SyncRatingsAdd, data, traktUser).ConfigureAwait(false))
             {
-                return _jsonSerializer.DeserializeFromStream<TraktSyncResponse>(response);
+                return await JsonSerializer.DeserializeAsync<TraktSyncResponse>(response).ConfigureAwait(false);
             }
         }
 
@@ -648,7 +644,7 @@ namespace Trakt.Api
         {
             using (var response = await GetFromTrakt(TraktUris.RecommendationsMovies, traktUser).ConfigureAwait(false))
             {
-                return _jsonSerializer.DeserializeFromStream<List<TraktMovie>>(response);
+                return await JsonSerializer.DeserializeAsync<List<TraktMovie>>(response).ConfigureAwait(false);
             }
         }
 
@@ -661,7 +657,7 @@ namespace Trakt.Api
         {
             using (var response = await GetFromTrakt(TraktUris.RecommendationsShows, traktUser).ConfigureAwait(false))
             {
-                return _jsonSerializer.DeserializeFromStream<List<TraktShow>>(response);
+                return await JsonSerializer.DeserializeAsync<List<TraktShow>>(response).ConfigureAwait(false);
             }
         }
 
@@ -674,7 +670,7 @@ namespace Trakt.Api
         {
             using (var response = await GetFromTrakt(TraktUris.WatchedMovies, traktUser).ConfigureAwait(false))
             {
-                return _jsonSerializer.DeserializeFromStream<List<DataContracts.Users.Watched.TraktMovieWatched>>(response);
+                return await JsonSerializer.DeserializeAsync<List<DataContracts.Users.Watched.TraktMovieWatched>>(response).ConfigureAwait(false);
             }
         }
 
@@ -687,7 +683,7 @@ namespace Trakt.Api
         {
             using (var response = await GetFromTrakt(TraktUris.WatchedShows, traktUser).ConfigureAwait(false))
             {
-                return _jsonSerializer.DeserializeFromStream<List<DataContracts.Users.Watched.TraktShowWatched>>(response);
+                return await JsonSerializer.DeserializeAsync<List<DataContracts.Users.Watched.TraktShowWatched>>(response).ConfigureAwait(false);
             }
         }
 
@@ -700,7 +696,7 @@ namespace Trakt.Api
         {
             using (var response = await GetFromTrakt(TraktUris.CollectedMovies, traktUser).ConfigureAwait(false))
             {
-                return _jsonSerializer.DeserializeFromStream<List<DataContracts.Users.Collection.TraktMovieCollected>>(response);
+                return await JsonSerializer.DeserializeAsync<List<DataContracts.Users.Collection.TraktMovieCollected>>(response).ConfigureAwait(false);
             }
         }
 
@@ -713,7 +709,7 @@ namespace Trakt.Api
         {
             using (var response = await GetFromTrakt(TraktUris.CollectedShows, traktUser).ConfigureAwait(false))
             {
-                return _jsonSerializer.DeserializeFromStream<List<DataContracts.Users.Collection.TraktShowCollected>>(response);
+                return await JsonSerializer.DeserializeAsync<List<DataContracts.Users.Collection.TraktShowCollected>>(response).ConfigureAwait(false);
             }
         }
 
@@ -784,7 +780,7 @@ namespace Trakt.Api
                 {
                     if (response != null)
                     {
-                        traktResponses.Add(_jsonSerializer.DeserializeFromStream<TraktSyncResponse>(response));
+                        traktResponses.Add(await JsonSerializer.DeserializeAsync<TraktSyncResponse>(response).ConfigureAwait(false));
                     }
                 }
             }
@@ -894,11 +890,11 @@ namespace Trakt.Api
 
             using (var response = await PostToTrakt(url, data, cancellationToken, traktUser).ConfigureAwait(false))
             {
-                return _jsonSerializer.DeserializeFromStream<TraktSyncResponse>(response);
+                return await JsonSerializer.DeserializeAsync<TraktSyncResponse>(response).ConfigureAwait(false);
             }
         }
 
-        public string AuthorizeDevice(TraktUser traktUser)
+        public async Task<string> AuthorizeDevice(TraktUser traktUser)
         {
             var deviceCodeRequest = new
             {
@@ -906,9 +902,9 @@ namespace Trakt.Api
             };
 
             TraktDeviceCode deviceCode;
-            using (var response = PostToTrakt(TraktUris.DeviceCode, deviceCodeRequest, null))
+            using (var response = await PostToTrakt(TraktUris.DeviceCode, deviceCodeRequest, null).ConfigureAwait(false))
             {
-                deviceCode = _jsonSerializer.DeserializeFromStream<TraktDeviceCode>(response.Result);
+                deviceCode = await JsonSerializer.DeserializeAsync<TraktDeviceCode>(response).ConfigureAwait(false);
             }
 
             // Start polling in the background
@@ -958,7 +954,7 @@ namespace Trakt.Api
                             _logger.LogInformation("Device successfully authorized");
 
                             var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                            var userAccessToken = await _jsonSerializer.DeserializeFromStreamAsync<TraktUserAccessToken>(stream).ConfigureAwait(false);
+                            var userAccessToken = await JsonSerializer.DeserializeAsync<TraktUserAccessToken>(stream).ConfigureAwait(false);
                             if (userAccessToken != null)
                             {
                                 traktUser.AccessToken = userAccessToken.access_token;
@@ -999,7 +995,7 @@ namespace Trakt.Api
                 using (var response = await PostToTrakt(TraktUris.AccessToken, data).ConfigureAwait(false))
                 {
                     await using var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
-                    userAccessToken = await _jsonSerializer.DeserializeFromStreamAsync<TraktUserAccessToken>(stream).ConfigureAwait(false);
+                    userAccessToken = await JsonSerializer.DeserializeAsync<TraktUserAccessToken>(stream).ConfigureAwait(false);
                 }
 
             }
@@ -1048,7 +1044,7 @@ namespace Trakt.Api
 
         private async Task<HttpResponseMessage> PostToTrakt(string url, object data)
         {
-            var jsonData = data == null ? string.Empty : _jsonSerializer.SerializeToString(data);
+            var jsonData = data == null ? string.Empty : JsonSerializer.Serialize(data);
             var requestContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
 
             var httpClient = GetHttpClient();
@@ -1080,7 +1076,7 @@ namespace Trakt.Api
             CancellationToken cancellationToken,
             TraktUser traktUser)
         {
-            var jsonData = data == null ? string.Empty : _jsonSerializer.SerializeToString(data);
+            var jsonData = data == null ? string.Empty : JsonSerializer.Serialize(data);
             var requestContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
 
             if (traktUser != null && traktUser.ExtraLogging)
