@@ -22,6 +22,8 @@ namespace Trakt.Api.DataContracts.Users.Watched
 
             public class Episode
             {
+                public string last_watched_at { get; set; }
+
                 public int number { get; set; }
 
                 public int plays { get; set; }

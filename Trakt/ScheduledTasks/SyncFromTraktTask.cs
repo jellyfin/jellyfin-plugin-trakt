@@ -171,7 +171,16 @@ namespace Trakt.ScheduledTasks
                     if (!userData.Played)
                     {
                         userData.Played = true;
-                        userData.LastPlayedDate = DateTimeOffset.UtcNow.UtcDateTime;
+
+                        if (!string.IsNullOrEmpty(matchedMovie.last_watched_at))
+                        {
+                            userData.LastPlayedDate = DateTimeOffset.Parse(matchedMovie.last_watched_at).ToUniversalTime().UtcDateTime;        
+                        }
+                        else
+                        {
+                            userData.LastPlayedDate = DateTimeOffset.UtcNow.UtcDateTime;
+                        }
+
                         changed = true;
                     }
 
@@ -253,7 +262,16 @@ namespace Trakt.ScheduledTasks
                                 if (!userData.Played)
                                 {
                                     userData.Played = true;
-                                    userData.LastPlayedDate = DateTimeOffset.UtcNow.UtcDateTime;
+
+                                    if (!string.IsNullOrEmpty(matchedEpisode.last_watched_at))
+                                    {
+                                        userData.LastPlayedDate = DateTimeOffset.Parse(matchedEpisode.last_watched_at).ToUniversalTime().UtcDateTime;        
+                                    }
+                                    else
+                                    {
+                                        userData.LastPlayedDate = DateTimeOffset.UtcNow.UtcDateTime;
+                                    }
+
                                     changed = true;
                                 }
 
