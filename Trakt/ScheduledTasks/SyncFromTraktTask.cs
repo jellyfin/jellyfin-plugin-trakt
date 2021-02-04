@@ -284,6 +284,18 @@ namespace Trakt.ScheduledTasks
                                     userData.PlayCount = playcount;
                                     changed = true;
                                 }
+
+                                // Set last played to whichever is most recent, remote or local time...
+                                if (!string.IsNullOrEmpty(matchedEpisode.last_watched_at))
+                                {
+                                    var tLastPlayed = DateTimeOffset.Parse(matchedEpisode.last_watched_at).ToUniversalTime();
+                                    var latestPlayed = tLastPlayed > userData.LastPlayedDate ? tLastPlayed.UtcDateTime : userData.LastPlayedDate;
+                                    if (userData.LastPlayedDate != latestPlayed)
+                                    {
+                                        userData.LastPlayedDate = latestPlayed;
+                                        changed = true;
+                                    }
+                                }
                             }
                         }
                         else if (!traktUser.SkipUnwatchedImportFromTrakt)
