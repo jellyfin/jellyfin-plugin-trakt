@@ -468,22 +468,22 @@ namespace Trakt.ScheduledTasks
             _logger.LogDebug("TraktResponse Added Episodes: " + dataContract.added.episodes);
             foreach (var traktMovie in dataContract.not_found.movies)
             {
-                _logger.LogError("TraktResponse not Found: {TraktMovie}", JsonSerializer.Serialize(traktMovie, JsonDefaults.GetOptions()));
+                _logger.LogError("TraktResponse not Found: {@TraktMovie}", traktMovie);
             }
 
             foreach (var traktShow in dataContract.not_found.shows)
             {
-                _logger.LogError("TraktResponse not Found: {TraktShow}", JsonSerializer.Serialize(traktShow, JsonDefaults.GetOptions()));
+                _logger.LogError("TraktResponse not Found: {@TraktShow}", traktShow);
             }
 
             foreach (var traktSeason in dataContract.not_found.seasons)
             {
-                _logger.LogError("TraktResponse not Found: {TraktSeason}", JsonSerializer.Serialize(traktSeason, JsonDefaults.GetOptions()));
+                _logger.LogError("TraktResponse not Found: {@TraktSeason}", traktSeason);
             }
 
             foreach (var traktEpisode in dataContract.not_found.episodes)
             {
-                _logger.LogError("TraktResponse not Found: {TraktEpisode}", JsonSerializer.Serialize(traktEpisode, JsonDefaults.GetOptions()));
+                _logger.LogError("TraktResponse not Found: {@TraktEpisode}", traktEpisode);
             }
         }
     }
