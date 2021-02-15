@@ -31,6 +31,7 @@ using TraktMovieCollected = Trakt.Api.DataContracts.Sync.Collection.TraktMovieCo
 using TraktShowCollected = Trakt.Api.DataContracts.Sync.Collection.TraktShowCollected;
 using System.Text.Json;
 using MediaBrowser.Common.Json;
+using System.Net.Mime;
 
 namespace Trakt.Api
 {
@@ -1078,15 +1079,17 @@ namespace Trakt.Api
             CancellationToken cancellationToken,
             TraktUser traktUser)
         {
-            var jsonData = data == null ? string.Empty : JsonSerializer.Serialize(data, _jsonOptions);
-            var requestContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
+            using var memoryStream = new MemoryStream();
+            await JsonSerializer.SerializeAsync(memoryStream, data ?? string.Empty, _jsonOptions);
+            memoryStream.Position = 0;
 
             if (traktUser != null && traktUser.ExtraLogging)
             {
-                _logger.LogDebug(jsonData);
+                _logger.LogDebug("{@JsonData}", data);
             }
 
             var httpClient = GetHttpClient();
+            httpClient.DefaultRequestHeaders.Add(HeaderNames.ContentType, MediaTypeNames.Application.Json);
 
             if (traktUser != null)
             {
@@ -1097,7 +1100,7 @@ namespace Trakt.Api
 
             try
             {
-                var response = await Retry(async () => await httpClient.PostAsync(url, requestContent, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+                var response = await Retry(async () => await httpClient.PostAsync(url, new StreamContent(memoryStream), cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
                 return await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
             }
             finally
