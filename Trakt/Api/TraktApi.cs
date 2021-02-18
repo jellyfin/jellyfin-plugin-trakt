@@ -1047,16 +1047,17 @@ namespace Trakt.Api
 
         private async Task<HttpResponseMessage> PostToTrakt(string url, object data)
         {
-            var jsonData = data == null ? string.Empty : JsonSerializer.Serialize(data, _jsonOptions);
-            var requestContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
-
             var httpClient = GetHttpClient();
+            
+            var bytes = JsonSerializer.SerializeToUtf8Bytes(data, _jsonOptions);
+            var content = new ByteArrayContent(bytes);
+            content.Headers.Add(HeaderNames.ContentType, MediaTypeNames.Application.Json);
 
             await _traktResourcePool.WaitAsync().ConfigureAwait(false);
 
             try
             {
-                return await httpClient.PostAsync(url, requestContent).ConfigureAwait(false);
+                return await httpClient.PostAsync(url, content).ConfigureAwait(false);
             }
             finally
             {
@@ -1079,28 +1080,27 @@ namespace Trakt.Api
             CancellationToken cancellationToken,
             TraktUser traktUser)
         {
-            using var memoryStream = new MemoryStream();
-            await JsonSerializer.SerializeAsync(memoryStream, data ?? string.Empty, _jsonOptions);
-            memoryStream.Position = 0;
-
             if (traktUser != null && traktUser.ExtraLogging)
             {
                 _logger.LogDebug("{@JsonData}", data);
             }
 
             var httpClient = GetHttpClient();
-            httpClient.DefaultRequestHeaders.Add(HeaderNames.ContentType, MediaTypeNames.Application.Json);
 
             if (traktUser != null)
             {
                 await SetRequestHeaders(httpClient, traktUser).ConfigureAwait(false);
             }
 
+            var bytes = JsonSerializer.SerializeToUtf8Bytes(data, _jsonOptions);
+            var content = new ByteArrayContent(bytes);
+            content.Headers.Add(HeaderNames.ContentType, MediaTypeNames.Application.Json);
+
             await _traktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             try
             {
-                var response = await Retry(async () => await httpClient.PostAsync(url, new StreamContent(memoryStream), cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+                var response = await Retry(async () => await httpClient.PostAsync(url, content, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
                 return await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
             }
             finally
