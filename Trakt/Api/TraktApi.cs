@@ -1109,27 +1109,28 @@ namespace Trakt.Api
             }
         }
 
-        private async Task<T> Retry<T>(Func<Task<T>> function)
+        private async Task<HttpResponseMessage> Retry(Func<Task<HttpResponseMessage>> function)
         {
-            try
+            HttpResponseMessage response = null;
+            for (int i = 0; i < 3; i++)
             {
-                return await function().ConfigureAwait(false);
+                try
+                {
+                    response = await function().ConfigureAwait(false);
+                    if (response.StatusCode == (HttpStatusCode) 429)
+                    {
+                        var delay = response.Headers.RetryAfter.Delta ?? TimeSpan.FromSeconds(1);
+                        await Task.Delay(delay).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        break;
+                    }
+                } catch {}
             }
-            catch
-            {
-            }
+   
 
-            await Task.Delay(500).ConfigureAwait(false);
-            try
-            {
-                return await function().ConfigureAwait(false);
-            }
-            catch
-            {
-            }
-
-            await Task.Delay(500).ConfigureAwait(false);
-            return await function().ConfigureAwait(false);
+            return response;
         }
 
         private HttpClient GetHttpClient()
