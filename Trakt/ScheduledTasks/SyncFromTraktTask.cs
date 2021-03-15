@@ -167,43 +167,32 @@ namespace Trakt.ScheduledTasks
                     var userData = _userDataManager.GetUserData(user.Id, movie);
                     bool changed = false;
 
+                    DateTime? tLastPlayed = null;
+                    if (DateTime.TryParse(matchedMovie.last_watched_at, out var value))
+                    {
+                        tLastPlayed = value;
+                    }
+
                     // set movie as watched
                     if (!userData.Played)
                     {
                         userData.Played = true;
-
-                        if (!string.IsNullOrEmpty(matchedMovie.last_watched_at))
-                        {
-                            userData.LastPlayedDate = DateTimeOffset.Parse(matchedMovie.last_watched_at).ToUniversalTime().UtcDateTime;        
-                        }
-                        else
-                        {
-                            userData.LastPlayedDate = DateTimeOffset.UtcNow.UtcDateTime;
-                        }
-
+                        userData.LastPlayedDate = tLastPlayed ?? DateTime.Now;
                         changed = true;
                     }
 
                     // keep the highest play count
-                    int playcount = Math.Max(matchedMovie.plays, userData.PlayCount);
-
-                    // set movie playcount
-                    if (userData.PlayCount != playcount)
+                    if (userData.PlayCount < matchedMovie.plays)
                     {
-                        userData.PlayCount = playcount;
+                        userData.PlayCount = matchedMovie.plays;
                         changed = true;
                     }
 
-                    // Set last played to whichever is most recent, remote or local time...
-                    if (!string.IsNullOrEmpty(matchedMovie.last_watched_at))
+                    // Update last played if remote time is more recent
+                    if (tLastPlayed != null && userData.LastPlayedDate < tLastPlayed)
                     {
-                        var tLastPlayed = DateTimeOffset.Parse(matchedMovie.last_watched_at).ToUniversalTime();
-                        var latestPlayed = tLastPlayed > userData.LastPlayedDate ? tLastPlayed.UtcDateTime : userData.LastPlayedDate;
-                        if (userData.LastPlayedDate != latestPlayed)
-                        {
-                            userData.LastPlayedDate = latestPlayed;
-                            changed = true;
-                        }
+                        userData.LastPlayedDate = tLastPlayed;
+                        changed = true;
                     }
 
                     // Only process if there's a change
@@ -258,43 +247,32 @@ namespace Trakt.ScheduledTasks
 
                             if(!traktUser.SkipWatchedImportFromTrakt)
                             {
+                                DateTime? tLastPlayed = null;
+                                if (DateTime.TryParse(matchedEpisode.last_watched_at, out var value))
+                                {
+                                    tLastPlayed = value;
+                                }
+
                                 // Set episode as watched
                                 if (!userData.Played)
                                 {
                                     userData.Played = true;
-
-                                    if (!string.IsNullOrEmpty(matchedEpisode.last_watched_at))
-                                    {
-                                        userData.LastPlayedDate = DateTimeOffset.Parse(matchedEpisode.last_watched_at).ToUniversalTime().UtcDateTime;        
-                                    }
-                                    else
-                                    {
-                                        userData.LastPlayedDate = DateTimeOffset.UtcNow.UtcDateTime;
-                                    }
-
+                                    userData.LastPlayedDate = tLastPlayed ?? DateTime.Now;
                                     changed = true;
                                 }
 
                                 // keep the highest play count
-                                int playcount = Math.Max(matchedEpisode.plays, userData.PlayCount);
-
-                                // set episode playcount
-                                if (userData.PlayCount != playcount)
+                                if (userData.PlayCount < matchedEpisode.plays)
                                 {
-                                    userData.PlayCount = playcount;
+                                    userData.PlayCount = matchedEpisode.plays;
                                     changed = true;
                                 }
 
-                                // Set last played to whichever is most recent, remote or local time...
-                                if (!string.IsNullOrEmpty(matchedEpisode.last_watched_at))
+                                // Update last played if remote time is more recent
+                                if (tLastPlayed != null && userData.LastPlayedDate < tLastPlayed)
                                 {
-                                    var tLastPlayed = DateTimeOffset.Parse(matchedEpisode.last_watched_at).ToUniversalTime();
-                                    var latestPlayed = tLastPlayed > userData.LastPlayedDate ? tLastPlayed.UtcDateTime : userData.LastPlayedDate;
-                                    if (userData.LastPlayedDate != latestPlayed)
-                                    {
-                                        userData.LastPlayedDate = latestPlayed;
-                                        changed = true;
-                                    }
+                                    userData.LastPlayedDate = tLastPlayed;
+                                    changed = true;
                                 }
                             }
                         }
