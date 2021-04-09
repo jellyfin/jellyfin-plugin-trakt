@@ -1036,7 +1036,7 @@ namespace Trakt.Api
 
             try
             {
-                var response = await Retry(async () => await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+                var response = await RetryHttpRequest(async () => await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
                 return await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
             }
             finally
@@ -1100,7 +1100,7 @@ namespace Trakt.Api
 
             try
             {
-                var response = await Retry(async () => await httpClient.PostAsync(url, content, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+                var response = await RetryHttpRequest(async () => await httpClient.PostAsync(url, content, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
                 return await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
             }
             finally
@@ -1109,7 +1109,7 @@ namespace Trakt.Api
             }
         }
 
-        private async Task<HttpResponseMessage> Retry(Func<Task<HttpResponseMessage>> function)
+        private async Task<HttpResponseMessage> RetryHttpRequest(Func<Task<HttpResponseMessage>> function)
         {
             HttpResponseMessage response = null;
             for (int i = 0; i < 3; i++)
