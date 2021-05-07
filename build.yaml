@@ -1,6 +1,7 @@
 ---
 name: "Trakt"
 guid: "4fe3201e-d6ae-4f2e-8917-e12bda571281"
+imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-trakt.png"
 version: "11.0.0.0"
 targetAbi: "10.7.0.0"
 framework: "net5.0"
@@ -10,6 +11,6 @@ description: >
   Record your watched media with Trakt.
 category: "General"
 artifacts:
-- "Trakt.dll"
-changelog: >
+  - "Trakt.dll"
+changelog: |
   changelog
