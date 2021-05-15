@@ -1,17 +1,3 @@
-/*Array.prototype.remove = function () {
-    let what;
-    const a = arguments;
-    let L = a.length;
-    let ax;
-    while (L && this.length) {
-        what = a[--L];
-        while ((ax = this.indexOf(what)) !== -1) {
-            this.splice(ax, 1);
-        }
-    }
-    return this;
-};*/
-
 const TraktConfigurationPage = {
     pluginUniqueId: '4fe3201e-d6ae-4f2e-8917-e12bda571281',
     loadConfiguration: function (userId, page) {
