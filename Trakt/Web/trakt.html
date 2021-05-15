@@ -1,0 +1,132 @@
+<div id="traktConfigurationPage" data-role="page" class="page type-interior pluginConfigurationPage traktConfigurationPage" data-controller="__plugin/traktjs">
+    <div data-role="content">
+        <div class="content-primary">
+
+            <h1>Trakt</h1>
+
+            <form id="traktConfigurationForm">
+
+                <div style="height:0; overflow: hidden;">
+                    <input type="text" name="fakeusernameremembered" tabindex="-1" />
+                    <input type="password" name="fakepasswordremembered" tabindex="-1" />
+                </div>
+
+                <div class="selectContainer">
+                    <select is="emby-select" id="selectUser" name="selectUser" label="Configure Trakt for:"></select>
+                </div>
+                <div>
+                    <div class="fieldDescription hide" id="authorizedDescription">
+                        This user is authorized. You can force a re-authorization by clicking the button below.
+                    </div>
+                    <button is="emby-button" type="button" id="authorizeDevice" class="raised block">Authorize device</button>
+                    <div id="activateWithCode" class="hide">
+                        Please visit <a href="https://trakt.tv/activate" class="button-link emby-button" target="_blank">https://trakt.tv/activate</a> and authorize Jellyfin to access your account.<br />
+                        Your device code is <span id="userCode"></span>.
+                    </div>
+                </div>
+                <div>
+                    <h3 class="checkboxListLabel">Exclude folders:</h3>
+                    <div id="divTraktLocations" class="paperList checkboxList checkboxList-paperList">
+                    </div>
+                </div>
+                <br />
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="chkSkipUnwatchedImportFromTrakt" name="chkSkipUnwatchedImportFromTrakt" />
+                        <span>Skip unwatched import from Trakt</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        The Import from Trakt scheduled task will set local items unwatched if item is marked as unwached on Trakt. If checked, do not import unwatched status.
+                    </div>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="chkSkipWatchedImportFromTrakt" name="chkSkipWatchedImportFromTrakt" />
+                        <span>Skip watched import from Trakt</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        The Import from Trakt scheduled task will set local items as watched if item is marked as watched on Trakt. If checked, do not import watched status.
+                    </div>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="chkPostWatchedHistory" name="chkPostWatchedHistory" />
+                        <span>During Scheduled Task, set Trakt items to watched if local item is watched</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        Controls what is synced to Trakt when when scheduled task is run.
+                    </div>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="chkPostUnwatchedHistory" name="chkPostUnwatchedHistory" />
+                        <span>During Scheduled Task, set Trakt items to unwatched if local item is unwatched</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        Controls what is synced to Trakt when when scheduled task is run.
+                    </div>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="chkPostSetWatched" name="chkPostSetWatched" />
+                        <span>Set Trakt item to Watched when local item is changed to Watched.</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        Controls what is synced to Trakt when item statuses are changed during normal use.
+                    </div>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="chkPostSetUnwatched" name="chkPostSetUnwatched" />
+                        <span>Set Trakt item to Unwatched when local item is changed to Unwatched.</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        Controls what is synced to Trakt when item statuses are changed during normal use.
+                    </div>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="chkExtraLogging" name="chkExtraLogging" />
+                        <span>Enable debug logging</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        When enabled, all data sent to trakt is logged.
+                    </div>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="chkExportMediaInfo" name="chkExportMediaInfo" />
+                        <span>Export media info</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        Send audio and video metadata to Trakt.
+                    </div>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="chkSyncCollections" name="chkSyncCollections" />
+                        <span>Synchronize Collection</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        Synchronize the collected movies and shows to Trakt.
+                    </div>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="chkScrobble" name="chkScrobble" />
+                        <span>Scrobble</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        Scrobble to Trakt.
+                    </div>
+                </div>
+                <div>
+                    <button is="emby-button" type="submit" class="raised button-submit block emby-button">
+                        <span>${Save}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
