@@ -41,8 +41,13 @@ namespace Trakt
             {
                 new PluginPageInfo
                 {
-                    Name = "Trakt",
-                    EmbeddedResourcePath = GetType().Namespace + ".Configuration.configPage.html"
+                    Name = "trakt",
+                    EmbeddedResourcePath = GetType().Namespace + ".Web.trakt.html",
+                },
+                new PluginPageInfo
+                {
+                    Name = "traktjs",
+                    EmbeddedResourcePath = GetType().Namespace + ".Web.trakt.js"
                 }
             };
         }
