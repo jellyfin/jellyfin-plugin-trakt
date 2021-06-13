@@ -16,6 +16,7 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
+    if: github.repository == 'jellyfin/jellyfin-plugin-trakt'
 
     strategy:
       fail-fast: false

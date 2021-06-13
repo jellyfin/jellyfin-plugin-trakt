@@ -7,6 +7,8 @@ on:
 jobs:
   publish_release_draft:
     runs-on: ubuntu-latest
+    if: github.repository == 'jellyfin/jellyfin-plugin-trakt'
+    
     steps:
       - name: Get version from GITHUB_REF
         id: get-version
