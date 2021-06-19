@@ -1,4 +1,4 @@
-name: Test Build Plugin
+name: Build Plugin
 
 on:
   push:
@@ -21,11 +21,14 @@ jobs:
         with:
           dotnet-version: 5.0.x
 
-      - name: Install dependencies
-        run: dotnet restore
+      - name: Build Jellyfin Plugin
+        uses: oddstr13/jellyfin-plugin-repository-manager@v0.4.2
+        id: jprm
 
-      - name: Build
-        run: dotnet build --configuration Release --no-restore
-
-      - name: Test
-        run: dotnet test --no-restore --verbosity normal
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-artifact
+          retention-days: 30
+          if-no-files-found: error
+          path: ${{ steps.jprm.outputs.artifact }}
