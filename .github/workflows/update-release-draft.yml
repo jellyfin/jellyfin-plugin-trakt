@@ -5,14 +5,67 @@ on:
   push:
     branches:
       - master
+  workflow_dispatch:
 
 jobs:
   update_release_draft:
     runs-on: ubuntu-latest
     if: github.repository == 'jellyfin/jellyfin-plugin-trakt'
-    
+
     steps:
       # Drafts your next Release notes as Pull Requests are merged into "master"
-      - uses: release-drafter/release-drafter@v5.15.0
+      - name: Update Draft
+        uses: release-drafter/release-drafter@v5.15.0
+        id: draft
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.JF_BOT_TOKEN }}
+
+      - name: Setup YQ
+        uses: chrisdickinson/setup-yq@latest
+        with:
+          yq-version: v4.9.6
+
+      - name: Parse changelog
+        run: |
+          TAG="${{ steps.draft.outputs.tag_name }}"
+          echo "VERSION=${TAG#v}" >> $GITHUB_ENV
+
+          cat << EOF | grep -P '^([*-] |###)' > cl.md
+          ${{ steps.draft.outputs.body }}
+          EOF
+
+          sed -i -r 's/^(#+) (:.*:)? *(.*)$/\n\1 \3 \1/' cl.md
+          sed -i -r 's/^\*/-/' cl.md
+
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          cat cl.md >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+          rm cl.md
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Update build.yaml
+        run: |
+          yq eval '.version = env(VERSION) | .changelog = strenv(CHANGELOG) | .changelog style="literal"' -i build.yaml
+
+      - name: Commit Changes
+        run: |
+          git config user.name "jellyfin-bot"
+          git config user.email "team@jellyfin.org"
+          git checkout -b prepare-${{ env.VERSION }}
+          git commit -am "Bump version to ${{ env.VERSION }}"
+          git push -f origin prepare-${{ env.VERSION }}
+
+      - name: Create or Update PR
+        uses: k3rnels-actions/pr-update@v1
+        with:
+          token: ${{ secrets.JF_BOT_TOKEN }}
+          pr_title: Prepare for release ${{ steps.draft.outputs.tag_name }}
+          pr_source: prepare-${{ env.VERSION }}
+          pr_labels: 'release-prep,skip-changelog'
+          pr_body: |
+            :robot: This is a generated PR to update version and changelog in `build.yaml`.
+            ---
+            ${{ env.CHANGELOG }}
