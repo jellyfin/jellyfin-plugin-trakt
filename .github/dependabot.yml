@@ -4,9 +4,12 @@ updates:
   - package-ecosystem: nuget
     directory: /
     schedule:
-      interval: daily
-      time: '00:00'
+      interval: weekly
     open-pull-requests-limit: 10
+    labels:
+      - chore
+      - dependency
+      - nuget
     commit-message:
       prefix: chore
       include: scope
@@ -15,9 +18,12 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-      time: '00:00'
+      interval: monthly
     open-pull-requests-limit: 10
+    labels:
+      - ci
+      - dependency
+      - github_actions
     commit-message:
-      prefix: chore
+      prefix: ci
       include: scope
