@@ -96,11 +96,18 @@ namespace Trakt.Api
             if (item is Episode episode
                 && episode.Series != null
                 && !episode.IsMissingEpisode
-                && (episode.IndexNumber.HasValue || !string.IsNullOrEmpty(episode.GetProviderId(MetadataProvider.Tvdb))))
+                && (episode.IndexNumber.HasValue 
+                    || !string.IsNullOrEmpty(episode.GetProviderId(MetadataProvider.Imdb))
+                    || !string.IsNullOrEmpty(episode.GetProviderId(MetadataProvider.Tmdb))
+                    || !string.IsNullOrEmpty(episode.GetProviderId(MetadataProvider.Tvdb))
+                    || !string.IsNullOrEmpty(episode.GetProviderId(MetadataProvider.TvRage))
+                    ))
             {
                 var series = episode.Series;
 
                 return !string.IsNullOrEmpty(series.GetProviderId(MetadataProvider.Imdb))
+                    || !string.IsNullOrEmpty(series.GetProviderId(MetadataProvider.Tmdb))
+                    || !string.IsNullOrEmpty(series.GetProviderId(MetadataProvider.TvRage))
                     || !string.IsNullOrEmpty(series.GetProviderId(MetadataProvider.Tvdb));
             }
 
@@ -168,53 +175,62 @@ namespace Trakt.Api
             var episodeDatas = new List<TraktScrobbleEpisode>();
             var tvDbId = episode.GetProviderId(MetadataProvider.Tvdb);
 
-            if (!string.IsNullOrEmpty(tvDbId) && (!episode.IndexNumber.HasValue || !episode.IndexNumberEnd.HasValue || episode.IndexNumberEnd <= episode.IndexNumber))
+            var indexNumber = 0;
+            var finalNumber = 0;
+            if (episode.IndexNumber.HasValue)
             {
-                episodeDatas.Add(new TraktScrobbleEpisode
+                indexNumber = episode.IndexNumber.Value;
+                finalNumber = (episode.IndexNumberEnd ?? episode.IndexNumber).Value;
+            }
+
+            var number = indexNumber;
+            var firstPass = true;
+            do
+            {
+                var scrobbleEpisode = new TraktScrobbleEpisode
                 {
                     app_date = DateTimeOffset.Now.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                     app_version = _appHost.ApplicationVersionString,
                     progress = progressPercent,
                     episode = new TraktEpisode
                     {
-                        ids = new TraktEpisodeId
-                        {
-                            tvdb = tvDbId.ConvertToInt()
-                        },
-                    }
-                });
-            }
-            else if (episode.IndexNumber.HasValue)
-            {
-                var indexNumber = episode.IndexNumber.Value;
-                var finalNumber = (episode.IndexNumberEnd ?? episode.IndexNumber).Value;
-
-                for (var number = indexNumber; number <= finalNumber; number++)
-                {
-                    episodeDatas.Add(new TraktScrobbleEpisode
+                        season = episode.GetSeasonNumber()
+                    },
+                    show = new TraktShow
                     {
-                        app_date = DateTimeOffset.Now.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                        app_version = _appHost.ApplicationVersionString,
-                        progress = progressPercent,
-                        episode = new TraktEpisode
+                        title = episode.Series.Name,
+                        year = episode.Series.ProductionYear,
+                        ids = new TraktShowId
                         {
-                            season = episode.GetSeasonNumber(),
-                            number = number
-                        },
-                        show = new TraktShow
-                        {
-                            title = episode.Series.Name,
-                            year = episode.Series.ProductionYear,
-                            ids = new TraktShowId
-                            {
-                                tvdb = episode.Series.GetProviderId(MetadataProvider.Tvdb).ConvertToInt(),
-                                imdb = episode.Series.GetProviderId(MetadataProvider.Imdb),
-                                tvrage = episode.Series.GetProviderId(MetadataProvider.TvRage).ConvertToInt()
-                            }
+                            tvdb = episode.Series.GetProviderId(MetadataProvider.Tvdb).ConvertToInt(),
+                            tmdb = episode.Series.GetProviderId(MetadataProvider.Tmdb).ConvertToInt(),
+                            imdb = episode.Series.GetProviderId(MetadataProvider.Imdb),
+                            tvrage = episode.Series.GetProviderId(MetadataProvider.TvRage).ConvertToInt()
                         }
-                    });
+                    }
+                };
+                if (episode.IndexNumber.HasValue) 
+                {
+                    scrobbleEpisode.episode.number = number;
                 }
-            }
+                //provider IDs in multi-episode file will be for the first episode only
+                if (firstPass)
+                {
+                    //output provider IDs for first episode
+                    scrobbleEpisode.episode.ids = new TraktEpisodeId
+                    {
+                        tvdb = episode.GetProviderId(MetadataProvider.Tvdb).ConvertToInt(),
+                        tmdb = episode.GetProviderId(MetadataProvider.Tmdb).ConvertToInt(),
+                        imdb = episode.GetProviderId(MetadataProvider.Imdb),
+                        tvrage = episode.GetProviderId(MetadataProvider.TvRage).ConvertToInt()                            
+                    };
+                    firstPass = false;
+                }
+                episodeDatas.Add(scrobbleEpisode);
+
+                number++;
+            } while (episode.IndexNumber.HasValue && number <= finalNumber);
+
 
             string url;
             switch (status)
