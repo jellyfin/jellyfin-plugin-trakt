@@ -173,7 +173,6 @@ namespace Trakt.Api
         public async Task<List<TraktScrobbleResponse>> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus status, TraktUser traktUser, float progressPercent)
         {
             var episodeDatas = new List<TraktScrobbleEpisode>();
-            var tvDbId = episode.GetProviderId(MetadataProvider.Tvdb);
 
             var indexNumber = 0;
             var finalNumber = 0;
