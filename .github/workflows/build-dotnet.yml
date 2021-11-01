@@ -25,6 +25,8 @@ jobs:
       - name: Build Jellyfin Plugin
         uses: oddstr13/jellyfin-plugin-repository-manager@v0.4.2
         id: jprm
+        with:
+          dotnet-target: net6.0
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
