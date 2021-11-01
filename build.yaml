@@ -2,22 +2,20 @@
 name: "Trakt"
 guid: "4fe3201e-d6ae-4f2e-8917-e12bda571281"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-trakt.png"
-version: "12.0.0.0"
-targetAbi: "10.7.0.0"
+version: "13"
+targetAbi: "10.8.0.0"
 framework: "net6.0"
 owner: "jellyfin"
 overview: "Record your watched media with Trakt"
 description: >
   Record your watched media with Trakt.
+
 category: "General"
 artifacts:
   - "Trakt.dll"
-changelog: |
-  - remove jQuery and update to es6 (#78) @grafixeyehero
-  - Use Trakt last watched date when importing (#63) @netpok
-  - Use System.Text.Json (#61) @Ullmie02
-  - chore: plugin images (#76) @h1dden-da3m0n
-  - Fix save button label (#72) @Vagab0nd
-  - Fix AUTHED_API_POST_LIMIT (#65) @dgalli1
-  - chore(deps): bump release-drafter/release-drafter from v5.14.0 to v5.15.0 (#68) @dependabot
-  - chore(ci): builds, releas drafter and more (#66) @h1dden-da3m0n
+changelog: |2-
+  ### CI & build changes ###
+  - Update ci (#85) @h1dden-da3m0n
+
+  ### Code or Repo Maintenance ###
+  - 10.8 support (#91) @crobibero
