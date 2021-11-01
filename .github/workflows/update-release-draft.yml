@@ -1,11 +1,16 @@
 # Automates creation of Release Drafts using Release Drafter
-name: Update Release Draft
+name: Update Release Draft & Create Release Bump PR
 
 on:
   push:
     branches:
       - master
+    paths-ignore:
+      - build.yaml
   workflow_dispatch:
+  repository_dispatch:
+    types:
+      - update-prep-command
 
 jobs:
   update_release_draft:
@@ -23,9 +28,9 @@ jobs:
       - name: Setup YQ
         uses: chrisdickinson/setup-yq@latest
         with:
-          yq-version: v4.9.6
+          yq-version: v4.12.2
 
-      - name: Parse changelog
+      - name: Set-up Environment
         run: |
           TAG="${{ steps.draft.outputs.tag_name }}"
           echo "VERSION=${TAG#v}" >> $GITHUB_ENV
@@ -41,16 +46,22 @@ jobs:
           cat cl.md >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
+          echo "HAS_CHANGES=$(grep -qie 'No changes$' cl.md && echo false || echo true)" >> $GITHUB_ENV
           rm cl.md
 
-      - name: Checkout repository
+          echo "ABI_VERSION=$(curl -s https://api.jellyfin.org/openapi/jellyfin-openapi-stable.json | jq -r '.info.version').0" >> $GITHUB_ENV
+
+      - name: Checkout Repository
+        if: ${{ env.HAS_CHANGES == 'true' }}
         uses: actions/checkout@v2
 
       - name: Update build.yaml
+        if: ${{ env.HAS_CHANGES == 'true' }}
         run: |
-          yq eval '.version = env(VERSION) | .changelog = strenv(CHANGELOG) | .changelog style="literal"' -i build.yaml
+          yq eval '.version = env(VERSION) | .targetAbi = env(ABI_VERSION) | .changelog = strenv(CHANGELOG) | .changelog style="literal"' -i build.yaml
 
       - name: Commit Changes
+        if: ${{ env.HAS_CHANGES == 'true' }}
         run: |
           git config user.name "jellyfin-bot"
           git config user.email "team@jellyfin.org"
@@ -59,6 +70,7 @@ jobs:
           git push -f origin prepare-${{ env.VERSION }}
 
       - name: Create or Update PR
+        if: ${{ env.HAS_CHANGES == 'true' }}
         uses: k3rnels-actions/pr-update@v1
         with:
           token: ${{ secrets.JF_BOT_TOKEN }}

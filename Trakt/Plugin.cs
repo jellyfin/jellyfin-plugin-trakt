@@ -22,7 +22,7 @@ namespace Trakt
         public override string Name => "Trakt";
 
         /// <inheritdoc />
-        public override Guid Id { get; } = new Guid("4fe3201e-d6ae-4f2e-8917-e12bda571281");
+        public override Guid Id => new Guid("4fe3201e-d6ae-4f2e-8917-e12bda571281");
 
         /// <inheritdoc />
         public override string Description

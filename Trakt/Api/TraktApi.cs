@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Text;
 using Microsoft.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,8 +29,8 @@ using TraktEpisodeCollected = Trakt.Api.DataContracts.Sync.Collection.TraktEpiso
 using TraktMovieCollected = Trakt.Api.DataContracts.Sync.Collection.TraktMovieCollected;
 using TraktShowCollected = Trakt.Api.DataContracts.Sync.Collection.TraktShowCollected;
 using System.Text.Json;
-using MediaBrowser.Common.Json;
 using System.Net.Mime;
+using Jellyfin.Extensions.Json;
 
 namespace Trakt.Api
 {
@@ -47,7 +46,7 @@ namespace Trakt.Api
         private readonly IServerApplicationHost _appHost;
         private readonly IUserDataManager _userDataManager;
         private readonly IFileSystem _fileSystem;
-        private readonly JsonSerializerOptions _jsonOptions = JsonDefaults.GetOptions();
+        private readonly JsonSerializerOptions _jsonOptions = JsonDefaults.Options;
 
         public TraktApi(
             ILogger<TraktApi> logger,

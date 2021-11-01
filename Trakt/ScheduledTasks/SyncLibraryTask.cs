@@ -19,8 +19,6 @@ using Trakt.Api;
 using Trakt.Api.DataContracts.Sync;
 using Trakt.Helpers;
 using Trakt.Model;
-using System.Text.Json;
-using MediaBrowser.Common.Json;
 
 namespace Trakt.ScheduledTasks
 {
