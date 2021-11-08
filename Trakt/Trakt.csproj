@@ -16,7 +16,7 @@
   <ItemGroup>
     <PackageReference Include="Jellyfin.Data" Version="10.*-*" />
     <PackageReference Include="Jellyfin.Controller" Version="10.*-*" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="5.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
