@@ -1,9 +1,6 @@
 namespace Trakt.Api.DataContracts.BaseModel
 {
-    public class TraktMovieId : TraktId
+    public class TraktMovieId : TraktIMDBandTMDBId
     {
-        public string imdb { get; set; }
-
-        public int? tmdb { get; set; }
     }
 }
