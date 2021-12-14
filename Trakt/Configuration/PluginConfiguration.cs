@@ -1,28 +1,29 @@
-﻿using System;
+﻿#pragma warning disable CA1819
+
+using System;
 using System.Linq;
 using MediaBrowser.Model.Plugins;
 using Trakt.Model;
 
-namespace Trakt.Configuration
+namespace Trakt.Configuration;
+
+public class PluginConfiguration : BasePluginConfiguration
 {
-    public class PluginConfiguration : BasePluginConfiguration
+    public PluginConfiguration()
     {
-        public PluginConfiguration()
-        {
-            TraktUsers = Array.Empty<TraktUser>();
-        }
+        TraktUsers = Array.Empty<TraktUser>();
+    }
 
-        public TraktUser[] TraktUsers { get; set; }
+    public TraktUser[] TraktUsers { get; set; }
 
-        public void AddUser(string userId)
+    public void AddUser(string userId)
+    {
+        var traktUsers = TraktUsers.ToList();
+        var traktUser = new TraktUser
         {
-            var traktUsers = TraktUsers.ToList();
-            var traktUser = new TraktUser
-            {
-                LinkedMbUserId = userId
-            };
-            traktUsers.Add(traktUser);
-            TraktUsers = traktUsers.ToArray();
-        }
+            LinkedMbUserId = userId
+        };
+        traktUsers.Add(traktUser);
+        TraktUsers = traktUsers.ToArray();
     }
 }

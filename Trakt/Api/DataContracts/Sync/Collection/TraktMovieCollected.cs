@@ -1,19 +1,24 @@
-﻿using Trakt.Api.DataContracts.BaseModel;
+﻿using System.Text.Json.Serialization;
+using Trakt.Api.DataContracts.BaseModel;
 
-namespace Trakt.Api.DataContracts.Sync.Collection
+namespace Trakt.Api.DataContracts.Sync.Collection;
+
+public class TraktMovieCollected : TraktMovie
 {
-    public class TraktMovieCollected : TraktMovie
-    {
-        public string collected_at { get; set; }
+    [JsonPropertyName("collected_at")]
+    public string CollectedAt { get; set; }
 
-        public string media_type { get; set; }
+    [JsonPropertyName("media_type")]
+    public string MediaType { get; set; }
 
-        public string resolution { get; set; }
+    [JsonPropertyName("resolution")]
+    public string Resolution { get; set; }
 
-        public string audio { get; set; }
+    [JsonPropertyName("audio")]
+    public string Audio { get; set; }
 
-        public string audio_channels { get; set; }
+    [JsonPropertyName("audio_channels")]
+    public string AudioChannels { get; set; }
 
-        //public bool 3d { get; set; }
-    }
+    // public bool 3d { get; set; }
 }

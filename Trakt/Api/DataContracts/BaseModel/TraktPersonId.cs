@@ -1,7 +1,9 @@
-namespace Trakt.Api.DataContracts.BaseModel
+using System.Text.Json.Serialization;
+
+namespace Trakt.Api.DataContracts.BaseModel;
+
+public class TraktPersonId : TraktIMDBandTMDBId
 {
-    public class TraktPersonId : TraktIMDBandTMDBId
-    {
-        public int? tvrage { get; set; }
-    }
+    [JsonPropertyName("tvrage")]
+    public int? Tvrage { get; set; }
 }

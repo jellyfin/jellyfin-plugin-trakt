@@ -1,9 +1,12 @@
-namespace Trakt.Api.DataContracts.BaseModel
-{
-    public class TraktSeason
-    {
-        public int? number { get; set; }
+using System.Text.Json.Serialization;
 
-        public TraktSeasonId ids { get; set; }
-    }
+namespace Trakt.Api.DataContracts.BaseModel;
+
+public class TraktSeason
+{
+    [JsonPropertyName("number")]
+    public int? Number { get; set; }
+
+    [JsonPropertyName("ids")]
+    public TraktSeasonId Ids { get; set; }
 }

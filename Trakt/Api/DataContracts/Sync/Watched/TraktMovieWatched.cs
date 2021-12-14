@@ -1,9 +1,10 @@
-﻿using Trakt.Api.DataContracts.BaseModel;
+﻿using System.Text.Json.Serialization;
+using Trakt.Api.DataContracts.BaseModel;
 
-namespace Trakt.Api.DataContracts.Sync.Watched
+namespace Trakt.Api.DataContracts.Sync.Watched;
+
+public class TraktMovieWatched : TraktMovie
 {
-    public class TraktMovieWatched : TraktMovie
-    {
-        public string watched_at { get; set; }
-    }
+    [JsonPropertyName("watched_at")]
+    public string WatchedAt { get; set; }
 }

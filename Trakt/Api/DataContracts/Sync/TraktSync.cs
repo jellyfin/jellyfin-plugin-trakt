@@ -1,28 +1,19 @@
+#pragma warning disable CA2227
+#pragma warning disable CA1002
+
 using System.Collections.Generic;
-using Trakt.Api.DataContracts.Sync.Collection;
-using Trakt.Api.DataContracts.Sync.Ratings;
-using Trakt.Api.DataContracts.Sync.Watched;
+using System.Text.Json.Serialization;
 
-namespace Trakt.Api.DataContracts.Sync
+namespace Trakt.Api.DataContracts.Sync;
+
+public class TraktSync<TMovie, TShow, TEpisode>
 {
-    public class TraktSync<TMovie, TShow, TEpisode>
-    {
-        public List<TMovie> movies { get; set; }
+    [JsonPropertyName("movies")]
+    public List<TMovie> Movies { get; set; }
 
-        public List<TShow> shows { get; set; }
+    [JsonPropertyName("shows")]
+    public List<TShow> Shows { get; set; }
 
-        public List<TEpisode> episodes { get; set; }
-    }
-
-    public class TraktSyncRated : TraktSync<TraktMovieRated, TraktShowRated, TraktEpisodeRated>
-    {
-    }
-
-    public class TraktSyncWatched : TraktSync<TraktMovieWatched, TraktShowWatched, TraktEpisodeWatched>
-    {
-    }
-
-    public class TraktSyncCollected : TraktSync<TraktMovieCollected, TraktShowCollected, TraktEpisodeCollected>
-    {
-    }
+    [JsonPropertyName("episodes")]
+    public List<TEpisode> Episodes { get; set; }
 }

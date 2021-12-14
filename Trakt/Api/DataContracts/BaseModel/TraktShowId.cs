@@ -1,7 +1,5 @@
-﻿
-namespace Trakt.Api.DataContracts.BaseModel
+﻿namespace Trakt.Api.DataContracts.BaseModel;
+
+public class TraktShowId : TraktTVId
 {
-    public class TraktShowId : TraktTVId
-    {
-    }
 }

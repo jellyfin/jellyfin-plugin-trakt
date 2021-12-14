@@ -1,11 +1,15 @@
-namespace Trakt.Api.DataContracts.BaseModel
+using System.Text.Json.Serialization;
+
+namespace Trakt.Api.DataContracts.BaseModel;
+
+public class TraktSeasonId : TraktId
 {
-    public class TraktSeasonId : TraktId
-    {
-        public int? tmdb { get; set; }
+    [JsonPropertyName("tmdb")]
+    public int? Tmdb { get; set; }
 
-        public int? tvdb { get; set; }
+    [JsonPropertyName("tvdb")]
+    public int? Tvdb { get; set; }
 
-        public int? tvrage { get; set; }
-    }
+    [JsonPropertyName("tvrage")]
+    public int? Tvrage { get; set; }
 }

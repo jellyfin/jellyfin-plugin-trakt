@@ -1,23 +1,23 @@
+#pragma warning disable CA2227
+#pragma warning disable CA1002
+
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using Trakt.Api.DataContracts.BaseModel;
 
-namespace Trakt.Api.DataContracts.Sync.Ratings
+namespace Trakt.Api.DataContracts.Sync.Ratings;
+
+public class TraktShowRated : TraktRated
 {
-    public class TraktShowRated : TraktRated
-    {
-        public string title { get; set; }
+    [JsonPropertyName("title")]
+    public string Title { get; set; }
 
-        public int? year { get; set; }
+    [JsonPropertyName("year")]
+    public int? Year { get; set; }
 
-        public TraktShowId ids { get; set; }
+    [JsonPropertyName("ids")]
+    public TraktShowId Ids { get; set; }
 
-        public List<TraktSeasonRated> seasons { get; set; }
-
-        public class TraktSeasonRated : TraktRated
-        {
-            public int? number { get; set; }
-
-            public List<TraktEpisodeRated> episodes { get; set; }
-        }
-    }
+    [JsonPropertyName("seasons")]
+    public List<TraktSeasonRated> Seasons { get; set; }
 }
