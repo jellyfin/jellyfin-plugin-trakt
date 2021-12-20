@@ -10,6 +10,8 @@ namespace Trakt.Api.DataContracts.Users.Watched
 
         public string last_watched_at { get; set; }
 
+        public string reset_at { get; set; }
+
         public TraktShow show { get; set; }
 
         public List<Season> seasons { get; set; }
