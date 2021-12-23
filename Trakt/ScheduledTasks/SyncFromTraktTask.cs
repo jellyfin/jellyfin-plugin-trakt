@@ -227,6 +227,13 @@ namespace Trakt.ScheduledTasks
                                         ? 0
                                         : (episode.ParentIndexNumber ?? 1)));
 
+                    // keep track of the shows rewatch cycles
+                    DateTime? tLastReset = null;
+                    if (DateTime.TryParse(matchedShow.reset_at, out var resetValue))
+                    {
+                        tLastReset = resetValue;
+                    }
+
                     // if it's not a match then it means trakt doesn't know about the season, leave the watched state alone and move on
                     if (matchedSeason != null)
                     {
@@ -236,6 +243,16 @@ namespace Trakt.ScheduledTasks
 
                         var matchedEpisode =
                             matchedSeason.episodes.FirstOrDefault(x => x.number == (episode.IndexNumber ?? -1));
+
+                        // prepend a check if the matched episode is on a rewatch cycle and 
+                        // discard it if the last play date was before the reset date
+                        if (matchedEpisode != null && tLastReset != null)
+                        {
+                            if (DateTime.TryParse(matchedEpisode.last_watched_at, out var value) && value < tLastReset)
+                            {
+                                matchedEpisode = null;
+                            }
+                        }
 
                         if (matchedEpisode != null)
                         {
