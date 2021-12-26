@@ -1,9 +1,12 @@
-namespace Trakt.Api.DataContracts.BaseModel
-{
-    public class TraktIMDBandTMDBId : TraktId
-    {
-        public string imdb { get; set; }
+using System.Text.Json.Serialization;
 
-        public int? tmdb { get; set; }
-    }
+namespace Trakt.Api.DataContracts.BaseModel;
+
+public class TraktIMDBandTMDBId : TraktId
+{
+    [JsonPropertyName("imdb")]
+    public string Imdb { get; set; }
+
+    [JsonPropertyName("tmdb")]
+    public int? Tmdb { get; set; }
 }

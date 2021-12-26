@@ -1,14 +1,16 @@
-﻿
+﻿using System.Text.Json.Serialization;
 using Trakt.Api.DataContracts.BaseModel;
 
-namespace Trakt.Api.DataContracts.Users.Collection
+namespace Trakt.Api.DataContracts.Users.Collection;
+
+public class TraktMovieCollected
 {
-    public class TraktMovieCollected
-    {
-        public string collected_at { get; set; }
+    [JsonPropertyName("collected_at")]
+    public string CollectedAt { get; set; }
 
-        public TraktMetadata metadata { get; set; }
+    [JsonPropertyName("metadata")]
+    public TraktMetadata Metadata { get; set; }
 
-        public TraktMovie movie { get; set; }
-    }
+    [JsonPropertyName("movie")]
+    public TraktMovie Movie { get; set; }
 }

@@ -1,11 +1,21 @@
-namespace Trakt.Api.DataContracts
+using System.Text.Json.Serialization;
+
+namespace Trakt.Api.DataContracts;
+
+public class TraktUserRefreshTokenRequest
 {
-    public class TraktUserRefreshTokenRequest
-    {
-        public string refresh_token { get; set; }
-        public string client_id { get; set; }
-        public string client_secret { get; set; }
-        public string redirect_uri { get; set; }
-        public string grant_type { get; set; }
-    }
+    [JsonPropertyName("refresh_token")]
+    public string RefreshToken { get; set; }
+
+    [JsonPropertyName("client_id")]
+    public string ClientId { get; set; }
+
+    [JsonPropertyName("client_secret")]
+    public string ClientSecret { get; set; }
+
+    [JsonPropertyName("redirect_uri")]
+    public string RedirectUri { get; set; }
+
+    [JsonPropertyName("grant_type")]
+    public string GrantType { get; set; }
 }

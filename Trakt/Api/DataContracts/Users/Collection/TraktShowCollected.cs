@@ -1,31 +1,20 @@
-﻿using System.Collections.Generic;
+﻿#pragma warning disable CA2227
+#pragma warning disable CA1002
 
+using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using Trakt.Api.DataContracts.BaseModel;
 
-namespace Trakt.Api.DataContracts.Users.Collection
+namespace Trakt.Api.DataContracts.Users.Collection;
+
+public class TraktShowCollected
 {
-    public class TraktShowCollected
-    {
-        public string last_collected_at { get; set; }
+    [JsonPropertyName("last_collected_at")]
+    public string LastCollectedAt { get; set; }
 
-        public TraktShow show { get; set; }
+    [JsonPropertyName("show")]
+    public TraktShow Show { get; set; }
 
-        public List<TraktSeasonCollected> seasons { get; set; }
-
-        public class TraktSeasonCollected
-        {
-            public int number { get; set; }
-
-            public List<TraktEpisodeCollected> episodes { get; set; }
-
-            public class TraktEpisodeCollected
-            {
-                public int number { get; set; }
-
-                public string collected_at { get; set; }
-
-                public TraktMetadata metadata { get; set; }
-            }
-        }
-    }
+    [JsonPropertyName("seasons")]
+    public List<TraktSeasonCollected> Seasons { get; set; }
 }

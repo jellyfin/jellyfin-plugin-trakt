@@ -1,9 +1,12 @@
-namespace Trakt.Api.DataContracts.BaseModel
-{
-    public class TraktPerson
-    {
-        public string name { get; set; }
+using System.Text.Json.Serialization;
 
-        public TraktPersonId ids { get; set; }
-    }
+namespace Trakt.Api.DataContracts.BaseModel;
+
+public class TraktPerson
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+
+    [JsonPropertyName("ids")]
+    public TraktPersonId Ids { get; set; }
 }

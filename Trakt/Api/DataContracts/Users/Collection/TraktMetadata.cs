@@ -1,17 +1,20 @@
-﻿
+﻿using System.Text.Json.Serialization;
 
-namespace Trakt.Api.DataContracts.Users.Collection
+namespace Trakt.Api.DataContracts.Users.Collection;
+
+public class TraktMetadata
 {
-    public class TraktMetadata
-    {
-        public string media_type { get; set; }
+    [JsonPropertyName("media_type")]
+    public string MediaType { get; set; }
 
-        public string resolution { get; set; }
+    [JsonPropertyName("resolution")]
+    public string Resolution { get; set; }
 
-        public string audio { get; set; }
+    [JsonPropertyName("audio")]
+    public string Audio { get; set; }
 
-        public string audio_channels { get; set; }
+    [JsonPropertyName("audio_channels")]
+    public string AudioChannels { get; set; }
 
-        //public bool 3d { get; set; }
-    }
+    // public bool 3d { get; set; }
 }

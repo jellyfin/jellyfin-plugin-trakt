@@ -1,12 +1,15 @@
-﻿
-namespace Trakt.Api.DataContracts.BaseModel
+﻿using System.Text.Json.Serialization;
+
+namespace Trakt.Api.DataContracts.BaseModel;
+
+public class TraktMovie
 {
-    public class TraktMovie
-    {
-        public string title { get; set; }
+    [JsonPropertyName("title")]
+    public string Title { get; set; }
 
-        public int? year { get; set; }
+    [JsonPropertyName("year")]
+    public int? Year { get; set; }
 
-        public TraktMovieId ids { get; set; }
-    }
+    [JsonPropertyName("ids")]
+    public TraktMovieId Ids { get; set; }
 }

@@ -1,28 +1,25 @@
-﻿using Trakt.Api.DataContracts.BaseModel;
+﻿using System.Text.Json.Serialization;
+using Trakt.Api.DataContracts.BaseModel;
 
-namespace Trakt.Api.DataContracts.Scrobble
+namespace Trakt.Api.DataContracts.Scrobble;
+
+public class TraktScrobbleResponse
 {
-    public class TraktScrobbleResponse
-    {
-        public string action { get; set; }
+    [JsonPropertyName("action")]
+    public string Action { get; set; }
 
-        public float progress { get; set; }
+    [JsonPropertyName("progress")]
+    public float Progress { get; set; }
 
-        public SocialMedia sharing { get; set; }
+    [JsonPropertyName("sharing")]
+    public SocialMedia Sharing { get; set; }
 
-        public class SocialMedia
-        {
-            public bool facebook { get; set; }
+    [JsonPropertyName("movie")]
+    public TraktMovie Movie { get; set; }
 
-            public bool twitter { get; set; }
+    [JsonPropertyName("episode")]
+    public TraktEpisode Episode { get; set; }
 
-            public bool tumblr { get; set; }
-        }
-
-        public TraktMovie movie { get; set; }
-
-        public TraktEpisode episode { get; set; }
-
-        public TraktShow show { get; set; }
-    }
+    [JsonPropertyName("show")]
+    public TraktShow Show { get; set; }
 }

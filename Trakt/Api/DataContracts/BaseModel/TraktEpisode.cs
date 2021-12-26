@@ -1,13 +1,30 @@
-namespace Trakt.Api.DataContracts.BaseModel
+using System.Text.Json.Serialization;
+
+namespace Trakt.Api.DataContracts.BaseModel;
+
+public class TraktEpisode
 {
-    public class TraktEpisode
-    {
-        public int? season { get; set; }
+    /// <summary>
+    /// Gets or sets the season number.
+    /// </summary>
+    [JsonPropertyName("season")]
+    public int? Season { get; set; }
 
-        public int? number { get; set; }
+    /// <summary>
+    /// Gets or sets the episode number.
+    /// </summary>
+    [JsonPropertyName("number")]
+    public int? Number { get; set; }
 
-        public string title { get; set; }
+    /// <summary>
+    /// Gets or sets the episode title.
+    /// </summary>
+    [JsonPropertyName("title")]
+    public string Title { get; set; }
 
-        public TraktEpisodeId ids { get; set; }
-    }
+    /// <summary>
+    /// Gets or sets the episode ids.
+    /// </summary>
+    [JsonPropertyName("ids")]
+    public TraktEpisodeId Ids { get; set; }
 }

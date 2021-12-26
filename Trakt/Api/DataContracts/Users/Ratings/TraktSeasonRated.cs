@@ -1,9 +1,10 @@
+using System.Text.Json.Serialization;
 using Trakt.Api.DataContracts.BaseModel;
 
-namespace Trakt.Api.DataContracts.Users.Ratings
+namespace Trakt.Api.DataContracts.Users.Ratings;
+
+public class TraktSeasonRated : TraktRated
 {
-    public class TraktSeasonRated : TraktRated
-    {
-        public TraktSeason season { get; set; }
-    }
+    [JsonPropertyName("season")]
+    public TraktSeason Season { get; set; }
 }

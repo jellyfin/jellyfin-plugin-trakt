@@ -1,17 +1,22 @@
-﻿using Trakt.Api.DataContracts.BaseModel;
+﻿using System.Text.Json.Serialization;
+using Trakt.Api.DataContracts.BaseModel;
 
-namespace Trakt.Api.DataContracts.Scrobble
+namespace Trakt.Api.DataContracts.Scrobble;
+
+public class TraktScrobbleEpisode
 {
-    public class TraktScrobbleEpisode
-    {
-        public TraktShow show { get; set; }
+    [JsonPropertyName("show")]
+    public TraktShow Show { get; set; }
 
-        public TraktEpisode episode { get; set; }
+    [JsonPropertyName("episode")]
+    public TraktEpisode Episode { get; set; }
 
-        public float progress { get; set; }
+    [JsonPropertyName("progress")]
+    public float Progress { get; set; }
 
-        public string app_version { get; set; }
+    [JsonPropertyName("app_version")]
+    public string AppVersion { get; set; }
 
-        public string app_date { get; set; }
-    }
+    [JsonPropertyName("app_date")]
+    public string AppDate { get; set; }
 }
