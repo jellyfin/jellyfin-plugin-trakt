@@ -137,7 +137,7 @@ public class SyncFromTraktTask : IScheduledTask
 
         var mediaItems =
             _libraryManager.GetItemList(
-                    new InternalItemsQuery(user) { IncludeItemTypes = new[] { nameof(Movie), nameof(Episode) }, IsVirtualItem = false, OrderBy = new[] { (ItemSortBy.SeriesSortName, SortOrder.Ascending), (ItemSortBy.SortName, SortOrder.Ascending) } })
+                    new InternalItemsQuery(user) { IncludeItemTypes = new[] { BaseItemKind.Movie, BaseItemKind.Episode }, IsVirtualItem = false, OrderBy = new[] { (ItemSortBy.SeriesSortName, SortOrder.Ascending), (ItemSortBy.SortName, SortOrder.Ascending) } })
                 .Where(i => _traktApi.CanSync(i, traktUser)).ToList();
 
         // purely for progress reporting

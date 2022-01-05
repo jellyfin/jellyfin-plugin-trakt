@@ -131,7 +131,7 @@ public class SyncLibraryTask : IScheduledTask
             _libraryManager.GetItemList(
                     new InternalItemsQuery(user)
                     {
-                        IncludeItemTypes = new[] { nameof(Movie) },
+                        IncludeItemTypes = new[] { BaseItemKind.Movie },
                         IsVirtualItem = false,
                         OrderBy = new[]
                         {
@@ -302,7 +302,7 @@ public class SyncLibraryTask : IScheduledTask
             _libraryManager.GetItemList(
                     new InternalItemsQuery(user)
                     {
-                        IncludeItemTypes = new[] { nameof(Episode) },
+                        IncludeItemTypes = new[] { BaseItemKind.Episode },
                         IsVirtualItem = false,
                         OrderBy = new[]
                         {
