@@ -1,4 +1,4 @@
-﻿#pragma warning disable CA1002
+#pragma warning disable CA1002
 
 using System;
 using System.Collections.Generic;
@@ -91,26 +91,20 @@ public class TraktApi
 
         if (item is Movie movie)
         {
-            return !string.IsNullOrEmpty(movie.GetProviderId(MetadataProvider.Imdb)) ||
-                   !string.IsNullOrEmpty(movie.GetProviderId(MetadataProvider.Tmdb));
+            return movie.HasProviderId(MetadataProvider.Imdb) ||
+                    movie.HasProviderId(MetadataProvider.Tmdb);
         }
 
         if (item is Episode episode
             && episode.Series != null
             && !episode.IsMissingEpisode
             && (episode.IndexNumber.HasValue
-                || !string.IsNullOrEmpty(episode.GetProviderId(MetadataProvider.Imdb))
-                || !string.IsNullOrEmpty(episode.GetProviderId(MetadataProvider.Tmdb))
-                || !string.IsNullOrEmpty(episode.GetProviderId(MetadataProvider.Tvdb))
-                || !string.IsNullOrEmpty(episode.GetProviderId(MetadataProvider.TvRage))
-            ))
+                || HasAnyProviderTvIds(episode)
+                ))
         {
             var series = episode.Series;
 
-            return !string.IsNullOrEmpty(series.GetProviderId(MetadataProvider.Imdb))
-                   || !string.IsNullOrEmpty(series.GetProviderId(MetadataProvider.Tmdb))
-                   || !string.IsNullOrEmpty(series.GetProviderId(MetadataProvider.TvRage))
-                   || !string.IsNullOrEmpty(series.GetProviderId(MetadataProvider.Tvdb));
+            return HasAnyProviderTvIds(series);
         }
 
         return false;
@@ -1110,5 +1104,13 @@ public class TraktApi
     {
         return shows.FirstOrDefault(
             sre => sre.Ids != null && sre.Ids.Imdb == series.GetProviderId(MetadataProvider.Imdb) && sre.Ids.Tmdb == series.GetProviderId(MetadataProvider.Tmdb).ConvertToInt() && sre.Ids.Tvdb == series.GetProviderId(MetadataProvider.Tvdb).ConvertToInt() && sre.Ids.Tvrage == series.GetProviderId(MetadataProvider.TvRage).ConvertToInt());
+    }
+
+    private bool HasAnyProviderTvIds(BaseItem item)
+    {
+        return item.HasProviderId(MetadataProvider.Imdb)
+            || item.HasProviderId(MetadataProvider.Tmdb)
+            || item.HasProviderId(MetadataProvider.Tvdb)
+            || item.HasProviderId(MetadataProvider.TvRage);
     }
 }
