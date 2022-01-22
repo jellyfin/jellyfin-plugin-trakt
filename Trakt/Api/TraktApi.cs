@@ -161,11 +161,11 @@ public class TraktApi
     /// <param name="traktUser">The user that's watching the episode</param>
     /// <param name="progressPercent"></param>
     /// <returns>A List of standard TraktResponse Data Contracts</returns>
-    public async Task<List<TraktScrobbleResponse>> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus status, TraktUser traktUser, float progressPercent)
+    public async Task<List<TraktScrobbleResponse>> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus status, TraktUser traktUser, float progressPercent, bool useProviderIDs = true)
     {
         var episodeDatas = new List<TraktScrobbleEpisode>();
 
-        if (HasAnyProviderTvIds(episode) && (!episode.IndexNumber.HasValue || !episode.IndexNumberEnd.HasValue || episode.IndexNumberEnd <= episode.IndexNumber))
+        if (useProviderIDs && HasAnyProviderTvIds(episode) && (!episode.IndexNumber.HasValue || !episode.IndexNumberEnd.HasValue || episode.IndexNumberEnd <= episode.IndexNumber))
         {
             episodeDatas.Add(new TraktScrobbleEpisode
             {
@@ -224,7 +224,20 @@ public class TraktApi
         {
             using (var response = await PostToTrakt(url, traktScrobbleEpisode, traktUser, CancellationToken.None).ConfigureAwait(false))
             {
-                responses.Add(await JsonSerializer.DeserializeAsync<TraktScrobbleResponse>(response, _jsonOptions).ConfigureAwait(false));
+                // response can be empty if episode not found
+                if (response.Length > 0)
+                {
+                    responses.Add(await JsonSerializer.DeserializeAsync<TraktScrobbleResponse>(response, _jsonOptions).ConfigureAwait(false));
+                }
+                else
+                {
+                    if (useProviderIDs && HasAnyProviderTvIds(episode))
+                    {
+                        // try scrobbling without IDs
+                        _logger.LogDebug("Resend episode status update, without episode IDs");
+                        responses = await SendEpisodeStatusUpdateAsync(episode, status, traktUser, progressPercent, false).ConfigureAwait(false);
+                    }
+                }
             }
         }
 
