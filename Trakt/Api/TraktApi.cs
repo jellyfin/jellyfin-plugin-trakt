@@ -607,7 +607,7 @@ public class TraktApi
         using (var response = await PostToTrakt(TraktUris.SyncRatingsAdd, data, traktUser).ConfigureAwait(false))
         {
             var tsr = await JsonSerializer.DeserializeAsync<TraktSyncResponse>(response, _jsonOptions).ConfigureAwait(false);
-            if (item is Episode episode && useEpisodeProviderIDs && tsr.NotFound.Episodes.Count > 0)
+            if (item is Episode && useEpisodeProviderIDs && tsr.NotFound.Episodes.Count > 0)
             {
                 // try without IDs to see if that matches
                 _logger.LogDebug("Resend episode rating, without episode IDs");
@@ -865,21 +865,18 @@ public class TraktApi
     {
         // episodes not found. if using IDs, try again without them
         List<Episode> episodes = new List<Episode>();
-        foreach (TraktEpisode traktEpisode in traktSyncResponse.NotFound.Episodes)
+        // build a list of unfound episodes with ids
+        foreach (TraktEpisode traktEpisode in traktSyncResponse.NotFound.Episodes.Where(i => HasAnyProviderTvIds(i.Ids)))
         {
-            // build a list of unfound episodes with ids
-            if (HasAnyProviderTvIds(traktEpisode.Ids))
-            {
-                // find matching episode in JF based on ids provide
-                var notFoundEpisode = episodeChunk.First(e => e.GetProviderId(MetadataProvider.Imdb) == traktEpisode.Ids.Imdb
-                    && e.GetProviderId(MetadataProvider.Tmdb) == traktEpisode.Ids.Tmdb?.ToString(CultureInfo.InvariantCulture)
-                    && e.GetProviderId(MetadataProvider.Tvdb) == traktEpisode.Ids.Tvdb?.ToString(CultureInfo.InvariantCulture)
-                    && e.GetProviderId(MetadataProvider.TvRage) == traktEpisode.Ids.Tvrage?.ToString(CultureInfo.InvariantCulture));
+            // find matching episode in JF based on ids provide
+            var notFoundEpisode = episodeChunk.First(e => e.GetProviderId(MetadataProvider.Imdb) == traktEpisode.Ids.Imdb
+                && e.GetProviderId(MetadataProvider.Tmdb) == traktEpisode.Ids.Tmdb?.ToString(CultureInfo.InvariantCulture)
+                && e.GetProviderId(MetadataProvider.Tvdb) == traktEpisode.Ids.Tvdb?.ToString(CultureInfo.InvariantCulture)
+                && e.GetProviderId(MetadataProvider.TvRage) == traktEpisode.Ids.Tvrage?.ToString(CultureInfo.InvariantCulture));
 
-                if (notFoundEpisode != null)
-                {
-                    episodes.Add(notFoundEpisode);
-                }
+            if (notFoundEpisode != null)
+            {
+                episodes.Add(notFoundEpisode);
             }
         }
 
