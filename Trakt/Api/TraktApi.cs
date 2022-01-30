@@ -1,4 +1,4 @@
-﻿#pragma warning disable CA1002
+#pragma warning disable CA1002
 
 using System;
 using System.Collections.Generic;
@@ -870,9 +870,9 @@ public class TraktApi
         {
             // find matching episode in JF based on ids provide
             var notFoundEpisode = episodeChunk.First(e => e.GetProviderId(MetadataProvider.Imdb) == traktEpisode.Ids.Imdb
-                && e.GetProviderId(MetadataProvider.Tmdb) == traktEpisode.Ids.Tmdb?.ToString(CultureInfo.InvariantCulture)
-                && e.GetProviderId(MetadataProvider.Tvdb) == traktEpisode.Ids.Tvdb?.ToString(CultureInfo.InvariantCulture)
-                && e.GetProviderId(MetadataProvider.TvRage) == traktEpisode.Ids.Tvrage?.ToString(CultureInfo.InvariantCulture));
+                || e.GetProviderId(MetadataProvider.Tmdb) == traktEpisode.Ids.Tmdb?.ToString(CultureInfo.InvariantCulture)
+                || e.GetProviderId(MetadataProvider.Tvdb) == traktEpisode.Ids.Tvdb?.ToString(CultureInfo.InvariantCulture)
+                || e.GetProviderId(MetadataProvider.TvRage) == traktEpisode.Ids.Tvrage?.ToString(CultureInfo.InvariantCulture));
 
             if (notFoundEpisode != null)
             {
