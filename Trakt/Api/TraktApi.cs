@@ -1,4 +1,4 @@
-﻿#pragma warning disable CA1002
+#pragma warning disable CA1002
 
 using System;
 using System.Collections.Generic;
@@ -161,11 +161,11 @@ public class TraktApi
     /// <param name="traktUser">The user that's watching the episode</param>
     /// <param name="progressPercent"></param>
     /// <returns>A List of standard TraktResponse Data Contracts</returns>
-    public async Task<List<TraktScrobbleResponse>> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus status, TraktUser traktUser, float progressPercent)
+    public async Task<List<TraktScrobbleResponse>> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus status, TraktUser traktUser, float progressPercent, bool useProviderIDs = true)
     {
         var episodeDatas = new List<TraktScrobbleEpisode>();
 
-        if (HasAnyProviderTvIds(episode) && (!episode.IndexNumber.HasValue || !episode.IndexNumberEnd.HasValue || episode.IndexNumberEnd <= episode.IndexNumber))
+        if (useProviderIDs && HasAnyProviderTvIds(episode) && (!episode.IndexNumber.HasValue || !episode.IndexNumberEnd.HasValue || episode.IndexNumberEnd <= episode.IndexNumber))
         {
             episodeDatas.Add(new TraktScrobbleEpisode
             {
@@ -224,7 +224,20 @@ public class TraktApi
         {
             using (var response = await PostToTrakt(url, traktScrobbleEpisode, traktUser, CancellationToken.None).ConfigureAwait(false))
             {
-                responses.Add(await JsonSerializer.DeserializeAsync<TraktScrobbleResponse>(response, _jsonOptions).ConfigureAwait(false));
+                // response can be empty if episode not found
+                if (response.Length > 0)
+                {
+                    responses.Add(await JsonSerializer.DeserializeAsync<TraktScrobbleResponse>(response, _jsonOptions).ConfigureAwait(false));
+                }
+                else
+                {
+                    if (useProviderIDs && HasAnyProviderTvIds(episode))
+                    {
+                        // try scrobbling without IDs
+                        _logger.LogDebug("Resend episode status update, without episode IDs");
+                        responses = await SendEpisodeStatusUpdateAsync(episode, status, traktUser, progressPercent, false).ConfigureAwait(false);
+                    }
+                }
             }
         }
 
@@ -341,7 +354,8 @@ public class TraktApi
         IEnumerable<Episode> episodes,
         TraktUser traktUser,
         EventType eventType,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool useProviderIDs = true)
     {
         var episodesPayload = new List<TraktEpisodeCollected>();
         var showPayload = new List<TraktShowCollected>();
@@ -349,7 +363,7 @@ public class TraktApi
         {
             var audioStream = episode.GetMediaStreams().FirstOrDefault(x => x.Type == MediaStreamType.Audio);
 
-            if (HasAnyProviderTvIds(episode) &&
+            if (useProviderIDs && HasAnyProviderTvIds(episode) &&
                 (!episode.IndexNumber.HasValue || !episode.IndexNumberEnd.HasValue ||
                  episode.IndexNumberEnd <= episode.IndexNumber))
             {
@@ -435,7 +449,15 @@ public class TraktApi
         var url = eventType == EventType.Add ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
         using (var response = await PostToTrakt(url, data, traktUser, cancellationToken).ConfigureAwait(false))
         {
-            return await JsonSerializer.DeserializeAsync<TraktSyncResponse>(response, _jsonOptions, cancellationToken).ConfigureAwait(false);
+            var tsr = await JsonSerializer.DeserializeAsync<TraktSyncResponse>(response, _jsonOptions, cancellationToken).ConfigureAwait(false);
+            if (useProviderIDs && tsr.NotFound.Episodes.Count > 0)
+            {
+                // send subset of episodes back to trakt to try without ids
+                _logger.LogDebug("Resend episodes Library update, without episode IDs");
+                await SendLibraryUpdateInternalAsync(FindNotFoundEpisodes(episodes, tsr), traktUser, eventType, cancellationToken, false).ConfigureAwait(false);
+            }
+
+            return tsr;
         }
     }
 
@@ -497,7 +519,7 @@ public class TraktApi
     /// <param name="rating"></param>
     /// <param name="traktUser"></param>
     /// <returns></returns>
-    public async Task<TraktSyncResponse> SendItemRating(BaseItem item, int rating, TraktUser traktUser)
+    public async Task<TraktSyncResponse> SendItemRating(BaseItem item, int rating, TraktUser traktUser, bool useEpisodeProviderIDs = true)
     {
         object data = new { };
         if (item is Movie)
@@ -518,7 +540,21 @@ public class TraktApi
         }
         else if (item is Episode episode)
         {
-            if (!HasAnyProviderTvIds(episode))
+            if (useEpisodeProviderIDs && HasAnyProviderTvIds(episode))
+            {
+                data = new
+                {
+                    episodes = new[]
+                    {
+                        new TraktEpisodeRated
+                        {
+                            Rating = rating,
+                            Ids = GetTraktTvIds<Episode, TraktEpisodeId>(episode)
+                        }
+                    }
+                };
+            }
+            else
             {
                 if (episode.IndexNumber.HasValue)
                 {
@@ -550,20 +586,6 @@ public class TraktApi
                     };
                 }
             }
-            else
-            {
-                data = new
-                {
-                    episodes = new[]
-                    {
-                        new TraktEpisodeRated
-                        {
-                            Rating = rating,
-                            Ids = GetTraktTvIds<Episode, TraktEpisodeId>(episode)
-                        }
-                    }
-                };
-            }
         }
         else // It's a Series
         {
@@ -584,7 +606,15 @@ public class TraktApi
 
         using (var response = await PostToTrakt(TraktUris.SyncRatingsAdd, data, traktUser).ConfigureAwait(false))
         {
-            return await JsonSerializer.DeserializeAsync<TraktSyncResponse>(response, _jsonOptions).ConfigureAwait(false);
+            var tsr = await JsonSerializer.DeserializeAsync<TraktSyncResponse>(response, _jsonOptions).ConfigureAwait(false);
+            if (item is Episode && useEpisodeProviderIDs && tsr.NotFound.Episodes.Count > 0)
+            {
+                // try without IDs to see if that matches
+                _logger.LogDebug("Resend episode rating, without episode IDs");
+                return await SendItemRating(item, rating, traktUser, false).ConfigureAwait(false);
+            }
+
+            return tsr;
         }
     }
 
@@ -759,7 +789,7 @@ public class TraktApi
         return traktResponses;
     }
 
-    private async Task<TraktSyncResponse> SendEpisodePlaystateUpdatesInternalAsync(IEnumerable<Episode> episodeChunk, TraktUser traktUser, bool seen, CancellationToken cancellationToken)
+    private async Task<TraktSyncResponse> SendEpisodePlaystateUpdatesInternalAsync(IEnumerable<Episode> episodeChunk, TraktUser traktUser, bool seen, CancellationToken cancellationToken, bool useProviderIDs = true)
     {
         var data = new TraktSyncWatched { Episodes = new List<TraktEpisodeWatched>(), Shows = new List<TraktShowWatched>() };
         foreach (var episode in episodeChunk)
@@ -769,7 +799,7 @@ public class TraktApi
                     .LastPlayedDate
                 : null;
 
-            if (HasAnyProviderTvIds(episode) && (!episode.IndexNumber.HasValue || !episode.IndexNumberEnd.HasValue || episode.IndexNumberEnd <= episode.IndexNumber))
+            if (useProviderIDs && HasAnyProviderTvIds(episode) && (!episode.IndexNumber.HasValue || !episode.IndexNumberEnd.HasValue || episode.IndexNumberEnd <= episode.IndexNumber))
             {
                 data.Episodes.Add(new TraktEpisodeWatched
                 {
@@ -819,8 +849,38 @@ public class TraktApi
 
         using (var response = await PostToTrakt(url, data, traktUser, cancellationToken).ConfigureAwait(false))
         {
-            return await JsonSerializer.DeserializeAsync<TraktSyncResponse>(response, _jsonOptions, cancellationToken).ConfigureAwait(false);
+            var tsr = await JsonSerializer.DeserializeAsync<TraktSyncResponse>(response, _jsonOptions, cancellationToken).ConfigureAwait(false);
+            if (useProviderIDs && tsr.NotFound.Episodes.Count > 0)
+            {
+                // send subset of episodes back to trakt to try without ids
+                _logger.LogDebug("Resend episodes playstate update, without episode IDs");
+                await SendEpisodePlaystateUpdatesInternalAsync(FindNotFoundEpisodes(episodeChunk, tsr), traktUser, seen, cancellationToken, false).ConfigureAwait(false);
+            }
+
+            return tsr;
         }
+    }
+
+    private List<Episode> FindNotFoundEpisodes(IEnumerable<Episode> episodeChunk, TraktSyncResponse traktSyncResponse)
+    {
+        // episodes not found. if using IDs, try again without them
+        List<Episode> episodes = new List<Episode>();
+        // build a list of unfound episodes with ids
+        foreach (TraktEpisode traktEpisode in traktSyncResponse.NotFound.Episodes.Where(i => HasAnyProviderTvIds(i.Ids)))
+        {
+            // find matching episode in JF based on ids provide
+            var notFoundEpisode = episodeChunk.First(e => e.GetProviderId(MetadataProvider.Imdb) == traktEpisode.Ids.Imdb
+                || e.GetProviderId(MetadataProvider.Tmdb) == traktEpisode.Ids.Tmdb?.ToString(CultureInfo.InvariantCulture)
+                || e.GetProviderId(MetadataProvider.Tvdb) == traktEpisode.Ids.Tvdb?.ToString(CultureInfo.InvariantCulture)
+                || e.GetProviderId(MetadataProvider.TvRage) == traktEpisode.Ids.Tvrage?.ToString(CultureInfo.InvariantCulture));
+
+            if (notFoundEpisode != null)
+            {
+                episodes.Add(notFoundEpisode);
+            }
+        }
+
+        return episodes;
     }
 
     public async Task<string> AuthorizeDevice(TraktUser traktUser)
@@ -1120,5 +1180,13 @@ public class TraktApi
             || item.HasProviderId(MetadataProvider.Tmdb)
             || item.HasProviderId(MetadataProvider.Tvdb)
             || item.HasProviderId(MetadataProvider.TvRage);
+    }
+
+    private bool HasAnyProviderTvIds(TraktTVId item)
+    {
+        return !string.IsNullOrEmpty(item.Imdb)
+            || item.Tmdb.HasValue
+            || item.Tvdb.HasValue
+            || item.Tvrage.HasValue;
     }
 }
