@@ -76,7 +76,7 @@ public class SyncFromTraktTask : IScheduledTask
     /// <summary>
     /// Gather users and call <see cref="SyncTraktDataForUser"/>
     /// </summary>
-    public async Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
+    public async Task ExecuteAsync(IProgress<double> progress, CancellationToken cancellationToken)
     {
         var users = _userManager.Users.Where(u => UserHelper.GetTraktUser(u) != null).ToList();
 
