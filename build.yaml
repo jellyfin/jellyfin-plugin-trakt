@@ -14,10 +14,13 @@ category: "General"
 artifacts:
   - "Trakt.dll"
 changelog: |2-
-  ### New features and improvements ###
-  - Handle TV show rewatches (#97) @dulli
-  - Don't treat TVDB Id specially for episodes (#93) @SenorSmartyPants
+  ### Bug Fixes ###
+  - Retry episode scrobble without IDs if episode was not found by trakt (#102) @SenorSmartyPants
+  - Fix episodes with IDs (#100) @SenorSmartyPants
 
   ### Code or Repo Maintenance ###
-  - Use BaseItemKind (#98) @crobibero
-  - Remove all warnings in project (#96) @crobibero
+  - 10.8 support (#110) @crobibero
+  - Use meta ci (#108) @crobibero
+
+  ### CI & build changes ###
+  - Use meta ci (#108) @crobibero
