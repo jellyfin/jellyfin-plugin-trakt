@@ -34,7 +34,7 @@ namespace Trakt
         private Dictionary<string, bool> _playbackPause;
 
         /// <summary>
-        /// Processes server events.
+        /// Initializes a new instance of the <see cref="ServerMediator"/> class.
         /// </summary>
         /// <param name="sessionManager">The <see cref="ISessionManager"/>.</param>
         /// <param name="userDataManager">The <see cref="IUserDataManager"/>.</param>
@@ -102,6 +102,7 @@ namespace Trakt
         /// <summary>
         /// Run observer tasks for observed events.
         /// </summary>
+        /// <returns>Task.</returns>
         public Task RunAsync()
         {
             _userDataManager.UserDataSaved += OnUserDataSaved;
@@ -191,7 +192,7 @@ namespace Trakt
 
                 if (!_traktApi.CanSync(playbackProgressEventArgs.Item, traktUser))
                 {
-                    _logger.LogDebug("Syncing playback for {Item} is forbidden for user {User}.", playbackProgressEventArgs.Item.Name, user.Username);
+                    _logger.LogDebug("Syncing playback for {Item} is forbidden for user {User}.", playbackProgressEventArgs.Item.Path, user.Username);
                     continue;
                 }
 
@@ -199,7 +200,7 @@ namespace Trakt
                 var progressPercent = video.RunTimeTicks.HasValue && video.RunTimeTicks != 0 ?
                     (float)(playbackProgressEventArgs.PlaybackPositionTicks ?? 0) / video.RunTimeTicks.Value * 100.0f : 0.0f;
 
-                _logger.LogDebug("User {User} started watching item {Item}.", user.Username, playbackProgressEventArgs.Item.Name);
+                _logger.LogDebug("User {User} started watching item {Item}.", user.Username, playbackProgressEventArgs.Item.Path);
 
                 try
                 {
@@ -266,7 +267,7 @@ namespace Trakt
 
                 if (!_traktApi.CanSync(playbackProgressEventArgs.Item, traktUser))
                 {
-                    _logger.LogDebug("Syncing playback for {Item} is forbidden for user {User}.", playbackProgressEventArgs.Item.Name, user.Username);
+                    _logger.LogDebug("Syncing playback for {Item} is forbidden for user {User}.", playbackProgressEventArgs.Item.Path, user.Username);
                     continue;
                 }
 
@@ -274,7 +275,7 @@ namespace Trakt
                 var progressPercent = video.RunTimeTicks.HasValue && video.RunTimeTicks != 0 ?
                     (float)(playbackProgressEventArgs.PlaybackPositionTicks ?? 0) / video.RunTimeTicks.Value * 100.0f : 0.0f;
 
-                _logger.LogDebug("User {User} progressed watching item {Item}.", user.Username, playbackProgressEventArgs.Item.Name);
+                _logger.LogDebug("User {User} progressed watching item {Item}.", user.Username, playbackProgressEventArgs.Item.Path);
 
                 try
                 {
@@ -344,8 +345,8 @@ namespace Trakt
         /// Media playback has stopped.
         /// Depending on playback progress, let trakt.tv know the user has completed watching the item.
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="playbackStoppedEventArgs"></param>
+        /// <param name="sender">The sending entity.</param>
+        /// <param name="playbackStoppedEventArgs">The <see cref="PlaybackStopEventArgs"/>.</param>
         private async void KernelPlaybackStopped(object sender, PlaybackStopEventArgs playbackStoppedEventArgs)
         {
             if (playbackStoppedEventArgs.Users == null || !playbackStoppedEventArgs.Users.Any() || playbackStoppedEventArgs.Item == null)
@@ -441,7 +442,7 @@ namespace Trakt
         /// <summary>
         /// Removes event subscriptions on dispose.
         /// </summary>
-        /// <param name="disposing"><see cref="bool"/> indicating if object is currently disposed</param>
+        /// <param name="disposing"><see cref="bool"/> indicating if object is currently disposed.</param>
         protected virtual void Dispose(bool disposing)
         {
             if (disposing)

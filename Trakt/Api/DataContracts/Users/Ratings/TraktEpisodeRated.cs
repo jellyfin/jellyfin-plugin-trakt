@@ -1,10 +1,17 @@
 using System.Text.Json.Serialization;
 using Trakt.Api.DataContracts.BaseModel;
 
-namespace Trakt.Api.DataContracts.Users.Ratings;
-
-public class TraktEpisodeRated : TraktRated
+namespace Trakt.Api.DataContracts.Users.Ratings
 {
-    [JsonPropertyName("episode")]
-    public TraktEpisode Episode { get; set; }
+    /// <summary>
+    /// The trakt.tv users rating class.
+    /// </summary>
+    public class TraktEpisodeRated : TraktRated
+    {
+        /// <summary>
+        /// Gets or sets the episode.
+        /// </summary>
+        [JsonPropertyName("episode")]
+        public TraktEpisode Episode { get; set; }
+    }
 }

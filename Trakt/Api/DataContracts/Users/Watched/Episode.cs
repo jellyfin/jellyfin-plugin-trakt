@@ -1,15 +1,28 @@
 using System.Text.Json.Serialization;
 
-namespace Trakt.Api.DataContracts.Users.Watched;
-
-public class Episode
+namespace Trakt.Api.DataContracts.Users.Watched
 {
-    [JsonPropertyName("last_watched_at")]
-    public string LastWatchedAt { get; set; }
+    /// <summary>
+    /// The trakt.tv users episode watched class.
+    /// </summary>
+    public class Episode
+    {
+        /// <summary>
+        /// Gets or sets the last watched date.
+        /// </summary>
+        [JsonPropertyName("last_watched_at")]
+        public string LastWatchedAt { get; set; }
 
-    [JsonPropertyName("number")]
-    public int Number { get; set; }
+        /// <summary>
+        /// Gets or sets the episode number.
+        /// </summary>
+        [JsonPropertyName("number")]
+        public int Number { get; set; }
 
-    [JsonPropertyName("plays")]
-    public int Plays { get; set; }
+        /// <summary>
+        /// Gets or sets the amount of plays.
+        /// </summary>
+        [JsonPropertyName("plays")]
+        public int Plays { get; set; }
+    }
 }

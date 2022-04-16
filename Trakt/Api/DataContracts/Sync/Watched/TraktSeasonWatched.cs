@@ -1,17 +1,27 @@
-﻿#pragma warning disable CA2227
-#pragma warning disable CA1002
+﻿#pragma warning disable CA1002
+#pragma warning disable CA2227
 
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Trakt.Api.DataContracts.BaseModel;
 
-namespace Trakt.Api.DataContracts.Sync.Watched;
-
-public class TraktSeasonWatched : TraktSeason
+namespace Trakt.Api.DataContracts.Sync.Watched
 {
-    [JsonPropertyName("watched_at")]
-    public string WatchedAt { get; set; }
+    /// <summary>
+    /// The trakt.tv sync season watched class.
+    /// </summary>
+    public class TraktSeasonWatched : TraktSeason
+    {
+        /// <summary>
+        /// Gets or sets the watched date.
+        /// </summary>
+        [JsonPropertyName("watched_at")]
+        public string WatchedAt { get; set; }
 
-    [JsonPropertyName("episodes")]
-    public List<TraktEpisodeWatched> Episodes { get; set; }
+        /// <summary>
+        /// Gets or sets the episodes.
+        /// </summary>
+        [JsonPropertyName("episodes")]
+        public List<TraktEpisodeWatched> Episodes { get; set; }
+    }
 }

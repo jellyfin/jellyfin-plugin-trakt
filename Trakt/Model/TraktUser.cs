@@ -2,53 +2,108 @@
 
 using System;
 
-namespace Trakt.Model;
-
-public class TraktUser
+namespace Trakt.Model
 {
-    public TraktUser()
+    /// <summary>
+    /// Trakt.tv user class.
+    /// </summary>
+    public class TraktUser
     {
-        SkipUnwatchedImportFromTrakt = true;
-        SkipWatchedImportFromTrakt = false;
-        PostWatchedHistory = true;
-        PostUnwatchedHistory = true;
-        PostSetWatched = true;
-        PostSetUnwatched = true;
-        ExtraLogging = false;
-        ExportMediaInfo = false;
-        SynchronizeCollections = true;
-        Scrobble = true;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TraktUser"/> class.
+        /// </summary>
+        public TraktUser()
+        {
+            SkipUnwatchedImportFromTrakt = true;
+            SkipWatchedImportFromTrakt = false;
+            PostWatchedHistory = true;
+            PostUnwatchedHistory = true;
+            PostSetWatched = true;
+            PostSetUnwatched = true;
+            ExtraLogging = false;
+            ExportMediaInfo = false;
+            SynchronizeCollections = true;
+            Scrobble = true;
+        }
+
+        /// <summary>
+        /// Gets or sets the access token.
+        /// </summary>
+        public string AccessToken { get; set; }
+
+        /// <summary>
+        /// Gets or sets the refresh token.
+        /// </summary>
+        public string RefreshToken { get; set; }
+
+        /// <summary>
+        /// Gets or sets the linked Mb user id.
+        /// </summary>
+        public string LinkedMbUserId { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the advanced rating option is enabled or not.
+        /// </summary>
+        public bool UsesAdvancedRating { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the skip unwatched import option is enabled or not.
+        /// </summary>
+        public bool SkipUnwatchedImportFromTrakt { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the skip watched import option is enabled or not.
+        /// </summary>
+        public bool SkipWatchedImportFromTrakt { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the watch history should be posted or not.
+        /// </summary>
+        public bool PostWatchedHistory { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the unwatch history should be posted or not.
+        /// </summary>
+        public bool PostUnwatchedHistory { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether setting an item to watched should be posted or not.
+        /// </summary>
+        public bool PostSetWatched { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the setting an item to unwatched should be posted or not.
+        /// </summary>
+        public bool PostSetUnwatched { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether extra logging is enabled or not.
+        /// </summary>
+        public bool ExtraLogging { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the media info should be exported or not.
+        /// </summary>
+        public bool ExportMediaInfo { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether collections should be synchronized or not.
+        /// </summary>
+        public bool SynchronizeCollections { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether scrobbling should take place or not.
+        /// </summary>
+        public bool Scrobble { get; set; }
+
+        /// <summary>
+        /// Gets or sets the access token.
+        /// </summary>
+        public string[] LocationsExcluded { get; set; }
+
+        /// <summary>
+        /// Gets or sets the access token expiration.
+        /// </summary>
+        public DateTime AccessTokenExpiration { get; set; }
     }
-
-    public string AccessToken { get; set; }
-
-    public string RefreshToken { get; set; }
-
-    public string LinkedMbUserId { get; set; }
-
-    public bool UsesAdvancedRating { get; set; }
-
-    public bool SkipUnwatchedImportFromTrakt { get; set; }
-
-    public bool SkipWatchedImportFromTrakt { get; set; }
-
-    public bool PostWatchedHistory { get; set; }
-
-    public bool PostUnwatchedHistory { get; set; }
-
-    public bool PostSetWatched { get; set; }
-
-    public bool PostSetUnwatched { get; set; }
-
-    public bool ExtraLogging { get; set; }
-
-    public bool ExportMediaInfo { get; set; }
-
-    public bool SynchronizeCollections { get; set; }
-
-    public bool Scrobble { get; set; }
-
-    public string[] LocationsExcluded { get; set; }
-
-    public DateTime AccessTokenExpiration { get; set; }
 }

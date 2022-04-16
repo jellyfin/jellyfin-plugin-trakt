@@ -1,17 +1,27 @@
-#pragma warning disable CA2227
 #pragma warning disable CA1002
+#pragma warning disable CA2227
 
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using Trakt.Api.DataContracts.BaseModel;
 
-namespace Trakt.Api.DataContracts.Sync.Ratings;
-
-public class TraktSeasonRated : TraktRated
+namespace Trakt.Api.DataContracts.Sync.Ratings
 {
-    [JsonPropertyName("number")]
-    public int? Number { get; set; }
+    /// <summary>
+    /// The trakt.tv sync season rated class.
+    /// </summary>
+    public class TraktSeasonRated : TraktRated
+    {
+        /// <summary>
+        /// Gets or sets the season number.
+        /// </summary>
+        [JsonPropertyName("number")]
+        public int? Number { get; set; }
 
-    [JsonPropertyName("episodes")]
-    public List<TraktEpisodeRated> Episodes { get; set; }
+        /// <summary>
+        /// Gets or sets the episodes.
+        /// </summary>
+        [JsonPropertyName("episodes")]
+        public List<TraktEpisodeRated> Episodes { get; set; }
+    }
 }
