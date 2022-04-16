@@ -55,26 +55,26 @@ namespace Trakt
             switch (audio)
             {
                 case "truehd":
-                    return TraktAudio.DolbyDigital.ToString();
+                    return TraktAudio.dolby_truehd.ToString();
                 case "dts":
                 case "dca":
-                    return TraktAudio.Dts.ToString();
+                    return TraktAudio.dts.ToString();
                 case "dtshd":
-                    return TraktAudio.DtsMa.ToString();
+                    return TraktAudio.dts_ma.ToString();
                 case "ac3":
-                    return TraktAudio.DolbyDigital.ToString();
+                    return TraktAudio.dolby_digital.ToString();
                 case "aac":
-                    return TraktAudio.Aac.ToString();
+                    return TraktAudio.aac.ToString();
                 case "mp2":
-                    return TraktAudio.Mp3.ToString();
+                    return TraktAudio.mp3.ToString();
                 case "pcm":
-                    return TraktAudio.Lpcm.ToString();
+                    return TraktAudio.lpcm.ToString();
                 case "ogg":
-                    return TraktAudio.Ogg.ToString();
+                    return TraktAudio.ogg.ToString();
                 case "wma":
-                    return TraktAudio.Wma.ToString();
+                    return TraktAudio.wma.ToString();
                 case "flac":
-                    return TraktAudio.Flac.ToString();
+                    return TraktAudio.flac.ToString();
                 default:
                     return null;
             }

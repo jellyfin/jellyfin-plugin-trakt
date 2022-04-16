@@ -1,4 +1,5 @@
-using System.ComponentModel;
+#pragma warning disable SA1300
+#pragma warning disable CA1707
 
 namespace Trakt.Model
 {
@@ -10,73 +11,61 @@ namespace Trakt.Model
         /// <summary>
         /// LPCM audio.
         /// </summary>
-        [Description("lpcm")]
-        Lpcm,
+        lpcm,
 
         /// <summary>
         /// MP3 audio.
         /// </summary>
-        [Description("mp3")]
-        Mp3,
+        mp3,
 
         /// <summary>
         /// AAC audio.
         /// </summary>
-        [Description("aac")]
-        Aac,
+        aac,
 
         /// <summary>
         /// DTS audio.
         /// </summary>
-        [Description("dts")]
-        Dts,
+        dts,
 
         /// <summary>
         /// DTS-HD Master Audio audio.
         /// </summary>
-        [Description("dts_ma")]
-        DtsMa,
+        dts_ma,
 
         /// <summary>
         /// FLAC audio.
         /// </summary>
-        [Description("flac")]
-        Flac,
+        flac,
 
         /// <summary>
         /// OGG audio.
         /// </summary>
-        [Description("ogg")]
-        Ogg,
+        ogg,
 
         /// <summary>
         /// WMA audio.
         /// </summary>
-        [Description("wma")]
-        Wma,
+        wma,
 
         /// <summary>
         /// Dolby ProLogic audio.
         /// </summary>
-        [Description("dolby_prologic")]
-        DolbyProLogic,
+        dolby_prologic,
 
         /// <summary>
         /// Dolby Digital audio.
         /// </summary>
-        [Description("dolby_digital")]
-        DolbyDigital,
+        dolby_digital,
 
         /// <summary>
         /// Dolby Digital Plus audio.
         /// </summary>
-        [Description("dolby_digital_plus")]
-        DolbyDigitalPlus,
+        dolby_digital_plus,
 
         /// <summary>
         /// Dolby TrueHD audio.
         /// </summary>
-        [Description("dolby_truehd")]
-        DolbyTrueHd
+        dolby_truehd
     }
 }
