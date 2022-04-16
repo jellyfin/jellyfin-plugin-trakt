@@ -139,81 +139,89 @@ namespace Trakt.ScheduledTasks
              */
             var traktWatchedMovies = await _traktApi.SendGetAllWatchedMoviesRequest(traktUser).ConfigureAwait(false);
             var traktCollectedMovies = await _traktApi.SendGetAllCollectedMoviesRequest(traktUser).ConfigureAwait(false);
-            var libraryMovies =
-                _libraryManager.GetItemList(
-                        new InternalItemsQuery(user)
-                        {
-                            IncludeItemTypes = new[] { BaseItemKind.Movie },
-                            IsVirtualItem = false,
-                            OrderBy = new[]
-                            {
-                            (ItemSortBy.SortName, SortOrder.Ascending)
-                            }
-                        })
-                    .Where(x => _traktApi.CanSync(x, traktUser))
-                    .ToList();
+
+            var baseQuery = new InternalItemsQuery(user)
+            {
+                IncludeItemTypes = new[] { BaseItemKind.Movie },
+                IsVirtualItem = false,
+                OrderBy = new[] { (ItemSortBy.SortName, SortOrder.Ascending) }
+            };
+
+            var totalCount = _libraryManager.GetCount(baseQuery);
+            var decisionProgress = progress.Split(4).Split(totalCount);
+
             var collectedMovies = new List<Movie>();
             var playedMovies = new List<Movie>();
             var unplayedMovies = new List<Movie>();
 
-            var decisionProgress = progress.Split(4).Split(libraryMovies.Count);
-            foreach (var child in libraryMovies)
+            const int Limit = 100;
+            int offset = 0, previousCount;
+
+            do
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                var libraryMovie = child as Movie;
-                var userData = _userDataManager.GetUserData(user.Id, child);
+                baseQuery.Limit = Limit;
+                baseQuery.StartIndex = offset;
 
-                if (traktUser.SynchronizeCollections)
+                var libraryMovies = _libraryManager.GetItemList(baseQuery);
+                previousCount = libraryMovies.Count;
+                offset += Limit;
+
+                foreach (var libraryMovie in libraryMovies.OfType<Movie>().Where(x => _traktApi.CanSync(x, traktUser)))
                 {
-                    // If movie is not collected, or (export media info setting is enabled and every collected matching movie has different metadata), collect it
-                    var collectedMathingMovies = SyncFromTraktTask.FindMatches(libraryMovie, traktCollectedMovies).ToList();
-                    if (!collectedMathingMovies.Any()
-                        || (traktUser.ExportMediaInfo
-                            && collectedMathingMovies.All(
-                                collectedMovie => collectedMovie.MetadataIsDifferent(libraryMovie))))
-                    {
-                        collectedMovies.Add(libraryMovie);
-                    }
-                }
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var userData = _userDataManager.GetUserData(user.Id, libraryMovie);
 
-                var movieWatched = SyncFromTraktTask.FindMatch(libraryMovie, traktWatchedMovies);
-
-                // If the movie has been played locally and is unplayed on trakt.tv then add it to the list
-                if (userData.Played)
-                {
-                    if (movieWatched == null)
+                    if (traktUser.SynchronizeCollections)
                     {
-                        if (traktUser.PostWatchedHistory)
+                        // If movie is not collected, or (export media info setting is enabled and every collected matching movie has different metadata), collect it
+                        var collectedMatchingMovies = SyncFromTraktTask.FindMatches(libraryMovie, traktCollectedMovies).ToList();
+                        if (collectedMatchingMovies.Count == 0
+                            || (traktUser.ExportMediaInfo && collectedMatchingMovies.All(collectedMovie => collectedMovie.MetadataIsDifferent(libraryMovie))))
                         {
-                            playedMovies.Add(libraryMovie);
+                            collectedMovies.Add(libraryMovie);
                         }
-                        else if (!traktUser.SkipUnwatchedImportFromTrakt)
-                        {
-                            if (userData.Played)
-                            {
-                                userData.Played = false;
+                    }
 
-                                _userDataManager.SaveUserData(
-                                    user.Id,
-                                    libraryMovie,
-                                    userData,
-                                    UserDataSaveReason.Import,
-                                    cancellationToken);
+                    var movieWatched = SyncFromTraktTask.FindMatch(libraryMovie, traktWatchedMovies);
+
+                    // If the movie has been played locally and is unplayed on trakt.tv then add it to the list
+                    if (userData.Played)
+                    {
+                        if (movieWatched == null)
+                        {
+                            if (traktUser.PostWatchedHistory)
+                            {
+                                playedMovies.Add(libraryMovie);
+                            }
+                            else if (!traktUser.SkipUnwatchedImportFromTrakt)
+                            {
+                                if (userData.Played)
+                                {
+                                    userData.Played = false;
+
+                                    _userDataManager.SaveUserData(
+                                        user.Id,
+                                        libraryMovie,
+                                        userData,
+                                        UserDataSaveReason.Import,
+                                        cancellationToken);
+                                }
                             }
                         }
                     }
-                }
-                else
-                {
-                    // If the show has not been played locally but is played on trakt.tv then add it to the unplayed list
-                    if (movieWatched != null && traktUser.PostUnwatchedHistory)
+                    else
                     {
-                        unplayedMovies.Add(libraryMovie);
+                        // If the show has not been played locally but is played on trakt.tv then add it to the unplayed list
+                        if (movieWatched != null && traktUser.PostUnwatchedHistory)
+                        {
+                            unplayedMovies.Add(libraryMovie);
+                        }
                     }
-                }
 
-                decisionProgress.Report(100);
+                    decisionProgress.Report(100);
+                }
             }
+            while (previousCount != 0);
 
             // Send movies to mark collected
             if (traktUser.SynchronizeCollections)
@@ -307,84 +315,93 @@ namespace Trakt.ScheduledTasks
         {
             var traktWatchedShows = await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false);
             var traktCollectedShows = await _traktApi.SendGetCollectedShowsRequest(traktUser).ConfigureAwait(false);
-            var episodeItems =
-                _libraryManager.GetItemList(
-                        new InternalItemsQuery(user)
-                        {
-                            IncludeItemTypes = new[] { BaseItemKind.Episode },
-                            IsVirtualItem = false,
-                            OrderBy = new[]
-                            {
-                            (ItemSortBy.SeriesSortName, SortOrder.Ascending)
-                            }
-                        })
-                    .Where(x => _traktApi.CanSync(x, traktUser))
-                    .ToList();
+
+            var baseQuery = new InternalItemsQuery(user)
+            {
+                IncludeItemTypes = new[] { BaseItemKind.Episode },
+                IsVirtualItem = false,
+                OrderBy = new[] { (ItemSortBy.SeriesSortName, SortOrder.Ascending) }
+            };
+
+            var totalCount = _libraryManager.GetCount(baseQuery);
+            var decisionProgress = progress.Split(4).Split(totalCount);
 
             var collectedEpisodes = new List<Episode>();
             var playedEpisodes = new List<Episode>();
             var unplayedEpisodes = new List<Episode>();
 
-            var decisionProgress = progress.Split(4).Split(episodeItems.Count);
-            foreach (var child in episodeItems)
+            const int Limit = 100;
+            int offset = 0, previousCount;
+
+            do
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                var episode = child as Episode;
-                var userData = _userDataManager.GetUserData(user.Id, episode);
-                var isPlayedTraktTv = false;
-                var traktWatchedShow = SyncFromTraktTask.FindMatch(episode.Series, traktWatchedShows);
+                baseQuery.Limit = Limit;
+                baseQuery.StartIndex = offset;
 
-                if (traktWatchedShow?.Seasons != null && traktWatchedShow.Seasons.Count > 0)
-                {
-                    isPlayedTraktTv =
-                        traktWatchedShow.Seasons.Any(
-                            season =>
-                                season.Number == episode.GetSeasonNumber() && season.Episodes != null
-                                                                           && season.Episodes.Any(te => te.Number == episode.IndexNumber && te.Plays > 0));
-                }
+                var episodeItems = _libraryManager.GetItemList(baseQuery);
+                previousCount = episodeItems.Count;
+                offset += Limit;
 
-                // if the show has been played locally and is unplayed on trakt.tv then add it to the list
-                if (userData != null && userData.Played && !isPlayedTraktTv)
+                foreach (var episode in episodeItems.OfType<Episode>().Where(x => _traktApi.CanSync(x, traktUser)))
                 {
-                    if (traktUser.PostWatchedHistory)
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var userData = _userDataManager.GetUserData(user.Id, episode);
+                    var isPlayedTraktTv = false;
+                    var traktWatchedShow = SyncFromTraktTask.FindMatch(episode.Series, traktWatchedShows);
+
+                    if (traktWatchedShow?.Seasons != null && traktWatchedShow.Seasons.Count > 0)
                     {
-                        playedEpisodes.Add(episode);
+                        isPlayedTraktTv =
+                            traktWatchedShow.Seasons.Any(
+                                season =>
+                                    season.Number == episode.GetSeasonNumber() && season.Episodes != null
+                                                                               && season.Episodes.Any(te => te.Number == episode.IndexNumber && te.Plays > 0));
                     }
-                    else if (!traktUser.SkipUnwatchedImportFromTrakt)
-                    {
-                        if (userData.Played)
-                        {
-                            userData.Played = false;
 
-                            _userDataManager.SaveUserData(
-                                user.Id,
-                                episode,
-                                userData,
-                                UserDataSaveReason.Import,
-                                cancellationToken);
+                    // if the show has been played locally and is unplayed on trakt.tv then add it to the list
+                    if (userData != null && userData.Played && !isPlayedTraktTv)
+                    {
+                        if (traktUser.PostWatchedHistory)
+                        {
+                            playedEpisodes.Add(episode);
+                        }
+                        else if (!traktUser.SkipUnwatchedImportFromTrakt)
+                        {
+                            if (userData.Played)
+                            {
+                                userData.Played = false;
+
+                                _userDataManager.SaveUserData(
+                                    user.Id,
+                                    episode,
+                                    userData,
+                                    UserDataSaveReason.Import,
+                                    cancellationToken);
+                            }
                         }
                     }
-                }
-                else if (userData != null && !userData.Played && isPlayedTraktTv && traktUser.PostUnwatchedHistory)
-                {
-                    // If the show has not been played locally but is played on trakt.tv then add it to the unplayed list
-                    unplayedEpisodes.Add(episode);
-                }
-
-                if (traktUser.SynchronizeCollections)
-                {
-                    var traktCollectedShow = SyncFromTraktTask.FindMatch(episode.Series, traktCollectedShows);
-                    if (traktCollectedShow?.Seasons == null
-                        || traktCollectedShow.Seasons.All(x => x.Number != episode.ParentIndexNumber)
-                        || traktCollectedShow.Seasons.First(x => x.Number == episode.ParentIndexNumber)
-                            .Episodes.All(e => e.Number != episode.IndexNumber))
+                    else if (userData != null && !userData.Played && isPlayedTraktTv && traktUser.PostUnwatchedHistory)
                     {
-                        collectedEpisodes.Add(episode);
+                        // If the show has not been played locally but is played on trakt.tv then add it to the unplayed list
+                        unplayedEpisodes.Add(episode);
                     }
-                }
 
-                decisionProgress.Report(100);
+                    if (traktUser.SynchronizeCollections)
+                    {
+                        var traktCollectedShow = SyncFromTraktTask.FindMatch(episode.Series, traktCollectedShows);
+                        if (traktCollectedShow?.Seasons == null
+                            || traktCollectedShow.Seasons.All(x => x.Number != episode.ParentIndexNumber)
+                            || traktCollectedShow.Seasons.First(x => x.Number == episode.ParentIndexNumber)
+                                .Episodes.All(e => e.Number != episode.IndexNumber))
+                        {
+                            collectedEpisodes.Add(episode);
+                        }
+                    }
+
+                    decisionProgress.Report(100);
+                }
             }
+            while (previousCount != 0);
 
             if (traktUser.SynchronizeCollections)
             {
