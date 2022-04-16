@@ -26,7 +26,7 @@ namespace Trakt.Configuration
         public TraktUser[] TraktUsers { get; set; }
 
         /// <summary>
-        /// Adds a user to the trakt user.
+        /// Adds a user to the trakt users.
         /// </summary>
         /// <param name="userId">The user id.</param>
         public void AddUser(string userId)
@@ -37,6 +37,17 @@ namespace Trakt.Configuration
                 LinkedMbUserId = userId
             };
             traktUsers.Add(traktUser);
+            TraktUsers = traktUsers.ToArray();
+        }
+
+        /// <summary>
+        /// Removes a user from the trakt users.
+        /// </summary>
+        /// <param name="userId">The user id.</param>
+        public void RemoveUser(string userId)
+        {
+            var traktUsers = TraktUsers.ToList();
+            traktUsers.RemoveAll(user => user.LinkedMbUserId == userId);
             TraktUsers = traktUsers.ToArray();
         }
     }

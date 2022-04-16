@@ -17,7 +17,8 @@
                 </div>
                 <div>
                     <div class="fieldDescription hide" id="authorizedDescription">
-                        This user is authorized. You can force a re-authorization by clicking the button below.
+                        This user is authorized. You can force a re-authorization or unauthorize by clicking one of the
+                        buttons below.
                     </div>
                     <button is="emby-button" type="button" id="authorizeDevice" class="raised block">Authorize
                         device</button>
@@ -27,6 +28,8 @@
                         account.<br />
                         Your device code is <span id="userCode"></span>.
                     </div>
+                    <button is="emby-button" type="button" id="deauthorizeDevice" class="raised block">De-Authorize
+                        device</button>
                 </div>
                 <div>
                     <h3 class="checkboxListLabel">Exclude folders:</h3>
