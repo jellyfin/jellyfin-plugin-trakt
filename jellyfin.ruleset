@@ -1,6 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RuleSet Name="Rules for Jellyfin.Server" Description="Code analysis rules for Jellyfin.Server.csproj" ToolsVersion="14.0">
   <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers">
+    <!-- error on SA1000: The keyword 'new' should be followed by a space -->
+    <Rule Id="SA1000" Action="Error" />
+    <!-- error on SA1001: Commas should not be preceded by whitespace -->
+    <Rule Id="SA1001" Action="Error" />
+    <!-- error on SA1117: The parameters should all be placed on the same line or each parameter should be placed on its own line -->
+    <Rule Id="SA1117" Action="Error" />
+    <!-- error on SA1142: Refer to tuple fields by name -->
+    <Rule Id="SA1142" Action="Error" />
+    <!-- error on SA1210: Using directives should be ordered alphabetically by the namespaces -->
+    <Rule Id="SA1210" Action="Error" />
+    <!-- error on SA1316: Tuple element names should use correct casing -->
+    <Rule Id="SA1316" Action="Error" />
+    <!-- error on SA1414: Tuple types in signatures should have element names -->
+    <Rule Id="SA1414" Action="Error" />
+    <!-- error on SA1518: File is required to end with a single newline character -->
+    <Rule Id="SA1518" Action="Error" />
+    <!-- error on SA1629: Documentation text should end with a period -->
+    <Rule Id="SA1629" Action="Error" />
+
     <!-- disable warning SA1009: Closing parenthesis should be followed by a space. -->
     <Rule Id="SA1009" Action="None" />
     <!-- disable warning SA1011: Closing square bracket should be followed by a space. -->
@@ -38,6 +57,10 @@
   </Rules>
 
   <Rules AnalyzerId="Microsoft.CodeAnalysis.NetAnalyzers" RuleNamespace="Microsoft.Design">
+    <!-- error on CA1001: Types that own disposable fields should be disposable -->
+    <Rule Id="CA1001" Action="Error" />
+    <!-- error on CA1012: Abstract types should not have public constructors -->
+    <Rule Id="CA1012" Action="Error" />
     <!-- error on CA1063: Implement IDisposable correctly -->
     <Rule Id="CA1063" Action="Error" />
     <!-- error on CA1305: Specify IFormatProvider -->
@@ -56,9 +79,13 @@
     <Rule Id="CA1843" Action="Error" />
     <!-- error on CA1845: Use span-based 'string.Concat' -->
     <Rule Id="CA1845" Action="Error" />
+    <!-- error on CA1849: Call async methods when in an async method -->
+    <Rule Id="CA1849" Action="Error" />
     <!-- error on CA2016: Forward the CancellationToken parameter to methods that take one
         or pass in 'CancellationToken.None' explicitly to indicate intentionally not propagating the token -->
     <Rule Id="CA2016" Action="Error" />
+    <!-- error on CA2215: Dispose methods should call base class dispose -->
+    <Rule Id="CA2215" Action="Error" />
     <!-- error on CA2254: Template should be a static expression -->
     <Rule Id="CA2254" Action="Error" />
 
@@ -114,5 +141,10 @@
     <Rule Id="CA2101" Action="None" />
     <!-- disable warning CA2234: Pass System.Uri objects instead of strings -->
     <Rule Id="CA2234" Action="None" />
+  </Rules>
+
+  <Rules AnalyzerId="Microsoft.CodeAnalysis.BannedApiAnalyzers" RuleNamespace="Microsoft.Design">
+    <!-- error on RS0030: Do not used banned APIs -->
+    <Rule Id="RS0030" Action="Error" />
   </Rules>
 </RuleSet>

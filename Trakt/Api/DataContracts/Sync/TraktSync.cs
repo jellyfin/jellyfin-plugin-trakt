@@ -1,19 +1,35 @@
-#pragma warning disable CA2227
 #pragma warning disable CA1002
+#pragma warning disable CA2227
 
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Trakt.Api.DataContracts.Sync;
-
-public class TraktSync<TMovie, TShow, TEpisode>
+namespace Trakt.Api.DataContracts.Sync
 {
-    [JsonPropertyName("movies")]
-    public List<TMovie> Movies { get; set; }
+    /// <summary>
+    /// The trakt.tv sync class.
+    /// </summary>
+    /// <typeparam name="TMovie">The type of the movie.</typeparam>
+    /// <typeparam name="TShow">The type of the show.</typeparam>
+    /// <typeparam name="TEpisode">The type of the episode.</typeparam>
+    public class TraktSync<TMovie, TShow, TEpisode>
+    {
+        /// <summary>
+        /// Gets or sets the movies.
+        /// </summary>
+        [JsonPropertyName("movies")]
+        public List<TMovie> Movies { get; set; }
 
-    [JsonPropertyName("shows")]
-    public List<TShow> Shows { get; set; }
+        /// <summary>
+        /// Gets or sets the shows.
+        /// </summary>
+        [JsonPropertyName("shows")]
+        public List<TShow> Shows { get; set; }
 
-    [JsonPropertyName("episodes")]
-    public List<TEpisode> Episodes { get; set; }
+        /// <summary>
+        /// Gets or sets the episodes.
+        /// </summary>
+        [JsonPropertyName("episodes")]
+        public List<TEpisode> Episodes { get; set; }
+    }
 }

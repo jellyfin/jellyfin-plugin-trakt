@@ -6,7 +6,7 @@ const TraktConfigurationPage = {
                 return curr.LinkedMbUserId == userId;
                 //return true;
             })[0];
-                // User doesn't have a config, so create a default one.
+            // User doesn't have a config, so create a default one.
             if (!currentUserConfig) {
                 // You don't have to put every property in here, just the ones the UI is expecting (below)
                 currentUserConfig = {
@@ -165,7 +165,7 @@ export default function (view) {
             });
         }
         ApiClient.fetch(request).then(function (result) {
-            console.log('Trakt user code: ' + result.userCode);
+            console.log('trakt.tv user code: ' + result.userCode);
             view.querySelector('#authorizedDescription').classList.add('hide');
             view.querySelector('#authorizeDevice').classList.add('hide');
             view.querySelector('#userCode').textContent = result.userCode;
@@ -182,7 +182,7 @@ export default function (view) {
         }).catch(handleError);
     });
 
-    view.addEventListener('viewshow', function() {
+    view.addEventListener('viewshow', function () {
         const page = this;
         ApiClient.getUsers().then(function (users) {
             TraktConfigurationPage.populateUsers(users);

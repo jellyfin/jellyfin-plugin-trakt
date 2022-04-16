@@ -9,8 +9,6 @@
     <Nullable>disable</Nullable>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
     <CodeAnalysisRuleSet>../jellyfin.ruleset</CodeAnalysisRuleSet>
-    <!-- Suppress all xmldoc warnings -->
-    <NoWarn>CS1591,CS1572,CS1573,CS1574,SA1629,SA1606,SA1611,SA1614,SA1615,SA1616,SA1642</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,7 +23,7 @@
     <PackageReference Include="Jellyfin.Controller" Version="10.*-*" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
     <PackageReference Include="SerilogAnalyzer" Version="0.15.0" PrivateAssets="All" />
-    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.376" PrivateAssets="All" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.406" PrivateAssets="All" />
     <PackageReference Include="SmartAnalyzers.MultithreadingAnalyzer" Version="1.1.31" PrivateAssets="All" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>

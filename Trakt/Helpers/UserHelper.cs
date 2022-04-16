@@ -1,44 +1,44 @@
 ﻿using System;
 using System.Linq;
 using Jellyfin.Data.Entities;
-using MediaBrowser.Controller.Entities;
 using Trakt.Model;
 
-namespace Trakt.Helpers;
-
-internal static class UserHelper
+namespace Trakt.Helpers
 {
-    public static TraktUser GetTraktUser(User user)
+    internal static class UserHelper
     {
-        return GetTraktUser(user.Id);
-    }
-
-    public static TraktUser GetTraktUser(string userId)
-    {
-        return GetTraktUser(new Guid(userId));
-    }
-
-    public static TraktUser GetTraktUser(Guid userGuid)
-    {
-        if (Plugin.Instance.PluginConfiguration.TraktUsers == null)
+        public static TraktUser GetTraktUser(User user)
         {
-            return null;
+            return GetTraktUser(user.Id);
         }
 
-        return Plugin.Instance.PluginConfiguration.TraktUsers.FirstOrDefault(tUser =>
+        public static TraktUser GetTraktUser(string userId)
         {
-            if (string.IsNullOrWhiteSpace(tUser.LinkedMbUserId))
+            return GetTraktUser(new Guid(userId));
+        }
+
+        public static TraktUser GetTraktUser(Guid userGuid)
+        {
+            if (Plugin.Instance.PluginConfiguration.TraktUsers == null)
             {
+                return null;
+            }
+
+            return Plugin.Instance.PluginConfiguration.TraktUsers.FirstOrDefault(user =>
+            {
+                if (string.IsNullOrWhiteSpace(user.LinkedMbUserId))
+                {
+                    return false;
+                }
+
+                if (Guid.TryParse(user.LinkedMbUserId, out Guid traktUserGuid)
+                    && traktUserGuid.Equals(userGuid))
+                {
+                    return true;
+                }
+
                 return false;
-            }
-
-            if (Guid.TryParse(tUser.LinkedMbUserId, out Guid traktUserGuid)
-                && traktUserGuid.Equals(userGuid))
-            {
-                return true;
-            }
-
-            return false;
-        });
+            });
+        }
     }
 }

@@ -1,9 +1,16 @@
 using System.Text.Json.Serialization;
 
-namespace Trakt.Api.DataContracts.BaseModel;
-
-public class TraktPersonId : TraktIMDBandTMDBId
+namespace Trakt.Api.DataContracts.BaseModel
 {
-    [JsonPropertyName("tvrage")]
-    public int? Tvrage { get; set; }
+    /// <summary>
+    /// The trakt.tv person id class.
+    /// </summary>
+    public class TraktPersonId : TraktIMDBandTMDBId
+    {
+        /// <summary>
+        /// Gets or sets the TVRage person id.
+        /// </summary>
+        [JsonPropertyName("tvrage")]
+        public int? Tvrage { get; set; }
+    }
 }

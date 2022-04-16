@@ -1,12 +1,22 @@
 using System.Text.Json.Serialization;
 
-namespace Trakt.Api.DataContracts.BaseModel;
-
-public class TraktIMDBandTMDBId : TraktId
+namespace Trakt.Api.DataContracts.BaseModel
 {
-    [JsonPropertyName("imdb")]
-    public string Imdb { get; set; }
+    /// <summary>
+    /// The trakt.tv IDMb and TMDb id class.
+    /// </summary>
+    public class TraktIMDBandTMDBId : TraktId
+    {
+        /// <summary>
+        /// Gets or sets the IMDb id.
+        /// </summary>
+        [JsonPropertyName("imdb")]
+        public string Imdb { get; set; }
 
-    [JsonPropertyName("tmdb")]
-    public int? Tmdb { get; set; }
+        /// <summary>
+        /// Gets or sets the TMDb id.
+        /// </summary>
+        [JsonPropertyName("tmdb")]
+        public int? Tmdb { get; set; }
+    }
 }

@@ -1,4 +1,5 @@
-<div id="traktConfigurationPage" data-role="page" class="page type-interior pluginConfigurationPage traktConfigurationPage" data-controller="__plugin/traktjs">
+<div id="traktConfigurationPage" data-role="page"
+    class="page type-interior pluginConfigurationPage traktConfigurationPage" data-controller="__plugin/traktjs">
     <div data-role="content">
         <div class="content-primary">
 
@@ -12,15 +13,18 @@
                 </div>
 
                 <div class="selectContainer">
-                    <select is="emby-select" id="selectUser" name="selectUser" label="Configure Trakt for:"></select>
+                    <select is="emby-select" id="selectUser" name="selectUser" label="Configure trakt.tv for:"></select>
                 </div>
                 <div>
                     <div class="fieldDescription hide" id="authorizedDescription">
                         This user is authorized. You can force a re-authorization by clicking the button below.
                     </div>
-                    <button is="emby-button" type="button" id="authorizeDevice" class="raised block">Authorize device</button>
+                    <button is="emby-button" type="button" id="authorizeDevice" class="raised block">Authorize
+                        device</button>
                     <div id="activateWithCode" class="hide">
-                        Please visit <a href="https://trakt.tv/activate" class="button-link emby-button" target="_blank">https://trakt.tv/activate</a> and authorize Jellyfin to access your account.<br />
+                        Please visit <a href="https://trakt.tv/activate" class="button-link emby-button"
+                            target="_blank">https://trakt.tv/activate</a> and authorize Jellyfin to access your
+                        account.<br />
                         Your device code is <span id="userCode"></span>.
                     </div>
                 </div>
@@ -32,56 +36,62 @@
                 <br />
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
-                        <input is="emby-checkbox" type="checkbox" id="chkSkipUnwatchedImportFromTrakt" name="chkSkipUnwatchedImportFromTrakt" />
+                        <input is="emby-checkbox" type="checkbox" id="chkSkipUnwatchedImportFromTrakt"
+                            name="chkSkipUnwatchedImportFromTrakt" />
                         <span>Skip unwatched import from Trakt</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        The Import from Trakt scheduled task will set local items unwatched if item is marked as unwached on Trakt. If checked, do not import unwatched status.
+                        The Import from trakt.tv scheduled task will set local items unwatched if item is marked as
+                        unwached on Trakt. If checked, do not import unwatched status.
                     </div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
-                        <input is="emby-checkbox" type="checkbox" id="chkSkipWatchedImportFromTrakt" name="chkSkipWatchedImportFromTrakt" />
+                        <input is="emby-checkbox" type="checkbox" id="chkSkipWatchedImportFromTrakt"
+                            name="chkSkipWatchedImportFromTrakt" />
                         <span>Skip watched import from Trakt</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        The Import from Trakt scheduled task will set local items as watched if item is marked as watched on Trakt. If checked, do not import watched status.
+                        The Import from trakt.tv scheduled task will set local items as watched if item is marked as
+                        watched on Trakt. If checked, do not import watched status.
                     </div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
-                        <input is="emby-checkbox" type="checkbox" id="chkPostWatchedHistory" name="chkPostWatchedHistory" />
-                        <span>During Scheduled Task, set Trakt items to watched if local item is watched</span>
+                        <input is="emby-checkbox" type="checkbox" id="chkPostWatchedHistory"
+                            name="chkPostWatchedHistory" />
+                        <span>During Scheduled Task, set trakt.tv items to watched if local item is watched</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        Controls what is synced to Trakt when when scheduled task is run.
+                        Controls what is synced to trakt.tv when when scheduled task is run.
                     </div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
-                        <input is="emby-checkbox" type="checkbox" id="chkPostUnwatchedHistory" name="chkPostUnwatchedHistory" />
-                        <span>During Scheduled Task, set Trakt items to unwatched if local item is unwatched</span>
+                        <input is="emby-checkbox" type="checkbox" id="chkPostUnwatchedHistory"
+                            name="chkPostUnwatchedHistory" />
+                        <span>During Scheduled Task, set trakt.tv items to unwatched if local item is unwatched</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        Controls what is synced to Trakt when when scheduled task is run.
+                        Controls what is synced to trakt.tv when when scheduled task is run.
                     </div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
                         <input is="emby-checkbox" type="checkbox" id="chkPostSetWatched" name="chkPostSetWatched" />
-                        <span>Set Trakt item to Watched when local item is changed to Watched.</span>
+                        <span>Set trakt.tv item to Watched when local item is changed to Watched.</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        Controls what is synced to Trakt when item statuses are changed during normal use.
+                        Controls what is synced to trakt.tv when item statuses are changed during normal use.
                     </div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
                         <input is="emby-checkbox" type="checkbox" id="chkPostSetUnwatched" name="chkPostSetUnwatched" />
-                        <span>Set Trakt item to Unwatched when local item is changed to Unwatched.</span>
+                        <span>Set trakt.tv item to Unwatched when local item is changed to Unwatched.</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        Controls what is synced to Trakt when item statuses are changed during normal use.
+                        Controls what is synced to trakt.tv when item statuses are changed during normal use.
                     </div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
@@ -90,7 +100,7 @@
                         <span>Enable debug logging</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        When enabled, all data sent to trakt is logged.
+                        When enabled, all data sent to trakt.tv is logged.
                     </div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
@@ -129,4 +139,3 @@
         </div>
     </div>
 </div>
-

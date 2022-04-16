@@ -1,13 +1,23 @@
 using System.Text.Json.Serialization;
 using Trakt.Api.DataContracts.BaseModel;
 
-namespace Trakt.Api.DataContracts.Sync.Ratings;
-
-public class TraktEpisodeRated : TraktRated
+namespace Trakt.Api.DataContracts.Sync.Ratings
 {
-    [JsonPropertyName("number")]
-    public int? Number { get; set; }
+    /// <summary>
+    /// The trakt.tv sync episode rated class.
+    /// </summary>
+    public class TraktEpisodeRated : TraktRated
+    {
+        /// <summary>
+        /// Gets or sets the episode number.
+        /// </summary>
+        [JsonPropertyName("number")]
+        public int? Number { get; set; }
 
-    [JsonPropertyName("ids")]
-    public TraktEpisodeId Ids { get; set; }
+        /// <summary>
+        /// Gets or sets the ids.
+        /// </summary>
+        [JsonPropertyName("ids")]
+        public TraktEpisodeId Ids { get; set; }
+    }
 }
