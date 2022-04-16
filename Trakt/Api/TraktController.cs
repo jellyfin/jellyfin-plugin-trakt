@@ -82,6 +82,35 @@ namespace Trakt.Api
         }
 
         /// <summary>
+        /// Deauthorize this server with trakt.tv.
+        /// </summary>
+        /// <param name="userId">The user id of the user connecting to trakt.tv.</param>
+        /// <response code="200">Deauthorization successful.</response>
+        /// <returns>Empty string.</returns>
+        [HttpPost("Users/{userId}/Deauthorize")]
+        [Authorize(Policy = "RequiresElevation")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public string TraktDeviceDeAuthorization([FromRoute] string userId)
+        {
+            _logger.LogInformation("TraktDeviceDeauthorization request received");
+
+            // Delete a user
+            var traktUser = UserHelper.GetTraktUser(userId);
+            if (traktUser == null)
+            {
+                _logger.LogDebug("{User} not found.", userId);
+            }
+            else
+            {
+                _traktApi.DeauthorizeDevice(traktUser);
+                Plugin.Instance.PluginConfiguration.RemoveUser(userId);
+                Plugin.Instance.SaveConfiguration();
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
         /// Poll the trakt.tv device authorization status.
         /// </summary>
         /// <param name="userId">The user id.</param>

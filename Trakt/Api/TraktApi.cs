@@ -912,6 +912,22 @@ namespace Trakt.Api
         }
 
         /// <summary>
+        /// Deauthorizes a device for a <see cref="TraktUser"/>.
+        /// </summary>
+        /// <param name="traktUser">The authorizing <see cref="TraktUser"/>.</param>
+        public async void DeauthorizeDevice(TraktUser traktUser)
+        {
+            var deviceRevokeRequest = new
+            {
+                token = traktUser.AccessToken,
+                client_id = TraktUris.ClientId,
+                client_secret = TraktUris.ClientSecret
+            };
+
+            await PostToTrakt(TraktUris.RevokeToken, deviceRevokeRequest, traktUser).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Poll access token status for a <see cref="TraktUser"/>.
         /// </summary>
         /// <param name="deviceCode">The <see cref="TraktDeviceCode"/>.</param>

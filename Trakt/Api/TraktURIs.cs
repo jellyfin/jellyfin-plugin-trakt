@@ -36,6 +36,11 @@
         public const string AccessToken = BaseUrl + "/oauth/token";
 
         /// <summary>
+        /// The token revoke URI.
+        /// </summary>
+        public const string RevokeToken = BaseUrl + "/oauth/revoke";
+
+        /// <summary>
         /// The collection sync add URI.
         /// </summary>
         public const string SyncCollectionAdd = BaseUrl + "/sync/collection";

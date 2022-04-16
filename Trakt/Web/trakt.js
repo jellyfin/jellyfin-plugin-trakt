@@ -83,9 +83,11 @@ function setAuthorizationElements(page, isAuthorized) {
     let buttonText;
     if (isAuthorized) {
         page.querySelector('#activateWithCode').classList.add('hide');
+        page.querySelector('#deauthorizeDevice').classList.remove('hide');
         page.querySelector('#authorizedDescription').classList.remove('hide');
         buttonText = 'Force re-authorization';
     } else {
+        page.querySelector('#deauthorizeDevice').classList.add('hide');
         page.querySelector('#authorizedDescription').classList.add('hide');
         buttonText = 'Authorize device';
     }
@@ -148,6 +150,7 @@ export default function (view) {
         e.preventDefault();
         return false;
     });
+
     view.querySelector('#authorizeDevice').addEventListener('click', function (e) {
         const currentUserId = view.querySelector('#selectUser').value;
         const headers = {
@@ -163,7 +166,7 @@ export default function (view) {
             Dashboard.alert({
                 message: 'An error occurred when trying to authorize device: ' + result.status + ' - ' + result.statusText
             });
-        }
+        };
         ApiClient.fetch(request).then(function (result) {
             console.log('trakt.tv user code: ' + result.userCode);
             view.querySelector('#authorizedDescription').classList.add('hide');
@@ -179,6 +182,31 @@ export default function (view) {
                 view.querySelector('#userCode').textContent = '';
                 TraktConfigurationPage.loadConfiguration(currentUserId, view);
             }).catch(handleError);
+        }).catch(handleError);
+    });
+
+    view.querySelector('#deauthorizeDevice').addEventListener('click', function (e) {
+        const currentUserId = view.querySelector('#selectUser').value;
+        const headers = {
+            accept: 'application/json'
+        };
+        const request = {
+            url: ApiClient.getUrl('Trakt/Users/' + currentUserId + '/Deauthorize'),
+            dataType: 'json',
+            type: 'POST',
+            headers: headers
+        };
+        function handleError() {
+            Dashboard.alert({
+                message: 'An error occurred when trying to deauthorize device for user ' + currentUserId
+            });
+        };
+        ApiClient.fetch(request).then(function () {
+            view.querySelector('#authorizedDescription').classList.add('hide');
+            view.querySelector('#authorizeDevice').classList.remove('hide');
+            view.querySelector('#userCode').textContent = '';
+            view.querySelector('#activateWithCode').classList.add('hide');
+            TraktConfigurationPage.loadConfiguration(currentUserId, view);
         }).catch(handleError);
     });
 
