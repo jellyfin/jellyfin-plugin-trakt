@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.IO;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -19,6 +20,7 @@ namespace Trakt.Api
     /// The trakt.tv controller class.
     /// </summary>
     [ApiController]
+    [Authorize(Policy = "DefaultAuthorization")]
     [Route("[controller]")]
     [Produces(MediaTypeNames.Application.Json)]
     public class TraktController : ControllerBase
@@ -56,6 +58,7 @@ namespace Trakt.Api
         /// <response code="200">Authorization code requested successfully.</response>
         /// <returns>The trakt.tv authorization code.</returns>
         [HttpPost("Users/{userId}/Authorize")]
+        [Authorize(Policy = "RequiresElevation")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<object>> TraktDeviceAuthorization([FromRoute] string userId)
         {
@@ -85,6 +88,7 @@ namespace Trakt.Api
         /// <response code="200">Polling successful.</response>
         /// <returns>A value indicating whether the authorization code was connected to a trakt.tv account.</returns>
         [HttpGet("Users/{userId}/PollAuthorizationStatus")]
+        [Authorize(Policy = "RequiresElevation")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<object> TraktPollAuthorizationStatus([FromRoute] string userId)
         {
@@ -113,6 +117,7 @@ namespace Trakt.Api
         /// <response code="200">Item rated successfully.</response>
         /// <returns>A <see cref="TraktSyncResponse"/>.</returns>
         [HttpPost("Users/{userId}/Items/{itemId}/Rate")]
+        [Authorize(Policy = "DefaultAuthorization")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<TraktSyncResponse>> TraktRateItem([FromRoute] string userId, [FromRoute] Guid itemId, [FromQuery] int rating)
         {
@@ -136,6 +141,7 @@ namespace Trakt.Api
         /// <response code="200">Recommended movies returned.</response>
         /// <returns>A <see cref="List{TraktMovie}"/> with recommended movies.</returns>
         [HttpPost("Users/{userId}/RecommendedMovies")]
+        [Authorize(Policy = "DefaultAuthorization")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<List<TraktMovie>>> RecommendedTraktMovies([FromRoute] string userId)
         {
@@ -149,6 +155,7 @@ namespace Trakt.Api
         /// <response code="200">Recommended shows returned.</response>
         /// <returns>A <see cref="List{TraktShow}"/> with recommended movies.</returns>
         [HttpPost("Users/{userId}/RecommendedShows")]
+        [Authorize(Policy = "DefaultAuthorization")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<List<TraktShow>>> RecommendedTraktShows([FromRoute] string userId)
         {
