@@ -174,11 +174,9 @@ namespace Trakt.ScheduledTasks
                     if (traktUser.SynchronizeCollections)
                     {
                         // If movie is not collected, or (export media info setting is enabled and every collected matching movie has different metadata), collect it
-                        var collectedMathingMovies = SyncFromTraktTask.FindMatches(libraryMovie, traktCollectedMovies).ToList();
-                        if (!collectedMathingMovies.Any()
-                            || (traktUser.ExportMediaInfo
-                                && collectedMathingMovies.All(
-                                    collectedMovie => collectedMovie.MetadataIsDifferent(libraryMovie))))
+                        var collectedMatchingMovies = SyncFromTraktTask.FindMatches(libraryMovie, traktCollectedMovies).ToList();
+                        if (collectedMatchingMovies.Count == 0
+                            || (traktUser.ExportMediaInfo && collectedMatchingMovies.All(collectedMovie => collectedMovie.MetadataIsDifferent(libraryMovie))))
                         {
                             collectedMovies.Add(libraryMovie);
                         }
