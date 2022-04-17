@@ -411,15 +411,23 @@ namespace Trakt
                         var progressPercent = video.RunTimeTicks.HasValue && video.RunTimeTicks != 0 ?
                             (float)(playbackStoppedEventArgs.PlaybackPositionTicks ?? 0) / video.RunTimeTicks.Value * 100.0f : 0.0f;
 
-                        _logger.LogDebug("User {User} didn't watch item {Item} until the end. Not scrobbling but stopping playback and sending current playback position.", user.Username, playbackStoppedEventArgs.Item.Name);
+                        _logger.LogDebug("User {User} didn't watch item {Item} until the end. Not scrobbling but pausing playback at current playback position.", user.Username, playbackStoppedEventArgs.Item.Name);
 
                         if (video is Movie movie)
                         {
-                            await _traktApi.SendMovieStatusUpdateAsync(movie, MediaStatus.Stop, traktUser, progressPercent).ConfigureAwait(false);
+                            await _traktApi.SendMovieStatusUpdateAsync(
+                                movie,
+                                MediaStatus.Paused,
+                                traktUser,
+                                progressPercent).ConfigureAwait(false);
                         }
                         else
                         {
-                            await _traktApi.SendEpisodeStatusUpdateAsync(video as Episode, MediaStatus.Stop, traktUser, progressPercent).ConfigureAwait(false);
+                            await _traktApi.SendEpisodeStatusUpdateAsync(
+                                video as Episode,
+                                MediaStatus.Paused,
+                                traktUser,
+                                progressPercent).ConfigureAwait(false);
                         }
                     }
 
