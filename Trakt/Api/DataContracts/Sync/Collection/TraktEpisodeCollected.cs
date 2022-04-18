@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using Trakt.Api.DataContracts.BaseModel;
+using Trakt.Api.Enums;
 
 namespace Trakt.Api.DataContracts.Sync.Collection
 {
@@ -18,19 +19,19 @@ namespace Trakt.Api.DataContracts.Sync.Collection
         /// Gets or sets the media type.
         /// </summary>
         [JsonPropertyName("media_type")]
-        public string MediaType { get; set; }
+        public TraktMediaType? MediaType { get; set; }
 
         /// <summary>
         /// Gets or sets the resolution.
         /// </summary>
         [JsonPropertyName("resolution")]
-        public string Resolution { get; set; }
+        public TraktResolution? Resolution { get; set; }
 
         /// <summary>
         /// Gets or sets the audio.
         /// </summary>
         [JsonPropertyName("audio")]
-        public string Audio { get; set; }
+        public TraktAudio? Audio { get; set; }
 
         /// <summary>
         /// Gets or sets the amount of audio channels.
@@ -38,6 +39,16 @@ namespace Trakt.Api.DataContracts.Sync.Collection
         [JsonPropertyName("audio_channels")]
         public string AudioChannels { get; set; }
 
-        // public bool 3d { get; set; }
+        /// <summary>
+        /// Gets or sets a value indicating whether the episode is 3D.
+        /// </summary>
+        [JsonPropertyName("3d")]
+        public bool Is3D { get; set; } = false;
+
+        /// <summary>
+        /// Gets or sets the HDR type.
+        /// </summary>
+        [JsonPropertyName("hdr")]
+        public TraktHdr? Hdr { get; set; }
     }
 }

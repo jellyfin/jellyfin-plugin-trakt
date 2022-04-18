@@ -8,12 +8,6 @@ namespace Trakt.Api.DataContracts.Scrobble
     public class SocialMedia
     {
         /// <summary>
-        /// Gets or sets a value indicating whether facebook posting should be enabled.
-        /// </summary>
-        [JsonPropertyName("facebook")]
-        public bool Facebook { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating whether twittwe posting should be enabled.
         /// </summary>
         [JsonPropertyName("twitter")]

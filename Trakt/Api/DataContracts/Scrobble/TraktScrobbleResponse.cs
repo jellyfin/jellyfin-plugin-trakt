@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using Trakt.Api.DataContracts.BaseModel;
+using Trakt.Api.Enums;
 
 namespace Trakt.Api.DataContracts.Scrobble
 {
@@ -18,7 +19,7 @@ namespace Trakt.Api.DataContracts.Scrobble
         /// Gets or sets the action.
         /// </summary>
         [JsonPropertyName("action")]
-        public string Action { get; set; }
+        public TraktAction Action { get; set; }
 
         /// <summary>
         /// Gets or sets the progress.

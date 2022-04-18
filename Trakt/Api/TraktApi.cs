@@ -3,7 +3,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -279,6 +278,7 @@ namespace Trakt.Api
                     Year = m.ProductionYear,
                     Ids = GetTraktIMDBTMDBIds<Movie, TraktMovieId>(m)
                 };
+
                 if (traktUser.ExportMediaInfo)
                 {
                     traktMovieCollected.AudioChannels = audioStream.GetAudioChannels();
@@ -288,8 +288,8 @@ namespace Trakt.Api
 
                 return traktMovieCollected;
             }).ToList();
-            var url = eventType == EventType.Add ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
 
+            var url = eventType == EventType.Add ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
             var responses = new List<TraktSyncResponse>();
             var chunks = moviesPayload.ToChunks(100);
             foreach (var chunk in chunks)
@@ -356,7 +356,7 @@ namespace Trakt.Api
             var showPayload = new List<TraktShowCollected>();
             foreach (Episode episode in episodes)
             {
-                var audioStream = episode.GetMediaStreams().FirstOrDefault(x => x.Type == MediaStreamType.Audio);
+                var audioStream = episode.GetMediaStreams().FirstOrDefault(stream => stream.Type == MediaStreamType.Audio);
 
                 if (useProviderIDs && HasAnyProviderTvIds(episode) &&
                     (!episode.IndexNumber.HasValue || !episode.IndexNumberEnd.HasValue ||
@@ -369,10 +369,11 @@ namespace Trakt.Api
                     };
                     if (traktUser.ExportMediaInfo)
                     {
-                        // traktEpisodeCollected.Is3D = episode.Is3D;
                         traktEpisodeCollected.AudioChannels = audioStream.GetAudioChannels();
                         traktEpisodeCollected.Audio = audioStream.GetCodecRepresetation();
                         traktEpisodeCollected.Resolution = episode.GetDefaultVideoStream().GetResolution();
+                        traktEpisodeCollected.Is3D = episode.Is3D;
+                        traktEpisodeCollected.Hdr = episode.GetDefaultVideoStream().GetHdr();
                     }
 
                     episodesPayload.Add(traktEpisodeCollected);
@@ -393,8 +394,7 @@ namespace Trakt.Api
                         showPayload.Add(syncShow);
                     }
 
-                    var syncSeason =
-                        syncShow.Seasons.FirstOrDefault(ss => ss.Number == episode.GetSeasonNumber());
+                    var syncSeason = syncShow.Seasons.FirstOrDefault(season => season.Number == episode.GetSeasonNumber());
                     if (syncSeason == null)
                     {
                         syncSeason = new TraktSeasonCollected
@@ -422,6 +422,7 @@ namespace Trakt.Api
                             CollectedAt = episode.DateCreated.ToISO8601(),
                             Ids = ids
                         };
+
                         if (traktUser.ExportMediaInfo)
                         {
                             // traktEpisodeCollected.Is3D = episode.Is3D;
@@ -483,14 +484,14 @@ namespace Trakt.Api
             }
 
             var showPayload = new List<TraktShowCollected>
-        {
-            new TraktShowCollected
             {
-                Title = show.Name,
-                Year = show.ProductionYear,
-                Ids = GetTraktTvIds<Series, TraktShowId>(show)
-            }
-        };
+                new TraktShowCollected
+                {
+                    Title = show.Name,
+                    Year = show.ProductionYear,
+                    Ids = GetTraktTvIds<Series, TraktShowId>(show)
+                }
+            };
 
             var data = new TraktSyncCollected
             {
@@ -692,6 +693,7 @@ namespace Trakt.Api
                 var lastPlayedDate = seen
                     ? _userDataManager.GetUserData(new Guid(traktUser.LinkedMbUserId), m).LastPlayedDate
                     : null;
+
                 return new TraktMovieWatched
                 {
                     Title = m.Name,
@@ -709,8 +711,8 @@ namespace Trakt.Api
                 {
                     Movies = chunk.ToList()
                 };
-                var url = seen ? TraktUris.SyncWatchedHistoryAdd : TraktUris.SyncWatchedHistoryRemove;
 
+                var url = seen ? TraktUris.SyncWatchedHistoryAdd : TraktUris.SyncWatchedHistoryRemove;
                 var response = await PostToTrakt<TraktSyncResponse>(url, data, traktUser, cancellationToken).ConfigureAwait(false);
                 if (response != null)
                 {
@@ -759,7 +761,12 @@ namespace Trakt.Api
 
         private async Task<TraktSyncResponse> SendEpisodePlaystateUpdatesInternalAsync(IEnumerable<Episode> episodeChunk, TraktUser traktUser, bool seen, CancellationToken cancellationToken, bool useProviderIDs = true)
         {
-            var data = new TraktSyncWatched { Episodes = new List<TraktEpisodeWatched>(), Shows = new List<TraktShowWatched>() };
+            var data = new TraktSyncWatched
+            {
+                Episodes = new List<TraktEpisodeWatched>(),
+                Shows = new List<TraktShowWatched>()
+            };
+
             foreach (var episode in episodeChunk)
             {
                 var lastPlayedDate = seen
@@ -788,6 +795,7 @@ namespace Trakt.Api
                             Ids = GetTraktTvIds<Series, TraktShowId>(episode.Series),
                             Seasons = new List<TraktSeasonWatched>()
                         };
+
                         data.Shows.Add(syncShow);
                     }
 
@@ -799,6 +807,7 @@ namespace Trakt.Api
                             Number = episode.GetSeasonNumber(),
                             Episodes = new List<TraktEpisodeWatched>()
                         };
+
                         syncShow.Seasons.Add(syncSeason);
                     }
 
@@ -820,7 +829,7 @@ namespace Trakt.Api
             if (useProviderIDs && response.NotFound.Episodes.Count > 0)
             {
                 // Send subset of episodes back to trakt.tv to try without ids
-                _logger.LogDebug("Resend episodes playstate update, without episode IDs");
+                _logger.LogDebug("Resend episodes playstate update, without episode ids");
                 await SendEpisodePlaystateUpdatesInternalAsync(FindNotFoundEpisodes(episodeChunk, response), traktUser, seen, cancellationToken, false).ConfigureAwait(false);
             }
 
@@ -832,13 +841,13 @@ namespace Trakt.Api
             // Episodes not found. If using ids, try again without them
             List<Episode> episodes = new List<Episode>();
             // Build a list of unfound episodes with ids
-            foreach (TraktEpisode traktEpisode in traktSyncResponse.NotFound.Episodes.Where(i => HasAnyProviderTvIds(i.Ids)))
+            foreach (TraktEpisode traktEpisode in traktSyncResponse.NotFound.Episodes.Where(episode => HasAnyProviderTvIds(episode.Ids)))
             {
                 // Find matching episode in Jellyfin based on provider ids
-                var notFoundEpisode = episodeChunk.First(e => e.GetProviderId(MetadataProvider.Imdb) == traktEpisode.Ids.Imdb
-                    || e.GetProviderId(MetadataProvider.Tmdb) == traktEpisode.Ids.Tmdb?.ToString(CultureInfo.InvariantCulture)
-                    || e.GetProviderId(MetadataProvider.Tvdb) == traktEpisode.Ids.Tvdb?.ToString(CultureInfo.InvariantCulture)
-                    || e.GetProviderId(MetadataProvider.TvRage) == traktEpisode.Ids.Tvrage?.ToString(CultureInfo.InvariantCulture));
+                var notFoundEpisode = episodeChunk.FirstOrDefault(episode => episode.GetProviderId(MetadataProvider.Imdb) == traktEpisode.Ids.Imdb
+                    || episode.GetProviderId(MetadataProvider.Tmdb) == traktEpisode.Ids.Tmdb?.ToString(CultureInfo.InvariantCulture)
+                    || episode.GetProviderId(MetadataProvider.Tvdb) == traktEpisode.Ids.Tvdb?.ToString(CultureInfo.InvariantCulture)
+                    || episode.GetProviderId(MetadataProvider.TvRage) == traktEpisode.Ids.Tvrage?.ToString(CultureInfo.InvariantCulture));
 
                 if (notFoundEpisode != null)
                 {
