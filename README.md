@@ -26,7 +26,7 @@ Available for install through the plugin catalog, Trakt for Jellyfin allows you 
 
 ## Build
 
-1. To build this plugin you will need [.Net 5.x](https://dotnet.microsoft.com/download/dotnet/5.0).
+1. To build this plugin you will need [.Net 6.x](https://dotnet.microsoft.com/download/dotnet/6.0).
 
 2. Build plugin with following command
   ```
