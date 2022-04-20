@@ -23,12 +23,12 @@ namespace Trakt.Helpers
 
         public Guid CurrentSeriesId { get; set; }
 
-        public List<Movie> SeenMovies { get; set; }
+        public ICollection<Movie> SeenMovies { get; set; }
 
-        public List<Movie> UnSeenMovies { get; set; }
+        public ICollection<Movie> UnSeenMovies { get; set; }
 
-        public List<Episode> SeenEpisodes { get; set; }
+        public ICollection<Episode> SeenEpisodes { get; set; }
 
-        public List<Episode> UnSeenEpisodes { get; set; }
+        public ICollection<Episode> UnSeenEpisodes { get; set; }
     }
 }

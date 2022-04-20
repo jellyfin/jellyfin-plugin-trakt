@@ -19,6 +19,7 @@ using Trakt.Api;
 using Trakt.Api.DataContracts.Sync;
 using Trakt.Helpers;
 using Trakt.Model;
+using Trakt.Model.Enums;
 
 namespace Trakt.ScheduledTasks
 {
@@ -239,7 +240,7 @@ namespace Trakt.ScheduledTasks
         private async Task SendMovieCollectionUpdates(
             bool collected,
             TraktUser traktUser,
-            List<Movie> movies,
+            ICollection<Movie> movies,
             ISplittableProgress<double> progress,
             CancellationToken cancellationToken)
         {
@@ -250,7 +251,7 @@ namespace Trakt.ScheduledTasks
                 {
                     var dataContracts =
                         await _traktApi.SendLibraryUpdateAsync(
-                                movies,
+                                movies.ToList().AsReadOnly(),
                                 traktUser,
                                 collected ? EventType.Add : EventType.Remove,
                                 cancellationToken)
@@ -279,7 +280,7 @@ namespace Trakt.ScheduledTasks
         private async Task SendMoviePlaystateUpdates(
             bool seen,
             TraktUser traktUser,
-            List<Movie> playedMovies,
+            ICollection<Movie> playedMovies,
             ISplittableProgress<double> progress,
             CancellationToken cancellationToken)
         {
@@ -289,7 +290,12 @@ namespace Trakt.ScheduledTasks
                 try
                 {
                     var dataContracts =
-                        await _traktApi.SendMoviePlaystateUpdates(playedMovies, traktUser, seen, cancellationToken).ConfigureAwait(false);
+                        await _traktApi.SendMoviePlaystateUpdates(
+                            playedMovies.ToList().AsReadOnly(),
+                            traktUser,
+                            seen,
+                            cancellationToken)
+                        .ConfigureAwait(false);
                     if (dataContracts != null)
                     {
                         foreach (var traktSyncResponse in dataContracts)
@@ -416,7 +422,7 @@ namespace Trakt.ScheduledTasks
         private async Task SendEpisodePlaystateUpdates(
             bool seen,
             TraktUser traktUser,
-            List<Episode> playedEpisodes,
+            ICollection<Episode> playedEpisodes,
             ISplittableProgress<double> progress,
             CancellationToken cancellationToken)
         {
@@ -426,7 +432,12 @@ namespace Trakt.ScheduledTasks
                 try
                 {
                     var dataContracts =
-                        await _traktApi.SendEpisodePlaystateUpdates(playedEpisodes, traktUser, seen, cancellationToken).ConfigureAwait(false);
+                        await _traktApi.SendEpisodePlaystateUpdates(
+                            playedEpisodes.ToList().AsReadOnly(),
+                            traktUser,
+                            seen,
+                            cancellationToken)
+                        .ConfigureAwait(false);
                     if (dataContracts != null)
                     {
                         foreach (var con in dataContracts)
@@ -447,7 +458,7 @@ namespace Trakt.ScheduledTasks
         private async Task SendEpisodeCollectionUpdates(
             bool collected,
             TraktUser traktUser,
-            List<Episode> collectedEpisodes,
+            ICollection<Episode> collectedEpisodes,
             ISplittableProgress<double> progress,
             CancellationToken cancellationToken)
         {

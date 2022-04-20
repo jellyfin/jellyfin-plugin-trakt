@@ -1,4 +1,3 @@
-#pragma warning disable CA1002
 #pragma warning disable CA2227
 
 using System.Collections.Generic;
@@ -22,6 +21,6 @@ namespace Trakt.Api.DataContracts.Sync.Ratings
         /// Gets or sets the episodes.
         /// </summary>
         [JsonPropertyName("episodes")]
-        public List<TraktEpisodeRated> Episodes { get; set; }
+        public IReadOnlyList<TraktEpisodeRated> Episodes { get; set; }
     }
 }

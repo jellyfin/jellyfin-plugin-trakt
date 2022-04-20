@@ -1,5 +1,4 @@
-﻿#pragma warning disable CA1002
-#pragma warning disable CA2227
+﻿#pragma warning disable CA2227
 
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
@@ -22,6 +21,6 @@ namespace Trakt.Api.DataContracts.Sync.Watched
         /// Gets or sets the episodes.
         /// </summary>
         [JsonPropertyName("episodes")]
-        public List<TraktEpisodeWatched> Episodes { get; set; }
+        public ICollection<TraktEpisodeWatched> Episodes { get; set; }
     }
 }

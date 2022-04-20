@@ -74,7 +74,7 @@ namespace Trakt.Helpers
                     if (userPackage.SeenMovies.Count >= 100)
                     {
                         _traktApi.SendMoviePlaystateUpdates(
-                            userPackage.SeenMovies,
+                            userPackage.SeenMovies.ToList(),
                             userPackage.TraktUser,
                             true,
                             CancellationToken.None).ConfigureAwait(false);
@@ -92,7 +92,7 @@ namespace Trakt.Helpers
                     if (userPackage.UnSeenMovies.Count >= 100)
                     {
                         _traktApi.SendMoviePlaystateUpdates(
-                            userPackage.UnSeenMovies,
+                            userPackage.UnSeenMovies.ToList(),
                             userPackage.TraktUser,
                             false,
                             CancellationToken.None).ConfigureAwait(false);
@@ -114,7 +114,7 @@ namespace Trakt.Helpers
                 if (userPackage.SeenEpisodes.Any())
                 {
                     _traktApi.SendEpisodePlaystateUpdates(
-                        userPackage.SeenEpisodes,
+                        userPackage.SeenEpisodes.ToList(),
                         userPackage.TraktUser,
                         true,
                         CancellationToken.None).ConfigureAwait(false);
@@ -124,7 +124,7 @@ namespace Trakt.Helpers
                 if (userPackage.UnSeenEpisodes.Any())
                 {
                     _traktApi.SendEpisodePlaystateUpdates(
-                        userPackage.UnSeenEpisodes,
+                        userPackage.UnSeenEpisodes.ToList(),
                         userPackage.TraktUser,
                         false,
                         CancellationToken.None).ConfigureAwait(false);

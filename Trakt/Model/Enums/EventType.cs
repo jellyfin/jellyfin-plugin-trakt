@@ -1,4 +1,4 @@
-namespace Trakt.Helpers
+namespace Trakt.Model.Enums
 {
     /// <summary>
     /// Enum EventType.

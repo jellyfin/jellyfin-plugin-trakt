@@ -1,4 +1,3 @@
-#pragma warning disable CA1002
 #pragma warning disable CA2227
 
 using System.Collections.Generic;
@@ -9,7 +8,7 @@ namespace Trakt.Api.DataContracts.Users.Watched
     /// <summary>
     /// The trakt.tv users season watched class.
     /// </summary>
-    public class Season
+    public class TraktSeasonWatched
     {
         /// <summary>
         /// Gets or sets the season number.
@@ -21,6 +20,6 @@ namespace Trakt.Api.DataContracts.Users.Watched
         /// Gets or sets the episodes.
         /// </summary>
         [JsonPropertyName("episodes")]
-        public List<Episode> Episodes { get; set; }
+        public IReadOnlyList<TraktEpisodeWatched> Episodes { get; set; }
     }
 }

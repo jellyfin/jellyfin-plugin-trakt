@@ -1,5 +1,6 @@
 using MediaBrowser.Controller.Entities;
 using Trakt.Model;
+using Trakt.Model.Enums;
 
 namespace Trakt.Helpers
 {

@@ -1,5 +1,3 @@
-#pragma warning disable CA1002
-
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -29,8 +27,8 @@ using Trakt.Api.DataContracts.Sync;
 using Trakt.Api.DataContracts.Sync.Collection;
 using Trakt.Api.DataContracts.Sync.Ratings;
 using Trakt.Api.DataContracts.Sync.Watched;
-using Trakt.Helpers;
 using Trakt.Model;
+using Trakt.Model.Enums;
 using TraktEpisodeCollected = Trakt.Api.DataContracts.Sync.Collection.TraktEpisodeCollected;
 using TraktMovieCollected = Trakt.Api.DataContracts.Sync.Collection.TraktMovieCollected;
 using TraktShowCollected = Trakt.Api.DataContracts.Sync.Collection.TraktShowCollected;
@@ -165,7 +163,11 @@ namespace Trakt.Api
         {
             var episodeDatas = new List<TraktScrobbleEpisode>();
 
-            if (useProviderIds && HasAnyProviderTvIds(episode) && (!episode.IndexNumber.HasValue || !episode.IndexNumberEnd.HasValue || episode.IndexNumberEnd <= episode.IndexNumber))
+            if (useProviderIds
+                && HasAnyProviderTvIds(episode)
+                && (!episode.IndexNumber.HasValue
+                    || !episode.IndexNumberEnd.HasValue
+                    || episode.IndexNumberEnd <= episode.IndexNumber))
             {
                 episodeDatas.Add(new TraktScrobbleEpisode
                 {
@@ -247,8 +249,8 @@ namespace Trakt.Api
         /// <param name="eventType">The <see cref="EventType"/>.</param>
         /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns>Task{TraktResponseDataContract}.</returns>
-        public async Task<IEnumerable<TraktSyncResponse>> SendLibraryUpdateAsync(
-            IList<Movie> movies,
+        public async Task<IReadOnlyList<TraktSyncResponse>> SendLibraryUpdateAsync(
+            ICollection<Movie> movies,
             TraktUser traktUser,
             EventType eventType,
             CancellationToken cancellationToken)
@@ -287,7 +289,7 @@ namespace Trakt.Api
                 }
 
                 return traktMovieCollected;
-            }).ToList();
+            });
 
             var url = eventType == EventType.Add ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
             var responses = new List<TraktSyncResponse>();
@@ -315,7 +317,7 @@ namespace Trakt.Api
         /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
         /// <returns>Task{IEnumerable{TraktSyncResponse}}.</returns>
         public async Task<IEnumerable<TraktSyncResponse>> SendLibraryUpdateAsync(
-            IReadOnlyList<Episode> episodes,
+            ICollection<Episode> episodes,
             TraktUser traktUser,
             EventType eventType,
             CancellationToken cancellationToken)
@@ -339,7 +341,7 @@ namespace Trakt.Api
             var chunks = episodes.ToChunks(100);
             foreach (var chunk in chunks)
             {
-                responses.Add(await SendLibraryUpdateInternalAsync(chunk.ToList(), traktUser, eventType, cancellationToken).ConfigureAwait(false));
+                responses.Add(await SendLibraryUpdateInternalAsync(chunk, traktUser, eventType, cancellationToken).ConfigureAwait(false));
             }
 
             return responses;
@@ -438,8 +440,8 @@ namespace Trakt.Api
 
             var data = new TraktSyncCollected
             {
-                Episodes = episodesPayload.ToList(),
-                Shows = showPayload.ToList()
+                Episodes = episodesPayload,
+                Shows = showPayload
             };
 
             var url = eventType == EventType.Add ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
@@ -495,7 +497,7 @@ namespace Trakt.Api
 
             var data = new TraktSyncCollected
             {
-                Shows = showPayload.ToList()
+                Shows = showPayload
             };
 
             var url = eventType == EventType.Add ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
@@ -676,7 +678,11 @@ namespace Trakt.Api
         /// <param name="cancellationToken">The Cancellation Token.</param>
         /// <returns>Task{List{TraktSyncResponse}}.</returns>
         // TODO: netstandard2.1: use IAsyncEnumerable
-        public async Task<List<TraktSyncResponse>> SendMoviePlaystateUpdates(List<Movie> movies, TraktUser traktUser, bool seen, CancellationToken cancellationToken)
+        public async Task<List<TraktSyncResponse>> SendMoviePlaystateUpdates(
+            ICollection<Movie> movies,
+            TraktUser traktUser,
+            bool seen,
+            CancellationToken cancellationToken)
         {
             if (movies == null)
             {
@@ -701,7 +707,7 @@ namespace Trakt.Api
                     Year = m.ProductionYear,
                     WatchedAt = lastPlayedDate?.ToISO8601()
                 };
-            }).ToList();
+            });
             var chunks = moviesPayload.ToChunks(100).ToList();
             var traktResponses = new List<TraktSyncResponse>();
 
@@ -731,7 +737,11 @@ namespace Trakt.Api
         /// <param name="seen">True if episodes are being marked seen, false otherwise.</param>
         /// <param name="cancellationToken">The Cancellation Token.</param>
         /// <returns>Task{List{TraktSyncResponse}}.</returns>
-        public async Task<List<TraktSyncResponse>> SendEpisodePlaystateUpdates(List<Episode> episodes, TraktUser traktUser, bool seen, CancellationToken cancellationToken)
+        public async Task<List<TraktSyncResponse>> SendEpisodePlaystateUpdates(
+            ICollection<Episode> episodes,
+            TraktUser traktUser,
+            bool seen,
+            CancellationToken cancellationToken)
         {
             if (episodes == null)
             {
@@ -743,7 +753,7 @@ namespace Trakt.Api
                 throw new ArgumentNullException(nameof(traktUser));
             }
 
-            var chunks = episodes.ToChunks(100).ToList();
+            var chunks = episodes.ToChunks(100);
             var traktResponses = new List<TraktSyncResponse>();
 
             foreach (var chunk in chunks)
@@ -759,7 +769,12 @@ namespace Trakt.Api
             return traktResponses;
         }
 
-        private async Task<TraktSyncResponse> SendEpisodePlaystateUpdatesInternalAsync(IEnumerable<Episode> episodeChunk, TraktUser traktUser, bool seen, CancellationToken cancellationToken, bool useProviderIDs = true)
+        private async Task<TraktSyncResponse> SendEpisodePlaystateUpdatesInternalAsync(
+            IEnumerable<Episode> episodeChunk,
+            TraktUser traktUser,
+            bool seen,
+            CancellationToken cancellationToken,
+            bool useProviderIDs = true)
         {
             var data = new TraktSyncWatched
             {
@@ -774,7 +789,11 @@ namespace Trakt.Api
                         .LastPlayedDate
                     : null;
 
-                if (useProviderIDs && HasAnyProviderTvIds(episode) && (!episode.IndexNumber.HasValue || !episode.IndexNumberEnd.HasValue || episode.IndexNumberEnd <= episode.IndexNumber))
+                if (useProviderIDs
+                    && HasAnyProviderTvIds(episode)
+                    && (!episode.IndexNumber.HasValue
+                        || !episode.IndexNumberEnd.HasValue
+                        || episode.IndexNumberEnd <= episode.IndexNumber))
                 {
                     data.Episodes.Add(new TraktEpisodeWatched
                     {
@@ -1174,11 +1193,15 @@ namespace Trakt.Api
             return retval;
         }
 
-        private static TTraktShow FindShow<TTraktShow>(List<TTraktShow> shows, Series series)
+        private static TTraktShow FindShow<TTraktShow>(ICollection<TTraktShow> shows, Series series)
             where TTraktShow : TraktShow
         {
             return shows.FirstOrDefault(
-                sre => sre.Ids != null && sre.Ids.Imdb == series.GetProviderId(MetadataProvider.Imdb) && sre.Ids.Tmdb == series.GetProviderId(MetadataProvider.Tmdb).ConvertToInt() && sre.Ids.Tvdb == series.GetProviderId(MetadataProvider.Tvdb).ConvertToInt() && sre.Ids.Tvrage == series.GetProviderId(MetadataProvider.TvRage).ConvertToInt());
+                sre => sre.Ids != null
+                && sre.Ids.Imdb == series.GetProviderId(MetadataProvider.Imdb)
+                && sre.Ids.Tmdb == series.GetProviderId(MetadataProvider.Tmdb).ConvertToInt()
+                && sre.Ids.Tvdb == series.GetProviderId(MetadataProvider.Tvdb).ConvertToInt()
+                && sre.Ids.Tvrage == series.GetProviderId(MetadataProvider.TvRage).ConvertToInt());
         }
 
         private bool HasAnyProviderTvIds(BaseItem item)
