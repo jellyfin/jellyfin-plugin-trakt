@@ -15,6 +15,7 @@ using MediaBrowser.Model.IO;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Helpers;
+using Trakt.Model.Enums;
 
 namespace Trakt
 {

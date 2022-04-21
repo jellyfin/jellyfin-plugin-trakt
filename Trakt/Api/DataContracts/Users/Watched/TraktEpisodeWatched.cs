@@ -5,7 +5,7 @@ namespace Trakt.Api.DataContracts.Users.Watched
     /// <summary>
     /// The trakt.tv users episode watched class.
     /// </summary>
-    public class Episode
+    public class TraktEpisodeWatched
     {
         /// <summary>
         /// Gets or sets the last watched date.

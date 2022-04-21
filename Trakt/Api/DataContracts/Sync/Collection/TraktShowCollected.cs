@@ -1,5 +1,4 @@
-﻿#pragma warning disable CA1002
-#pragma warning disable CA2227
+﻿#pragma warning disable CA2227
 
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
@@ -16,6 +15,6 @@ namespace Trakt.Api.DataContracts.Sync.Collection
         /// Gets or sets the seasons.
         /// </summary>
         [JsonPropertyName("seasons")]
-        public List<TraktSeasonCollected> Seasons { get; set; }
+        public ICollection<TraktSeasonCollected> Seasons { get; set; }
     }
 }

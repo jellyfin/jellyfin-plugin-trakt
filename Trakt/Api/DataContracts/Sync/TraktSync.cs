@@ -1,4 +1,3 @@
-#pragma warning disable CA1002
 #pragma warning disable CA2227
 
 using System.Collections.Generic;
@@ -18,18 +17,18 @@ namespace Trakt.Api.DataContracts.Sync
         /// Gets or sets the movies.
         /// </summary>
         [JsonPropertyName("movies")]
-        public List<TMovie> Movies { get; set; }
+        public ICollection<TMovie> Movies { get; set; }
 
         /// <summary>
         /// Gets or sets the shows.
         /// </summary>
         [JsonPropertyName("shows")]
-        public List<TShow> Shows { get; set; }
+        public ICollection<TShow> Shows { get; set; }
 
         /// <summary>
         /// Gets or sets the episodes.
         /// </summary>
         [JsonPropertyName("episodes")]
-        public List<TEpisode> Episodes { get; set; }
+        public ICollection<TEpisode> Episodes { get; set; }
     }
 }

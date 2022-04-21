@@ -6,8 +6,8 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Entities;
 using Trakt.Api.DataContracts.Users.Collection;
+using Trakt.Api.Enums;
 using Trakt.Helpers;
-using Trakt.Model;
 
 namespace Trakt
 {
@@ -37,17 +37,17 @@ namespace Trakt
         /// <param name="metadata">String to convert to int.</param>
         /// <returns><see cref="bool"/> indicating if the provided <see cref="TraktMetadata"/> is empty.</returns>
         public static bool IsEmpty(this TraktMetadata metadata)
-            => string.IsNullOrEmpty(metadata.MediaType)
-               && string.IsNullOrEmpty(metadata.Resolution)
-               && string.IsNullOrEmpty(metadata.Audio)
+            => metadata.MediaType == null
+               && metadata.Resolution == null
+               && metadata.Audio == null
                && string.IsNullOrEmpty(metadata.AudioChannels);
 
         /// <summary>
         /// Gets the trakt.tv codec representation of a <see cref="MediaStream"/>.
         /// </summary>
         /// <param name="audioStream">The <see cref="MediaStream"/>.</param>
-        /// <returns>string.</returns>
-        public static string GetCodecRepresetation(this MediaStream audioStream)
+        /// <returns>TraktAudio.</returns>
+        public static TraktAudio? GetCodecRepresetation(this MediaStream audioStream)
         {
             var audio = audioStream != null && !string.IsNullOrEmpty(audioStream.Codec)
                 ? audioStream.Codec.ToLowerInvariant().Replace(' ', '_')
@@ -55,26 +55,26 @@ namespace Trakt
             switch (audio)
             {
                 case "truehd":
-                    return TraktAudio.dolby_truehd.ToString();
+                    return TraktAudio.dolby_truehd;
                 case "dts":
                 case "dca":
-                    return TraktAudio.dts.ToString();
+                    return TraktAudio.dts;
                 case "dtshd":
-                    return TraktAudio.dts_ma.ToString();
+                    return TraktAudio.dts_ma;
                 case "ac3":
-                    return TraktAudio.dolby_digital.ToString();
+                    return TraktAudio.dolby_digital;
                 case "aac":
-                    return TraktAudio.aac.ToString();
+                    return TraktAudio.aac;
                 case "mp2":
-                    return TraktAudio.mp3.ToString();
+                    return TraktAudio.mp3;
                 case "pcm":
-                    return TraktAudio.lpcm.ToString();
+                    return TraktAudio.lpcm;
                 case "ogg":
-                    return TraktAudio.ogg.ToString();
+                    return TraktAudio.ogg;
                 case "wma":
-                    return TraktAudio.wma.ToString();
+                    return TraktAudio.wma;
                 case "flac":
-                    return TraktAudio.flac.ToString();
+                    return TraktAudio.flac;
                 default:
                     return null;
             }
@@ -91,19 +91,23 @@ namespace Trakt
             var audioStream = movie.GetMediaStreams().FirstOrDefault(x => x.Type == MediaStreamType.Audio);
 
             var resolution = movie.GetDefaultVideoStream().GetResolution();
+            var is3D = movie.Is3D;
+            var hdr = movie.GetDefaultVideoStream().GetHdr();
             var audio = GetCodecRepresetation(audioStream);
             var audioChannels = audioStream.GetAudioChannels();
 
             if (collectedMovie.Metadata == null || collectedMovie.Metadata.IsEmpty())
             {
-                return !string.IsNullOrEmpty(resolution)
-                       || !string.IsNullOrEmpty(audio)
+                return resolution != null
+                       || audio != null
                        || !string.IsNullOrEmpty(audioChannels);
             }
 
             return collectedMovie.Metadata.Audio != audio
                    || collectedMovie.Metadata.AudioChannels != audioChannels
-                   || collectedMovie.Metadata.Resolution != resolution;
+                   || collectedMovie.Metadata.Resolution != resolution
+                   || collectedMovie.Metadata.Is3D != is3D
+                   || collectedMovie.Metadata.Hdr != hdr;
         }
 
         /// <summary>
@@ -111,7 +115,7 @@ namespace Trakt
         /// </summary>
         /// <param name="videoStream">The <see cref="MediaStream"/>.</param>
         /// <returns>string.</returns>
-        public static string GetResolution(this MediaStream videoStream)
+        public static TraktResolution? GetResolution(this MediaStream videoStream)
         {
             if (videoStream == null)
             {
@@ -125,24 +129,34 @@ namespace Trakt
 
             if (videoStream.Width.Value >= 3800)
             {
-                return "uhd_4k";
+                return TraktResolution.uhd_4k;
             }
 
             if (videoStream.Width.Value >= 1900)
             {
-                return "hd_1080p";
+                return TraktResolution.hd_1080p;
             }
 
             if (videoStream.Width.Value >= 1270)
             {
-                return "hd_720p";
+                return TraktResolution.hd_720p;
             }
 
             if (videoStream.Width.Value >= 700)
             {
-                return "sd_480p";
+                return TraktResolution.sd_480p;
             }
 
+            return null;
+        }
+
+        /// <summary>
+        /// Gets the HDR type of a <see cref="MediaStream"/>.
+        /// </summary>
+        /// <param name="videoStream">The <see cref="MediaStream"/>.</param>
+        /// <returns>string.</returns>
+        public static TraktHdr? GetHdr(this MediaStream videoStream)
+        {
             return null;
         }
 

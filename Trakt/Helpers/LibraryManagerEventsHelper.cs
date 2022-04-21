@@ -10,6 +10,7 @@ using MediaBrowser.Model.Entities;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Model;
+using Trakt.Model.Enums;
 
 namespace Trakt.Helpers
 {
