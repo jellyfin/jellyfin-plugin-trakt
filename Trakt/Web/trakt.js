@@ -132,7 +132,6 @@ function save(page) {
                     TraktConfigurationPage.populateUsers(users);
                     page.querySelector('#selectUser').value = currentUserId;
                     TraktConfigurationPage.loadConfiguration(currentUserId, page);
-                    Dashboard.alert('Settings saved.');
                     resolve();
                 });
             });

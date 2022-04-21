@@ -21,7 +21,7 @@ namespace Trakt.Helpers
 
         public TraktUser TraktUser { get; set; }
 
-        public Guid CurrentSeriesId { get; set; }
+        public Guid? CurrentSeriesId { get; set; }
 
         public ICollection<Movie> SeenMovies { get; set; }
 

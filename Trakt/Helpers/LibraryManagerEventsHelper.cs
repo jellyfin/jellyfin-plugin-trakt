@@ -50,12 +50,12 @@ namespace Trakt.Helpers
                 _queueTimer = new Timer(
                     OnQueueTimerCallback,
                     null,
-                    TimeSpan.FromMilliseconds(20000),
+                    TimeSpan.FromMilliseconds(10000),
                     Timeout.InfiniteTimeSpan);
             }
             else
             {
-                _queueTimer.Change(TimeSpan.FromMilliseconds(20000), Timeout.InfiniteTimeSpan);
+                _queueTimer.Change(TimeSpan.FromMilliseconds(10000), Timeout.InfiniteTimeSpan);
             }
 
             var users = Plugin.Instance.PluginConfiguration.TraktUsers;
@@ -107,91 +107,92 @@ namespace Trakt.Helpers
             _queuedEvents.Clear();
             foreach (var traktUser in Plugin.Instance.PluginConfiguration.TraktUsers)
             {
-                var queuedMovieDeletes = queue.Where(ev =>
-                    new Guid(ev.TraktUser.LinkedMbUserId).Equals(new Guid(traktUser.LinkedMbUserId)) &&
-                    ev.Item is Movie &&
-                    ev.EventType == EventType.Remove).ToList();
+                var traktUserGuid = new Guid(traktUser.LinkedMbUserId);
 
-                if (queuedMovieDeletes.Any())
-                {
-                    _logger.LogInformation("{Count} movie deletions to process", queuedMovieDeletes.Count);
-                    await ProcessQueuedMovieEvents(queuedMovieDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
-                }
-                else
-                {
-                    _logger.LogInformation("No movie deletions to process");
-                }
+                var queuedMovieDeletes = new List<LibraryEvent>();
+                var queuedMovieAdds = new List<LibraryEvent>();
+                var queuedMovieUpdates = new List<LibraryEvent>();
+                var queuedEpisodeDeletes = new List<LibraryEvent>();
+                var queuedEpisodeAdds = new List<LibraryEvent>();
+                var queuedEpisodeUpdates = new List<LibraryEvent>();
+                var queuedShowDeletes = new List<LibraryEvent>();
+                var queuedShowAdds = new List<LibraryEvent>();
+                var queuedShowUpdates = new List<LibraryEvent>();
 
-                var queuedMovieAdds = queue.Where(ev =>
-                    new Guid(ev.TraktUser.LinkedMbUserId).Equals(new Guid(traktUser.LinkedMbUserId)) &&
-                    ev.Item is Movie &&
-                    ev.EventType == EventType.Add).ToList();
-
-                if (queuedMovieAdds.Any())
+                foreach (var ev in queue)
                 {
-                    _logger.LogInformation("{Count} movie additions to process", queuedMovieAdds.Count);
-                    await ProcessQueuedMovieEvents(queuedMovieAdds, traktUser, EventType.Add).ConfigureAwait(false);
-                }
-                else
-                {
-                    _logger.LogInformation("No movie additions to process");
-                }
-
-                var queuedEpisodeDeletes = queue.Where(ev =>
-                    new Guid(ev.TraktUser.LinkedMbUserId).Equals(new Guid(traktUser.LinkedMbUserId)) &&
-                    ev.Item is Episode &&
-                    ev.EventType == EventType.Remove).ToList();
-
-                if (queuedEpisodeDeletes.Any())
-                {
-                    _logger.LogInformation("{Count} episode deletions to process", queuedEpisodeDeletes.Count);
-                    await ProcessQueuedEpisodeEvents(queuedEpisodeDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
-                }
-                else
-                {
-                    _logger.LogInformation("No episode deletions to process");
-                }
-
-                var queuedEpisodeAdds = queue.Where(ev =>
-                    new Guid(ev.TraktUser.LinkedMbUserId).Equals(new Guid(traktUser.LinkedMbUserId)) &&
-                    ev.Item is Episode &&
-                    ev.EventType == EventType.Add).ToList();
-
-                if (queuedEpisodeAdds.Any())
-                {
-                    _logger.LogInformation("{Count} episode additions to process", queuedEpisodeAdds.Count);
-                    await ProcessQueuedEpisodeEvents(queuedEpisodeAdds, traktUser, EventType.Add).ConfigureAwait(false);
-                }
-                else
-                {
-                    _logger.LogInformation("No episode additions to process");
+                    var eventTraktUserGuid = new Guid(ev.TraktUser.LinkedMbUserId);
+                    if (eventTraktUserGuid.Equals(traktUserGuid))
+                    {
+                        switch (ev.Item)
+                        {
+                            case Movie when ev.EventType is EventType.Remove:
+                                queuedMovieDeletes.Add(ev);
+                                break;
+                            case Movie when ev.EventType is EventType.Add:
+                                queuedMovieAdds.Add(ev);
+                                break;
+                            case Movie when ev.EventType is EventType.Update:
+                                queuedMovieUpdates.Add(ev);
+                                break;
+                            case Episode when ev.EventType is EventType.Remove:
+                                queuedEpisodeDeletes.Add(ev);
+                                break;
+                            case Episode when ev.EventType is EventType.Add:
+                                queuedEpisodeAdds.Add(ev);
+                                break;
+                            case Episode when ev.EventType is EventType.Update:
+                                queuedEpisodeUpdates.Add(ev);
+                                break;
+                            case Series when ev.EventType is EventType.Remove:
+                                queuedShowDeletes.Add(ev);
+                                break;
+                            case Series when ev.EventType is EventType.Add:
+                                queuedShowAdds.Add(ev);
+                                break;
+                            case Series when ev.EventType is EventType.Update:
+                                queuedShowUpdates.Add(ev);
+                                break;
+                        }
+                    }
                 }
 
-                var queuedShowDeletes = queue.Where(ev =>
-                    new Guid(ev.TraktUser.LinkedMbUserId).Equals(new Guid(traktUser.LinkedMbUserId)) &&
-                    ev.Item is Series &&
-                    ev.EventType == EventType.Remove).ToList();
+                await ProcessQueuedMovieEvents(queuedMovieDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
+                await ProcessQueuedMovieEvents(queuedMovieAdds, traktUser, EventType.Add).ConfigureAwait(false);
+                await ProcessQueuedMovieEvents(queuedMovieUpdates, traktUser, EventType.Update).ConfigureAwait(false);
 
-                if (queuedShowDeletes.Any())
-                {
-                    _logger.LogInformation("{Count} series deletions to process", queuedMovieDeletes.Count);
-                    await ProcessQueuedShowEvents(queuedShowDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
-                }
-                else
-                {
-                    _logger.LogInformation("No series deletions to process");
-                }
+                await ProcessQueuedEpisodeEvents(queuedEpisodeDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
+                await ProcessQueuedEpisodeEvents(queuedEpisodeAdds, traktUser, EventType.Add).ConfigureAwait(false);
+                await ProcessQueuedEpisodeEvents(queuedEpisodeUpdates, traktUser, EventType.Add).ConfigureAwait(false);
+
+                await ProcessQueuedShowEvents(queuedShowDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
+                await ProcessQueuedShowEvents(queuedShowAdds, traktUser, EventType.Remove).ConfigureAwait(false);
+                await ProcessQueuedShowEvents(queuedShowUpdates, traktUser, EventType.Remove).ConfigureAwait(false);
             }
 
             // Everything is processed. Reset the event list.
             _queuedEvents.Clear();
         }
 
-        private async Task ProcessQueuedShowEvents(IEnumerable<LibraryEvent> events, TraktUser traktUser, EventType eventType)
+        private async Task ProcessQueuedShowEvents(IReadOnlyCollection<LibraryEvent> events, TraktUser traktUser, EventType eventType)
         {
+            if (events.Count == 0)
+            {
+                _logger.LogInformation("No shows with event type {EventType} to process", eventType);
+                return;
+            }
+
+            _logger.LogInformation("Processing {Count} shows with event type {EventType}", events.Count, eventType);
+
             var shows = events.Select(lev => (Series)lev.Item)
-                .Where(lev => !string.IsNullOrEmpty(lev.Name) && !string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Tvdb)))
-                .ToList();
+                .Where(lev => !string.IsNullOrEmpty(lev.Name)
+                    && (!string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Tmdb))
+                        || !string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Tvdb))
+                        || !string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Imdb))
+                        || !string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.TvRage)))
+                    && !traktUser.LocationsExcluded.Any(directory => lev.Path.Contains(directory, StringComparison.OrdinalIgnoreCase)))
+                .ToHashSet();
+
             try
             {
                 // Should probably not be awaiting this, but it's unlikely a user will be deleting more than one or two shows at a time
@@ -213,11 +214,23 @@ namespace Trakt.Helpers
         /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
         /// <param name="eventType">The <see cref="EventType"/>.</param>
         /// <returns>Task.</returns>
-        private async Task ProcessQueuedMovieEvents(IEnumerable<LibraryEvent> events, TraktUser traktUser, EventType eventType)
+        private async Task ProcessQueuedMovieEvents(IReadOnlyCollection<LibraryEvent> events, TraktUser traktUser, EventType eventType)
         {
+            if (events.Count == 0)
+            {
+                _logger.LogInformation("No movies with event type {EventType} to process", eventType);
+                return;
+            }
+
+            _logger.LogInformation("Processing {Count} movies with event type {EventType}", events.Count, eventType);
+
             var movies = events.Select(lev => (Movie)lev.Item)
-                .Where(lev => !string.IsNullOrEmpty(lev.Name) && !string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Imdb)))
-                .ToList();
+                .Where(lev => !string.IsNullOrEmpty(lev.Name)
+                    && (!string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Tmdb))
+                        || !string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Imdb)))
+                    && !traktUser.LocationsExcluded.Any(directory => lev.Path.Contains(directory, StringComparison.OrdinalIgnoreCase)))
+                .ToHashSet();
+
             try
             {
                 await _traktApi.SendLibraryUpdateAsync(movies, traktUser, eventType, CancellationToken.None).ConfigureAwait(false);
@@ -235,10 +248,22 @@ namespace Trakt.Helpers
         /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
         /// <param name="eventType">The <see cref="EventType"/>.</param>
         /// <returns>Task.</returns>
-        private async Task ProcessQueuedEpisodeEvents(IEnumerable<LibraryEvent> events, TraktUser traktUser, EventType eventType)
+        private async Task ProcessQueuedEpisodeEvents(IReadOnlyCollection<LibraryEvent> events, TraktUser traktUser, EventType eventType)
         {
+            if (events.Count == 0)
+            {
+                _logger.LogInformation("No episodes with event type {EventType} to process", eventType);
+                return;
+            }
+
+            _logger.LogInformation("Processing {Count} episodes with event type {EventType}", events.Count, eventType);
+
             var episodes = events.Select(lev => (Episode)lev.Item)
-                .Where(lev => lev.Series != null && !string.IsNullOrEmpty(lev.Series.Name) && !string.IsNullOrEmpty(lev.Series.GetProviderId(MetadataProvider.Tvdb)))
+                .Where(lev => lev.Series != null
+                    && !string.IsNullOrEmpty(lev.Series.Name)
+                    && (!string.IsNullOrEmpty(lev.Series.GetProviderId(MetadataProvider.Tmdb))
+                        || !string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Tvdb)))
+                    && !traktUser.LocationsExcluded.Any(directory => lev.Path.Contains(directory, StringComparison.OrdinalIgnoreCase)))
                 .OrderBy(i => i.Series.Id)
                 .ToList();
 

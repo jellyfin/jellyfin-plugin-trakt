@@ -255,7 +255,7 @@ namespace Trakt.Api
             EventType eventType,
             CancellationToken cancellationToken)
         {
-            if (movies == null)
+            if (movies is null || movies.Count == 0)
             {
                 throw new ArgumentNullException(nameof(movies));
             }
@@ -263,11 +263,6 @@ namespace Trakt.Api
             if (traktUser == null)
             {
                 throw new ArgumentNullException(nameof(traktUser));
-            }
-
-            if (eventType == EventType.Update)
-            {
-                return null;
             }
 
             var moviesPayload = movies.Select(m =>
@@ -291,7 +286,7 @@ namespace Trakt.Api
                 return traktMovieCollected;
             });
 
-            var url = eventType == EventType.Add ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
+            var url = (eventType == EventType.Add || eventType == EventType.Update) ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
             var responses = new List<TraktSyncResponse>();
             var chunks = moviesPayload.ToChunks(100);
             foreach (var chunk in chunks)
@@ -322,7 +317,7 @@ namespace Trakt.Api
             EventType eventType,
             CancellationToken cancellationToken)
         {
-            if (episodes == null)
+            if (episodes is null || episodes.Count == 0)
             {
                 throw new ArgumentNullException(nameof(episodes));
             }
@@ -330,11 +325,6 @@ namespace Trakt.Api
             if (traktUser == null)
             {
                 throw new ArgumentNullException(nameof(traktUser));
-            }
-
-            if (eventType == EventType.Update)
-            {
-                return null;
             }
 
             var responses = new List<TraktSyncResponse>();
@@ -427,10 +417,12 @@ namespace Trakt.Api
 
                         if (traktUser.ExportMediaInfo)
                         {
-                            // traktEpisodeCollected.Is3D = episode.Is3D;
+                            var defaultVideoStream = episode.GetDefaultVideoStream();
                             traktEpisodeCollected.AudioChannels = audioStream.GetAudioChannels();
                             traktEpisodeCollected.Audio = audioStream.GetCodecRepresetation();
-                            traktEpisodeCollected.Resolution = episode.GetDefaultVideoStream().GetResolution();
+                            traktEpisodeCollected.Resolution = defaultVideoStream.GetResolution();
+                            traktEpisodeCollected.Is3D = episode.Is3D;
+                            traktEpisodeCollected.Hdr = defaultVideoStream.GetHdr();
                         }
 
                         syncSeason.Episodes.Add(traktEpisodeCollected);
@@ -444,7 +436,7 @@ namespace Trakt.Api
                 Shows = showPayload
             };
 
-            var url = eventType == EventType.Add ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
+            var url = (eventType == EventType.Add || eventType == EventType.Update) ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
             var response = await PostToTrakt<TraktSyncResponse>(url, data, traktUser, cancellationToken).ConfigureAwait(false);
             if (useProviderIDs && response.NotFound.Episodes.Count > 0)
             {
@@ -478,11 +470,6 @@ namespace Trakt.Api
             if (traktUser == null)
             {
                 throw new ArgumentNullException(nameof(traktUser));
-            }
-
-            if (eventType == EventType.Update)
-            {
-                return null;
             }
 
             var showPayload = new List<TraktShowCollected>
@@ -1179,7 +1166,7 @@ namespace Trakt.Api
             return new TReturn
             {
                 Imdb = mediaObject.GetProviderId(MetadataProvider.Imdb),
-                Tmdb = mediaObject.GetProviderId(MetadataProvider.Tmdb).ConvertToInt()
+                Tmdb = mediaObject.GetProviderId(MetadataProvider.Tmdb)
             };
         }
 
@@ -1188,8 +1175,8 @@ namespace Trakt.Api
             where TReturn : TraktTVId, new()
         {
             TReturn retval = GetTraktIMDBTMDBIds<TInput, TReturn>(mediaObject);
-            retval.Tvdb = mediaObject.GetProviderId(MetadataProvider.Tvdb).ConvertToInt();
-            retval.Tvrage = mediaObject.GetProviderId(MetadataProvider.TvRage).ConvertToInt();
+            retval.Tvdb = mediaObject.GetProviderId(MetadataProvider.Tvdb);
+            retval.Tvrage = mediaObject.GetProviderId(MetadataProvider.TvRage);
             return retval;
         }
 
@@ -1199,9 +1186,9 @@ namespace Trakt.Api
             return shows.FirstOrDefault(
                 sre => sre.Ids != null
                 && sre.Ids.Imdb == series.GetProviderId(MetadataProvider.Imdb)
-                && sre.Ids.Tmdb == series.GetProviderId(MetadataProvider.Tmdb).ConvertToInt()
-                && sre.Ids.Tvdb == series.GetProviderId(MetadataProvider.Tvdb).ConvertToInt()
-                && sre.Ids.Tvrage == series.GetProviderId(MetadataProvider.TvRage).ConvertToInt());
+                && sre.Ids.Tmdb == series.GetProviderId(MetadataProvider.Tmdb)
+                && sre.Ids.Tvdb == series.GetProviderId(MetadataProvider.Tvdb)
+                && sre.Ids.Tvrage == series.GetProviderId(MetadataProvider.TvRage));
         }
 
         private bool HasAnyProviderTvIds(BaseItem item)
@@ -1215,9 +1202,9 @@ namespace Trakt.Api
         private bool HasAnyProviderTvIds(TraktTVId item)
         {
             return !string.IsNullOrEmpty(item.Imdb)
-                || item.Tmdb.HasValue
-                || item.Tvdb.HasValue
-                || item.Tvrage.HasValue;
+                || !string.IsNullOrEmpty(item.Tmdb)
+                || !string.IsNullOrEmpty(item.Tvdb)
+                || !string.IsNullOrEmpty(item.Tvrage);
         }
     }
 }

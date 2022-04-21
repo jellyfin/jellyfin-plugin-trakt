@@ -45,7 +45,10 @@ namespace Trakt.Helpers
 
             if (userPackage == null)
             {
-                _userDataPackages.Add(new UserDataPackage { TraktUser = traktUser });
+                userPackage = new UserDataPackage
+                {
+                    TraktUser = traktUser
+                };
             }
 
             if (_timer == null)
@@ -109,29 +112,56 @@ namespace Trakt.Helpers
             }
 
             // If it's not the series we're currently storing, upload our episodes and reset the arrays
-            if (!userPackage.CurrentSeriesId.Equals(episode.Series.Id))
+            if (userPackage.CurrentSeriesId != null)
             {
-                if (userPackage.SeenEpisodes.Any())
+                if (!userPackage.CurrentSeriesId.Equals(episode.Series.Id))
                 {
-                    _traktApi.SendEpisodePlaystateUpdates(
-                        userPackage.SeenEpisodes.ToList(),
-                        userPackage.TraktUser,
-                        true,
-                        CancellationToken.None).ConfigureAwait(false);
-                    userPackage.SeenEpisodes.Clear();
-                }
+                    if (userPackage.SeenEpisodes.Any())
+                    {
+                        _traktApi.SendEpisodePlaystateUpdates(
+                            userPackage.SeenEpisodes.ToList(),
+                            userPackage.TraktUser,
+                            true,
+                            CancellationToken.None).ConfigureAwait(false);
+                        userPackage.SeenEpisodes.Clear();
+                    }
 
-                if (userPackage.UnSeenEpisodes.Any())
+                    if (userPackage.UnSeenEpisodes.Any())
+                    {
+                        _traktApi.SendEpisodePlaystateUpdates(
+                            userPackage.UnSeenEpisodes.ToList(),
+                            userPackage.TraktUser,
+                            false,
+                            CancellationToken.None).ConfigureAwait(false);
+                        userPackage.UnSeenEpisodes.Clear();
+                    }
+
+                    userPackage.CurrentSeriesId = episode.Series.Id;
+                }
+                else
                 {
-                    _traktApi.SendEpisodePlaystateUpdates(
-                        userPackage.UnSeenEpisodes.ToList(),
-                        userPackage.TraktUser,
-                        false,
-                        CancellationToken.None).ConfigureAwait(false);
-                    userPackage.UnSeenEpisodes.Clear();
-                }
+                    // Force update trakt.tv if we have more than 100 seen episodes in the queue due to API
+                    if (userPackage.SeenEpisodes.Count >= 100)
+                    {
+                        _traktApi.SendEpisodePlaystateUpdates(
+                            userPackage.SeenEpisodes.ToList(),
+                            userPackage.TraktUser,
+                            true,
+                            CancellationToken.None).ConfigureAwait(false);
+                        userPackage.SeenEpisodes.Clear();
+                    }
 
-                userPackage.CurrentSeriesId = episode.Series.Id;
+                    // Force update trakt.tv if we have more than 100 unseen episodes in the queue due to API
+                    if (userPackage.UnSeenEpisodes.Count >= 100)
+                    {
+                        _traktApi.SendEpisodePlaystateUpdates(
+                            userPackage.UnSeenEpisodes.ToList(),
+                            userPackage.TraktUser,
+                            false,
+                            CancellationToken.None).ConfigureAwait(false);
+                        userPackage.UnSeenEpisodes.Clear();
+                    }
+                }
             }
 
             if (userDataSaveEventArgs.UserData.Played)
@@ -206,7 +236,7 @@ namespace Trakt.Helpers
         {
             if (disposing)
             {
-                _timer.Dispose();
+                _timer?.Dispose();
             }
         }
     }

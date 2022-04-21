@@ -11,12 +11,12 @@ namespace Trakt.Api.DataContracts.BaseModel
         /// Gets or sets the TVDb id.
         /// </summary>
         [JsonPropertyName("tvdb")]
-        public int? Tvdb { get; set; }
+        public string Tvdb { get; set; }
 
         /// <summary>
         /// Gets or sets the TVRage id.
         /// </summary>
         [JsonPropertyName("tvrage")]
-        public int? Tvrage { get; set; }
+        public string Tvrage { get; set; }
     }
 }

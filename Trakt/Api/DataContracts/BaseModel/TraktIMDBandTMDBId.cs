@@ -17,6 +17,6 @@ namespace Trakt.Api.DataContracts.BaseModel
         /// Gets or sets the TMDb id.
         /// </summary>
         [JsonPropertyName("tmdb")]
-        public int? Tmdb { get; set; }
+        public string Tmdb { get; set; }
     }
 }

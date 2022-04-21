@@ -32,7 +32,7 @@
                         device</button>
                 </div>
                 <div>
-                    <h3 class="checkboxListLabel">Exclude folders:</h3>
+                    <h3 class="checkboxListLabel">Exclude library folders:</h3>
                     <div id="divTraktLocations" class="paperList checkboxList checkboxList-paperList">
                     </div>
                 </div>
@@ -41,7 +41,7 @@
                     <label>
                         <input is="emby-checkbox" type="checkbox" id="chkSkipUnwatchedImportFromTrakt"
                             name="chkSkipUnwatchedImportFromTrakt" />
-                        <span>Skip unwatched import from Trakt</span>
+                        <span>Skip unwatched import from trakt.tv</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
                         The Import from trakt.tv scheduled task will set local items unwatched if item is marked as
@@ -52,7 +52,7 @@
                     <label>
                         <input is="emby-checkbox" type="checkbox" id="chkSkipWatchedImportFromTrakt"
                             name="chkSkipWatchedImportFromTrakt" />
-                        <span>Skip watched import from Trakt</span>
+                        <span>Skip watched import from trakt.tv</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
                         The Import from trakt.tv scheduled task will set local items as watched if item is marked as
@@ -82,7 +82,7 @@
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
                         <input is="emby-checkbox" type="checkbox" id="chkPostSetWatched" name="chkPostSetWatched" />
-                        <span>Set trakt.tv item to Watched when local item is changed to Watched.</span>
+                        <span>Set trakt.tv item to watched when local item is changed to watched.</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
                         Controls what is synced to trakt.tv when item statuses are changed during normal use.
@@ -99,29 +99,20 @@
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
-                        <input is="emby-checkbox" type="checkbox" id="chkExtraLogging" name="chkExtraLogging" />
-                        <span>Enable debug logging</span>
-                    </label>
-                    <div class="fieldDescription checkboxFieldDescription">
-                        When enabled, all data sent to trakt.tv is logged.
-                    </div>
-                </div>
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label>
                         <input is="emby-checkbox" type="checkbox" id="chkExportMediaInfo" name="chkExportMediaInfo" />
                         <span>Export media info</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        Send audio and video metadata to Trakt.
+                        Send audio and video metadata to trakt.tv.
                     </div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
                         <input is="emby-checkbox" type="checkbox" id="chkSyncCollections" name="chkSyncCollections" />
-                        <span>Synchronize Collection</span>
+                        <span>Synchronize collection</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        Synchronize the collected movies and shows to Trakt.
+                        Synchronize the collected movies and shows to trakt.tv.
                     </div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
@@ -130,7 +121,16 @@
                         <span>Scrobble</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        Scrobble to Trakt.
+                        Scrobble to trakt.tv.
+                    </div>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="chkExtraLogging" name="chkExtraLogging" />
+                        <span>Enable debug logging</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        When enabled, all data sent to trakt.tv is logged.
                     </div>
                 </div>
                 <div>

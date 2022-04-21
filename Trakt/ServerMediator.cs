@@ -24,13 +24,13 @@ namespace Trakt
     /// </summary>
     public class ServerMediator : IServerEntryPoint, IDisposable
     {
-        private readonly ISessionManager _sessionManager;
         private readonly ILibraryManager _libraryManager;
         private readonly ILogger<ServerMediator> _logger;
-        private readonly UserDataManagerEventsHelper _userDataManagerEventsHelper;
+        private readonly ISessionManager _sessionManager;
         private readonly IUserDataManager _userDataManager;
+        private readonly UserDataManagerEventsHelper _userDataManagerEventsHelper;
+        private readonly LibraryManagerEventsHelper _libraryManagerEventsHelper;
         private TraktApi _traktApi;
-        private LibraryManagerEventsHelper _libraryManagerEventsHelper;
 
         private Dictionary<string, bool> _playbackPause;
 
@@ -111,7 +111,9 @@ namespace Trakt
             _sessionManager.PlaybackProgress += KernelPlaybackProgress;
             _sessionManager.PlaybackStopped += KernelPlaybackStopped;
             _libraryManager.ItemAdded += LibraryManagerItemAdded;
+            _libraryManager.ItemUpdated += LibraryManagerItemUpdated;
             _libraryManager.ItemRemoved += LibraryManagerItemRemoved;
+
             return Task.CompletedTask;
         }
 
@@ -123,7 +125,7 @@ namespace Trakt
         /// <param name="itemChangeEventArgs">The <see cref="ItemChangeEventArgs"/>.</param>
         private void LibraryManagerItemRemoved(object sender, ItemChangeEventArgs itemChangeEventArgs)
         {
-            if (!(itemChangeEventArgs.Item is Movie) && !(itemChangeEventArgs.Item is Episode) && !(itemChangeEventArgs.Item is Series))
+            if (itemChangeEventArgs.Item is not Movie && itemChangeEventArgs.Item is not Episode && itemChangeEventArgs.Item is not Series)
             {
                 return;
             }
@@ -145,7 +147,7 @@ namespace Trakt
         private void LibraryManagerItemAdded(object sender, ItemChangeEventArgs itemChangeEventArgs)
         {
             // Don't do anything if it's not a supported media type
-            if (!(itemChangeEventArgs.Item is Movie) && !(itemChangeEventArgs.Item is Episode) && !(itemChangeEventArgs.Item is Series))
+            if (itemChangeEventArgs.Item is not Movie && itemChangeEventArgs.Item is not Episode && itemChangeEventArgs.Item is not Series)
             {
                 return;
             }
@@ -156,6 +158,28 @@ namespace Trakt
             }
 
             _libraryManagerEventsHelper.QueueItem(itemChangeEventArgs.Item, EventType.Add);
+        }
+
+        /// <summary>
+        /// Library item was updated.
+        /// Let trakt.tv know which item was updated in the user's library.
+        /// </summary>
+        /// <param name="sender">The sending entity.</param>
+        /// <param name="itemChangeEventArgs">The <see cref="ItemChangeEventArgs"/>.</param>
+        private void LibraryManagerItemUpdated(object sender, ItemChangeEventArgs itemChangeEventArgs)
+        {
+            // Don't do anything if it's not a supported media type
+            if (itemChangeEventArgs.Item is not Movie && itemChangeEventArgs.Item is not Episode && itemChangeEventArgs.Item is not Series)
+            {
+                return;
+            }
+
+            if (itemChangeEventArgs.Item.LocationType == LocationType.Virtual)
+            {
+                return;
+            }
+
+            _libraryManagerEventsHelper.QueueItem(itemChangeEventArgs.Item, EventType.Update);
         }
 
         /// <summary>
@@ -459,11 +483,12 @@ namespace Trakt
                 _userDataManager.UserDataSaved -= OnUserDataSaved;
                 _sessionManager.PlaybackStart -= KernelPlaybackStart;
                 _sessionManager.PlaybackStopped -= KernelPlaybackStopped;
+                _sessionManager.PlaybackProgress -= KernelPlaybackProgress;
                 _libraryManager.ItemAdded -= LibraryManagerItemAdded;
+                _libraryManager.ItemUpdated -= LibraryManagerItemUpdated;
                 _libraryManager.ItemRemoved -= LibraryManagerItemRemoved;
                 _traktApi = null;
                 _libraryManagerEventsHelper.Dispose();
-                _libraryManagerEventsHelper = null;
                 _userDataManagerEventsHelper.Dispose();
             }
         }
