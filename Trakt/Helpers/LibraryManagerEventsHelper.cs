@@ -66,11 +66,14 @@ namespace Trakt.Helpers
             }
 
             // Check if item can be synced for all users.
-            foreach (var user in users.Where(user => _traktApi.CanSync(item, user)))
+            lock (_queuedEvents)
             {
-                // Add to queue.
-                // Sync will be processed when the next timer elapsed event fires.
-                _queuedEvents.Add(new LibraryEvent { Item = item, TraktUser = user, EventType = eventType });
+                foreach (var user in users.Where(user => _traktApi.CanSync(item, user)))
+                {
+                    // Add to queue.
+                    // Sync will be processed when the next timer elapsed event fires.
+                    _queuedEvents.Add(new LibraryEvent { Item = item, TraktUser = user, EventType = eventType });
+                }
             }
         }
 
@@ -95,16 +98,21 @@ namespace Trakt.Helpers
         private async Task OnQueueTimerCallbackInternal()
         {
             _logger.LogInformation("Timer elapsed - processing queued items");
+            var queue = new List<LibraryEvent>();
 
-            if (!_queuedEvents.Any())
+            lock (_queuedEvents)
             {
-                _logger.LogInformation("No events... stopping queue timer");
-                // This may need to go
-                return;
+                if (!_queuedEvents.Any())
+                {
+                    _logger.LogInformation("No events... stopping queue timer");
+                    // This may need to go
+                    return;
+                }
+
+                queue = _queuedEvents.ToList();
+                _queuedEvents.Clear();
             }
 
-            var queue = _queuedEvents.ToList();
-            _queuedEvents.Clear();
             foreach (var traktUser in Plugin.Instance.PluginConfiguration.TraktUsers)
             {
                 var traktUserGuid = new Guid(traktUser.LinkedMbUserId);
@@ -169,9 +177,6 @@ namespace Trakt.Helpers
                 await ProcessQueuedShowEvents(queuedShowAdds, traktUser, EventType.Remove).ConfigureAwait(false);
                 await ProcessQueuedShowEvents(queuedShowUpdates, traktUser, EventType.Remove).ConfigureAwait(false);
             }
-
-            // Everything is processed. Reset the event list.
-            _queuedEvents.Clear();
         }
 
         private async Task ProcessQueuedShowEvents(IReadOnlyCollection<LibraryEvent> events, TraktUser traktUser, EventType eventType)

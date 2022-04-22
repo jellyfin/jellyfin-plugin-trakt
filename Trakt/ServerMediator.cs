@@ -30,7 +30,7 @@ namespace Trakt
         private readonly IUserDataManager _userDataManager;
         private readonly UserDataManagerEventsHelper _userDataManagerEventsHelper;
         private readonly LibraryManagerEventsHelper _libraryManagerEventsHelper;
-        private TraktApi _traktApi;
+        private readonly TraktApi _traktApi;
 
         private Dictionary<string, bool> _playbackPause;
 
@@ -487,9 +487,7 @@ namespace Trakt
                 _libraryManager.ItemAdded -= LibraryManagerItemAdded;
                 _libraryManager.ItemUpdated -= LibraryManagerItemUpdated;
                 _libraryManager.ItemRemoved -= LibraryManagerItemRemoved;
-                _traktApi = null;
                 _libraryManagerEventsHelper.Dispose();
-                _userDataManagerEventsHelper.Dispose();
             }
         }
     }

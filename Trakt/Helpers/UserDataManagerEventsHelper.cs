@@ -15,12 +15,11 @@ namespace Trakt.Helpers
     /// Helper class used to update the watched status of movies/episodes.
     /// Attempts to organise requests to lower API calls.
     /// </summary>
-    internal class UserDataManagerEventsHelper : IDisposable
+    internal class UserDataManagerEventsHelper
     {
         private readonly ILogger<UserDataManagerEventsHelper> _logger;
         private readonly TraktApi _traktApi;
         private readonly List<UserDataPackage> _userDataPackages;
-        private Timer _timer;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UserDataManagerEventsHelper"/> class.
@@ -49,19 +48,6 @@ namespace Trakt.Helpers
                 {
                     TraktUser = traktUser
                 };
-            }
-
-            if (_timer == null)
-            {
-                _timer = new Timer(
-                    OnTimerCallback,
-                    null,
-                    TimeSpan.FromMilliseconds(3000),
-                    Timeout.InfiniteTimeSpan);
-            }
-            else
-            {
-                _timer.Change(TimeSpan.FromMilliseconds(5000), Timeout.InfiniteTimeSpan);
             }
 
             if (userDataSaveEventArgs.Item is Movie movie)
@@ -223,20 +209,6 @@ namespace Trakt.Helpers
                         CancellationToken.None).ConfigureAwait(false);
                     package.SeenEpisodes.Clear();
                 }
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                _timer?.Dispose();
             }
         }
     }

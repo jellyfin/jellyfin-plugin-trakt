@@ -147,12 +147,23 @@ namespace Trakt.ScheduledTasks
             double availablePercent,
             CancellationToken cancellationToken)
         {
-            /*
-             * In order to sync watched status to trakt.tv we need to know what's been watched on trakt.tv already. This
-             * will stop us from endlessly incrementing the watched values on the site.
-             */
-            var traktWatchedMovies = await _traktApi.SendGetAllWatchedMoviesRequest(traktUser).ConfigureAwait(false);
-            var traktCollectedMovies = await _traktApi.SendGetAllCollectedMoviesRequest(traktUser).ConfigureAwait(false);
+            List<Api.DataContracts.Users.Watched.TraktMovieWatched> traktWatchedMovies = new List<Api.DataContracts.Users.Watched.TraktMovieWatched>();
+            List<Api.DataContracts.Users.Collection.TraktMovieCollected> traktCollectedMovies = new List<Trakt.Api.DataContracts.Users.Collection.TraktMovieCollected>();
+
+            try
+            {
+                /*
+                * In order to sync watched status to trakt.tv we need to know what's been watched on trakt.tv already. This
+                * will stop us from endlessly incrementing the watched values on the site.
+                */
+                traktWatchedMovies.AddRange(await _traktApi.SendGetAllWatchedMoviesRequest(traktUser).ConfigureAwait(false));
+                traktCollectedMovies.AddRange(await _traktApi.SendGetAllCollectedMoviesRequest(traktUser).ConfigureAwait(false));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception handled in SyncMovies");
+                throw;
+            }
 
             var baseQuery = new InternalItemsQuery(user)
             {
@@ -286,7 +297,7 @@ namespace Trakt.ScheduledTasks
 
                     // Force update trakt.tv if we have more than 100 movies in the queue due to API
                     var offset = 0;
-                    while (offset < movies.Count)
+                    while (offset + 100 < movies.Count)
                     {
                         var moviesToSend = movies.GetRange(offset, 100);
                         dataContracts = (await _traktApi.SendLibraryUpdateAsync(
@@ -305,7 +316,7 @@ namespace Trakt.ScheduledTasks
                     }
 
                     dataContracts = (await _traktApi.SendLibraryUpdateAsync(
-                            movies,
+                            movies.GetRange(offset, movies.Count - offset),
                             traktUser,
                             collected ? EventType.Add : EventType.Remove,
                             cancellationToken)
@@ -347,7 +358,7 @@ namespace Trakt.ScheduledTasks
 
                     // Force update trakt.tv if we have more than 100 movies in the queue due to API
                     var offset = 0;
-                    while (offset < movies.Count)
+                    while (offset + 100 < movies.Count)
                     {
                         var moviesToSend = movies.GetRange(offset, 100);
                         dataContracts = await _traktApi.SendMoviePlaystateUpdates(
@@ -365,7 +376,7 @@ namespace Trakt.ScheduledTasks
                     }
 
                     dataContracts = await _traktApi.SendMoviePlaystateUpdates(
-                        movies,
+                        movies.GetRange(offset, movies.Count - offset),
                         traktUser,
                         seen,
                         cancellationToken)
@@ -391,8 +402,23 @@ namespace Trakt.ScheduledTasks
             double availablePercent,
             CancellationToken cancellationToken)
         {
-            var traktWatchedShows = await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false);
-            var traktCollectedShows = await _traktApi.SendGetCollectedShowsRequest(traktUser).ConfigureAwait(false);
+            List<Api.DataContracts.Users.Watched.TraktShowWatched> traktWatchedShows;
+            List<Api.DataContracts.Users.Collection.TraktShowCollected> traktCollectedShows;
+
+            try
+            {
+                /*
+                * In order to sync watched status to trakt.tv we need to know what's been watched on trakt.tv already. This
+                * will stop us from endlessly incrementing the watched values on the site.
+                */
+                traktWatchedShows = await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false);
+                traktCollectedShows = await _traktApi.SendGetCollectedShowsRequest(traktUser).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception handled in SyncShows");
+                throw;
+            }
 
             var baseQuery = new InternalItemsQuery(user)
             {
@@ -530,7 +556,7 @@ namespace Trakt.ScheduledTasks
 
                     // Force update trakt.tv if we have more than 100 movies in the queue due to API
                     var offset = 0;
-                    while (offset < episodes.Count)
+                    while (offset + 100 < episodes.Count)
                     {
                         var episodesToSend = episodes.GetRange(offset, 100);
 
@@ -550,7 +576,7 @@ namespace Trakt.ScheduledTasks
                     }
 
                     dataContracts = (await _traktApi.SendLibraryUpdateAsync(
-                        episodes,
+                        episodes.GetRange(offset, episodes.Count - offset),
                         traktUser,
                         collected ? EventType.Add : EventType.Remove,
                         cancellationToken)
@@ -592,7 +618,7 @@ namespace Trakt.ScheduledTasks
 
                     // Force update trakt.tv if we have more than 100 movies in the queue due to API
                     var offset = 0;
-                    while (offset < episodes.Count)
+                    while (offset + 100 < episodes.Count)
                     {
                         var episodesToSend = episodes.GetRange(offset, 100);
                         dataContracts = await _traktApi.SendEpisodePlaystateUpdates(
@@ -610,7 +636,7 @@ namespace Trakt.ScheduledTasks
                     }
 
                     dataContracts = (await _traktApi.SendEpisodePlaystateUpdates(
-                        episodes,
+                        episodes.GetRange(offset, episodes.Count - offset),
                         traktUser,
                         seen,
                         cancellationToken)

@@ -1105,6 +1105,11 @@ namespace Trakt.Api
                 response.EnsureSuccessStatusCode();
                 return await response.Content.ReadFromJsonAsync<T>(_jsonOptions, cancellationToken).ConfigureAwait(false);
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception handled in PostToTrakt");
+                throw;
+            }
             finally
             {
                 _traktResourcePool.Release();
