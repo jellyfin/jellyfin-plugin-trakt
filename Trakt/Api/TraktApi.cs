@@ -1171,7 +1171,7 @@ namespace Trakt.Api
             return new TReturn
             {
                 Imdb = mediaObject.GetProviderId(MetadataProvider.Imdb),
-                Tmdb = mediaObject.GetProviderId(MetadataProvider.Tmdb)
+                Tmdb = mediaObject.GetProviderId(MetadataProvider.Tmdb).ConvertToInt()
             };
         }
 
@@ -1191,7 +1191,7 @@ namespace Trakt.Api
             return shows.FirstOrDefault(
                 sre => sre.Ids != null
                 && sre.Ids.Imdb == series.GetProviderId(MetadataProvider.Imdb)
-                && sre.Ids.Tmdb == series.GetProviderId(MetadataProvider.Tmdb)
+                && sre.Ids.Tmdb == series.GetProviderId(MetadataProvider.Tmdb).ConvertToInt()
                 && sre.Ids.Tvdb == series.GetProviderId(MetadataProvider.Tvdb)
                 && sre.Ids.Tvrage == series.GetProviderId(MetadataProvider.TvRage));
         }
@@ -1207,7 +1207,7 @@ namespace Trakt.Api
         private bool HasAnyProviderTvIds(TraktTVId item)
         {
             return !string.IsNullOrEmpty(item.Imdb)
-                || !string.IsNullOrEmpty(item.Tmdb)
+                || !(item.Tmdb == null)
                 || !string.IsNullOrEmpty(item.Tvdb)
                 || !string.IsNullOrEmpty(item.Tvrage);
         }

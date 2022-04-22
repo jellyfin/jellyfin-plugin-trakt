@@ -305,7 +305,7 @@ namespace Trakt
             }
 
             var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
-            if (string.Equals(tmdb, movie.Ids.Tmdb, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(tmdb, movie.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
@@ -328,7 +328,7 @@ namespace Trakt
             }
 
             var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
-            if (string.Equals(tmdb, show.Ids.Tmdb, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(tmdb, show.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
