@@ -27,6 +27,7 @@ const TraktConfigurationPage = {
             currentUserConfig.LocationsExcluded = currentUserConfig.LocationsExcluded || [];
             page.querySelector('#chkSkipUnwatchedImportFromTrakt').checked = currentUserConfig.SkipUnwatchedImportFromTrakt;
             page.querySelector('#chkSkipWatchedImportFromTrakt').checked = currentUserConfig.SkipWatchedImportFromTrakt;
+            page.querySelector('#chkSkipPlaybackProgressImportFromTrakt').checked = currentUserConfig.SkipPlaybackProgressImportFromTrakt;
             page.querySelector('#chkPostWatchedHistory').checked = currentUserConfig.PostWatchedHistory;
             page.querySelector('#chkPostUnwatchedHistory').checked = currentUserConfig.PostUnwatchedHistory;
             page.querySelector('#chkPostSetWatched').checked = currentUserConfig.PostSetWatched;
@@ -110,6 +111,7 @@ function save(page) {
             }
             currentUserConfig.SkipUnwatchedImportFromTrakt = page.querySelector('#chkSkipUnwatchedImportFromTrakt').checked;
             currentUserConfig.SkipWatchedImportFromTrakt = page.querySelector('#chkSkipWatchedImportFromTrakt').checked;
+            currentUserConfig.SkipPlaybackProgressImportFromTrakt = page.querySelector('#chkSkipPlaybackProgressImportFromTrakt').checked;
             currentUserConfig.PostWatchedHistory = page.querySelector('#chkPostWatchedHistory').checked;
             currentUserConfig.PostUnwatchedHistory = page.querySelector('#chkPostUnwatchedHistory').checked;
             currentUserConfig.PostSetWatched = page.querySelector('#chkPostSetWatched').checked;

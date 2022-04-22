@@ -11,7 +11,6 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Session;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.IO;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Helpers;
@@ -43,15 +42,13 @@ namespace Trakt
         /// <param name="loggerFactory">The <see cref="ILoggerFactory"/>.</param>
         /// <param name="httpClientFactory">The <see cref="IHttpClientFactory"/>.</param>
         /// <param name="appHost">The <see cref="IServerApplicationHost"/>.</param>
-        /// <param name="fileSystem">The <see cref="IFileSystem"/>.</param>
         public ServerMediator(
             ISessionManager sessionManager,
             IUserDataManager userDataManager,
             ILibraryManager libraryManager,
             ILoggerFactory loggerFactory,
             IHttpClientFactory httpClientFactory,
-            IServerApplicationHost appHost,
-            IFileSystem fileSystem)
+            IServerApplicationHost appHost)
         {
             _sessionManager = sessionManager;
             _libraryManager = libraryManager;
@@ -60,7 +57,7 @@ namespace Trakt
             _logger = loggerFactory.CreateLogger<ServerMediator>();
             _playbackPause = new Dictionary<string, bool>();
 
-            _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, fileSystem);
+            _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager);
             _libraryManagerEventsHelper = new LibraryManagerEventsHelper(loggerFactory.CreateLogger<LibraryManagerEventsHelper>(), _traktApi);
             _userDataManagerEventsHelper = new UserDataManagerEventsHelper(loggerFactory.CreateLogger<UserDataManagerEventsHelper>(), _traktApi);
         }

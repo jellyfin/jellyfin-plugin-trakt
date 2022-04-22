@@ -8,6 +8,7 @@ using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Entities;
 using Trakt.Api.DataContracts.BaseModel;
 using Trakt.Api.DataContracts.Users.Collection;
+using Trakt.Api.DataContracts.Users.Playback;
 using Trakt.Api.DataContracts.Users.Watched;
 using Trakt.Api.Enums;
 using Episode = MediaBrowser.Controller.Entities.TV.Episode;
@@ -250,7 +251,7 @@ namespace Trakt
         /// Gets a watched match for a series.
         /// </summary>
         /// <param name="item">The <see cref="Series"/>.</param>
-        /// <param name="results">IEnumerale of <see cref="TraktShowWatched"/>.</param>
+        /// <param name="results">The <see cref="IEnumerable{TraktShowWatched}"/>.</param>
         /// <returns>TraktShowWatched.</returns>
         public static TraktShowWatched FindMatch(Series item, IEnumerable<TraktShowWatched> results)
         {
@@ -261,7 +262,7 @@ namespace Trakt
         /// Gets a collected match for a series.
         /// </summary>
         /// <param name="item">The <see cref="Series"/>.</param>
-        /// <param name="results">IEnumerale of <see cref="TraktShowCollected"/>.</param>
+        /// <param name="results">>The <see cref="IEnumerable{TraktShowCollected}"/>.</param>
         /// <returns>TraktShowCollected.</returns>
         public static TraktShowCollected FindMatch(Series item, IEnumerable<TraktShowCollected> results)
         {
@@ -269,10 +270,21 @@ namespace Trakt
         }
 
         /// <summary>
+        /// Gets a paused match for a series.
+        /// </summary>
+        /// <param name="item">The <see cref="Episode"/>.</param>
+        /// <param name="results">>The <see cref="IEnumerable{TraktShowCollected}"/>.</param>
+        /// <returns>TraktShowCollected.</returns>
+        public static TraktEpisodePaused FindMatch(Episode item, IEnumerable<TraktEpisodePaused> results)
+        {
+            return results.FirstOrDefault(i => IsMatch(item, i.Episode));
+        }
+
+        /// <summary>
         /// Gets a watched match for a movie.
         /// </summary>
         /// <param name="item">The <see cref="BaseItem"/>.</param>
-        /// <param name="results">IEnumerale of <see cref="TraktMovieWatched"/>.</param>
+        /// <param name="results">>The <see cref="IEnumerable{TraktMovieWatched}"/>.</param>
         /// <returns>TraktMovieWatched.</returns>
         public static TraktMovieWatched FindMatch(BaseItem item, IEnumerable<TraktMovieWatched> results)
         {
@@ -283,18 +295,29 @@ namespace Trakt
         /// Gets a collected match for a movie.
         /// </summary>
         /// <param name="item">The <see cref="BaseItem"/>.</param>
-        /// <param name="results">IEnumerale of <see cref="TraktMovieCollected"/>.</param>
+        /// <param name="results">>The <see cref="IEnumerable{TraktMovieCollected}"/>.</param>
         /// <returns>TraktMovieCollected.</returns>
-        public static IEnumerable<TraktMovieCollected> FindMatches(BaseItem item, IEnumerable<TraktMovieCollected> results)
+        public static TraktMovieCollected FindMatch(BaseItem item, IEnumerable<TraktMovieCollected> results)
         {
-            return results.Where(i => IsMatch(item, i.Movie)).ToList();
+            return results.FirstOrDefault(i => IsMatch(item, i.Movie));
+        }
+
+        /// <summary>
+        /// Gets a paused match for a movie.
+        /// </summary>
+        /// <param name="item">The <see cref="BaseItem"/>.</param>
+        /// <param name="results">>The <see cref="IEnumerable{TraktMoviePaused}"/>.</param>
+        /// <returns>TraktMoviePaused.</returns>
+        public static TraktMoviePaused FindMatch(BaseItem item, IEnumerable<TraktMoviePaused> results)
+        {
+            return results.FirstOrDefault(i => IsMatch(item, i.Movie));
         }
 
         /// <summary>
         /// Checks if a <see cref="BaseItem"/> matches a <see cref="TraktMovie"/>.
         /// </summary>
         /// <param name="item">The <see cref="BaseItem"/>.</param>
-        /// <param name="movie">The <see cref="TraktMovie"/>.</param>
+        /// <param name="movie">The IEnumerable of <see cref="TraktMovie"/>.</param>
         /// <returns><see cref="bool"/> indicating if the <see cref="BaseItem"/> matches a <see cref="TraktMovie"/>.</returns>
         public static bool IsMatch(BaseItem item, TraktMovie movie)
         {
@@ -341,6 +364,41 @@ namespace Trakt
 
             var tvrage = item.GetProviderId(MetadataProvider.TvRage);
             if (string.Equals(tvrage, show.Ids.Tvrage, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if a <see cref="Episode"/> matches a <see cref="TraktEpisode"/>.
+        /// </summary>
+        /// <param name="item">The <see cref="Episode"/>.</param>
+        /// <param name="episode">The <see cref="TraktEpisode"/>.</param>
+        /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktEpisode"/>.</returns>
+        public static bool IsMatch(Episode item, TraktEpisode episode)
+        {
+            var tvdb = item.GetProviderId(MetadataProvider.Tvdb);
+            if (string.Equals(tvdb, episode.Ids.Tvdb, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
+            if (string.Equals(tmdb, episode.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var imdb = item.GetProviderId(MetadataProvider.Imdb);
+            if (string.Equals(imdb, episode.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var tvrage = item.GetProviderId(MetadataProvider.TvRage);
+            if (string.Equals(tvrage, episode.Ids.Tvrage, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }

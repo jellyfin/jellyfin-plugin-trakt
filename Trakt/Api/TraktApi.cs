@@ -17,7 +17,6 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.IO;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using Trakt.Api.DataContracts;
@@ -46,7 +45,6 @@ namespace Trakt.Api
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IServerApplicationHost _appHost;
         private readonly IUserDataManager _userDataManager;
-        private readonly IFileSystem _fileSystem;
         private readonly JsonSerializerOptions _jsonOptions = JsonDefaults.Options;
 
         /// <summary>
@@ -56,18 +54,15 @@ namespace Trakt.Api
         /// <param name="httpClientFactory">The <see cref="IHttpClientFactory"/>.</param>
         /// <param name="appHost">The <see cref="IServerApplicationHost"/>.</param>
         /// <param name="userDataManager">The <see cref="IUserDataManager"/>.</param>
-        /// <param name="fileSystem">The <see cref="IFileSystem"/>.</param>
         public TraktApi(
             ILogger<TraktApi> logger,
             IHttpClientFactory httpClientFactory,
             IServerApplicationHost appHost,
-            IUserDataManager userDataManager,
-            IFileSystem fileSystem)
+            IUserDataManager userDataManager)
         {
             _httpClientFactory = httpClientFactory;
             _appHost = appHost;
             _userDataManager = userDataManager;
-            _fileSystem = fileSystem;
             _logger = logger;
         }
 
@@ -84,7 +79,8 @@ namespace Trakt.Api
                 return false;
             }
 
-            if (traktUser.LocationsExcluded != null && traktUser.LocationsExcluded.Any(location => _fileSystem.ContainsSubPath(location, item.Path)))
+            if (traktUser.LocationsExcluded != null
+                && traktUser.LocationsExcluded.Any(directory => item.Path.Contains(directory, StringComparison.OrdinalIgnoreCase)))
             {
                 return false;
             }
@@ -634,6 +630,26 @@ namespace Trakt.Api
         public async Task<List<DataContracts.Users.Watched.TraktShowWatched>> SendGetWatchedShowsRequest(TraktUser traktUser)
         {
             return await GetFromTrakt<List<DataContracts.Users.Watched.TraktShowWatched>>(TraktUris.WatchedShows, traktUser).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get all paused movies.
+        /// </summary>
+        /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+        /// <returns>Task{List{DataContracts.Users.Playback.TraktMoviePaused}}.</returns>
+        public async Task<List<DataContracts.Users.Playback.TraktMoviePaused>> SendGetAllPausedMoviesRequest(TraktUser traktUser)
+        {
+            return await GetFromTrakt<List<DataContracts.Users.Playback.TraktMoviePaused>>(TraktUris.PausedMovies, traktUser).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get paused shows.
+        /// </summary>
+        /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+        /// <returns>Task{List{DataContracts.Users.Playback.TraktEpisodePaused}}.</returns>
+        public async Task<List<DataContracts.Users.Playback.TraktEpisodePaused>> SendGetPausedShowsRequest(TraktUser traktUser)
+        {
+            return await GetFromTrakt<List<DataContracts.Users.Playback.TraktEpisodePaused>>(TraktUris.PausedShows, traktUser).ConfigureAwait(false);
         }
 
         /// <summary>

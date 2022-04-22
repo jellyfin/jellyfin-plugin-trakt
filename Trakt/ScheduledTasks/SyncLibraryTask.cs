@@ -11,7 +11,6 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.IO;
 using MediaBrowser.Model.Querying;
 using MediaBrowser.Model.Tasks;
 using Microsoft.Extensions.Logging;
@@ -48,7 +47,6 @@ namespace Trakt.ScheduledTasks
         /// <param name="userDataManager">Instance of the <see cref="IUserDataManager"/> interface.</param>
         /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
         /// <param name="appHost">Instance of the <see cref="IServerApplicationHost"/> interface.</param>
-        /// <param name="fileSystem">Instance of the <see cref="IFileSystem"/> interface.</param>
         /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
         public SyncLibraryTask(
             ILoggerFactory loggerFactory,
@@ -56,28 +54,26 @@ namespace Trakt.ScheduledTasks
             IUserDataManager userDataManager,
             IHttpClientFactory httpClientFactory,
             IServerApplicationHost appHost,
-            IFileSystem fileSystem,
             ILibraryManager libraryManager)
         {
             _userManager = userManager;
             _userDataManager = userDataManager;
             _libraryManager = libraryManager;
             _logger = loggerFactory.CreateLogger<SyncLibraryTask>();
-            _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, fileSystem);
+            _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager);
         }
 
         /// <inheritdoc />
         public string Key => "TraktSyncLibraryTask";
 
         /// <inheritdoc />
-        public string Name => "Sync library to trakt.tv";
+        public string Name => "Export library to trakt.tv";
 
         /// <inheritdoc />
         public string Category => "Trakt";
 
         /// <inheritdoc />
-        public string Description
-            => "Adds any media that is in each users trakt.tv monitored locations to their trakt.tv profile";
+        public string Description => "Exports any media that is in each user's trakt.tv monitored locations to their trakt.tv collection";
 
         /// <inheritdoc />
         public IEnumerable<TaskTriggerInfo> GetDefaultTriggers() => Enumerable.Empty<TaskTriggerInfo>();
@@ -194,16 +190,14 @@ namespace Trakt.ScheduledTasks
                 baseQuery.Limit = Limit;
                 baseQuery.StartIndex = offset;
 
-                var libraryMovies = _libraryManager.GetItemList(baseQuery)
-                    .OfType<Movie>()
-                    .Where(item => !traktUser.LocationsExcluded.Any(directory => item.Path.Contains(directory, StringComparison.OrdinalIgnoreCase)))
-                    .ToList();
-                previousCount = libraryMovies.Count;
+                var items = _libraryManager.GetItemList(baseQuery);
+                previousCount = items.Count;
                 offset += Limit;
+                var movieItems = items.OfType<Movie>().Where(x => _traktApi.CanSync(x, traktUser));
 
-                if (previousCount > 0)
+                if (movieItems != null)
                 {
-                    foreach (var libraryMovie in libraryMovies.Where(movie => _traktApi.CanSync(movie, traktUser)))
+                    foreach (var libraryMovie in movieItems)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
                         var userData = _userDataManager.GetUserData(user.Id, libraryMovie);
@@ -211,9 +205,9 @@ namespace Trakt.ScheduledTasks
                         if (traktUser.SynchronizeCollections)
                         {
                             // If movie is not collected, or (export media info setting is enabled and every collected matching movie has different metadata), collect it
-                            var collectedMatchingMovies = Extensions.FindMatches(libraryMovie, traktCollectedMovies).ToList();
-                            if (collectedMatchingMovies.Count == 0
-                                || (traktUser.ExportMediaInfo && collectedMatchingMovies.All(collectedMovie => collectedMovie.MetadataIsDifferent(libraryMovie))))
+                            var collectedMatchingMovies = Extensions.FindMatch(libraryMovie, traktCollectedMovies);
+                            if (collectedMatchingMovies == null
+                                || (traktUser.ExportMediaInfo && collectedMatchingMovies.MetadataIsDifferent(libraryMovie)))
                             {
                                 collectedMovies.Add(libraryMovie);
                             }
@@ -299,6 +293,7 @@ namespace Trakt.ScheduledTasks
                     var offset = 0;
                     while (offset + 100 < movies.Count)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         var moviesToSend = movies.GetRange(offset, 100);
                         dataContracts = (await _traktApi.SendLibraryUpdateAsync(
                             moviesToSend,
@@ -360,6 +355,7 @@ namespace Trakt.ScheduledTasks
                     var offset = 0;
                     while (offset + 100 < movies.Count)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         var moviesToSend = movies.GetRange(offset, 100);
                         dataContracts = await _traktApi.SendMoviePlaystateUpdates(
                             moviesToSend,
@@ -449,16 +445,14 @@ namespace Trakt.ScheduledTasks
                 baseQuery.Limit = Limit;
                 baseQuery.StartIndex = offset;
 
-                var episodeItems = _libraryManager.GetItemList(baseQuery)
-                    .OfType<Episode>()
-                    .Where(item => !traktUser.LocationsExcluded.Any(directory => item.Path.Contains(directory, StringComparison.OrdinalIgnoreCase)))
-                    .ToHashSet();
-                previousCount = episodeItems.Count;
+                var items = _libraryManager.GetItemList(baseQuery);
+                previousCount = items.Count;
                 offset += Limit;
+                var episodeItems = items.OfType<Episode>().Where(x => _traktApi.CanSync(x, traktUser));
 
-                if (previousCount > 0)
+                if (episodeItems != null)
                 {
-                    foreach (var episode in episodeItems.Where(x => _traktApi.CanSync(x, traktUser)))
+                    foreach (var episode in episodeItems)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
                         var userData = _userDataManager.GetUserData(user.Id, episode);
@@ -558,8 +552,8 @@ namespace Trakt.ScheduledTasks
                     var offset = 0;
                     while (offset + 100 < episodes.Count)
                     {
+                        cancellationToken.ThrowIfCancellationRequested();
                         var episodesToSend = episodes.GetRange(offset, 100);
-
                         dataContracts = (await _traktApi.SendLibraryUpdateAsync(
                             episodesToSend,
                             traktUser,
@@ -621,6 +615,7 @@ namespace Trakt.ScheduledTasks
                     while (offset + 100 < episodes.Count)
                     {
                         var episodesToSend = episodes.GetRange(offset, 100);
+                        cancellationToken.ThrowIfCancellationRequested();
                         dataContracts = await _traktApi.SendEpisodePlaystateUpdates(
                             episodesToSend,
                             traktUser,
