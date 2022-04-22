@@ -18,6 +18,12 @@ namespace Trakt.Api.DataContracts.Users.Collection
         public string LastCollectedAt { get; set; }
 
         /// <summary>
+        /// Gets or sets the last updated date.
+        /// </summary>
+        [JsonPropertyName("last_updated_at")]
+        public string LastUpdatedAt { get; set; }
+
+        /// <summary>
         /// Gets or sets the show.
         /// </summary>
         [JsonPropertyName("show")]

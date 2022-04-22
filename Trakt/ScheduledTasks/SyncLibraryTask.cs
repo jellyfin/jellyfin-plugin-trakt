@@ -98,10 +98,9 @@ namespace Trakt.ScheduledTasks
             {
                 var traktUser = UserHelper.GetTraktUser(user);
 
-                // I'll leave this in here for now, but in reality this continue should never be reached.
-                if (string.IsNullOrEmpty(traktUser?.LinkedMbUserId))
+                if (!(traktUser.SynchronizeCollections || traktUser.PostUnwatchedHistory || traktUser.PostWatchedHistory))
                 {
-                    _logger.LogError("traktUser is either null or has no linked account");
+                    _logger.LogDebug("User {Name} disabled collection and history syncing.", user.Username);
                     continue;
                 }
 
@@ -152,8 +151,15 @@ namespace Trakt.ScheduledTasks
                 * In order to sync watched status to trakt.tv we need to know what's been watched on trakt.tv already. This
                 * will stop us from endlessly incrementing the watched values on the site.
                 */
-                traktWatchedMovies.AddRange(await _traktApi.SendGetAllWatchedMoviesRequest(traktUser).ConfigureAwait(false));
-                traktCollectedMovies.AddRange(await _traktApi.SendGetAllCollectedMoviesRequest(traktUser).ConfigureAwait(false));
+                if (traktUser.PostWatchedHistory || traktUser.PostUnwatchedHistory)
+                {
+                    traktWatchedMovies.AddRange(await _traktApi.SendGetAllWatchedMoviesRequest(traktUser).ConfigureAwait(false));
+                }
+
+                if (traktUser.SynchronizeCollections)
+                {
+                    traktCollectedMovies.AddRange(await _traktApi.SendGetAllCollectedMoviesRequest(traktUser).ConfigureAwait(false));
+                }
             }
             catch (Exception ex)
             {
@@ -169,14 +175,7 @@ namespace Trakt.ScheduledTasks
             };
 
             // Purely for progress reporting
-            if (traktUser.SynchronizeCollections)
-            {
-                availablePercent /= 4;
-            }
-            else
-            {
-                availablePercent /= 3;
-            }
+            availablePercent /= 4;
 
             var collectedMovies = new List<Movie>();
             var playedMovies = new List<Movie>();
@@ -224,7 +223,8 @@ namespace Trakt.ScheduledTasks
                                 {
                                     playedMovies.Add(libraryMovie);
                                 }
-                                else if (!traktUser.SkipUnwatchedImportFromTrakt && userData.Played)
+
+                                if (!traktUser.SkipUnwatchedImportFromTrakt)
                                 {
                                     userData.Played = false;
 
@@ -253,13 +253,10 @@ namespace Trakt.ScheduledTasks
             currentProgress += availablePercent;
             progress.Report(currentProgress);
 
-            if (traktUser.SynchronizeCollections)
-            {
-                // Send movies to mark collected
-                await SendMovieCollectionUpdates(true, traktUser, collectedMovies, progress, currentProgress, availablePercent, cancellationToken).ConfigureAwait(false);
-                currentProgress += availablePercent;
-                progress.Report(currentProgress);
-            }
+            // Send movies to mark collected
+            await SendMovieCollectionUpdates(true, traktUser, collectedMovies, progress, currentProgress, availablePercent, cancellationToken).ConfigureAwait(false);
+            currentProgress += availablePercent;
+            progress.Report(currentProgress);
 
             // Send movies to mark watched
             await SendMoviePlaystateUpdates(true, traktUser, playedMovies, progress, currentProgress, availablePercent, cancellationToken).ConfigureAwait(false);
@@ -398,8 +395,8 @@ namespace Trakt.ScheduledTasks
             double availablePercent,
             CancellationToken cancellationToken)
         {
-            List<Api.DataContracts.Users.Watched.TraktShowWatched> traktWatchedShows;
-            List<Api.DataContracts.Users.Collection.TraktShowCollected> traktCollectedShows;
+            List<Api.DataContracts.Users.Watched.TraktShowWatched> traktWatchedShows = new List<Api.DataContracts.Users.Watched.TraktShowWatched>();
+            List<Api.DataContracts.Users.Collection.TraktShowCollected> traktCollectedShows = new List<Api.DataContracts.Users.Collection.TraktShowCollected>();
 
             try
             {
@@ -407,8 +404,15 @@ namespace Trakt.ScheduledTasks
                 * In order to sync watched status to trakt.tv we need to know what's been watched on trakt.tv already. This
                 * will stop us from endlessly incrementing the watched values on the site.
                 */
-                traktWatchedShows = await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false);
-                traktCollectedShows = await _traktApi.SendGetCollectedShowsRequest(traktUser).ConfigureAwait(false);
+                if (traktUser.PostWatchedHistory || traktUser.PostUnwatchedHistory)
+                {
+                    traktWatchedShows.AddRange(await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false));
+                }
+
+                if (traktUser.SynchronizeCollections)
+                {
+                    traktCollectedShows.AddRange(await _traktApi.SendGetCollectedShowsRequest(traktUser).ConfigureAwait(false));
+                }
             }
             catch (Exception ex)
             {
@@ -424,14 +428,7 @@ namespace Trakt.ScheduledTasks
             };
 
             // Purely for progress reporting
-            if (traktUser.SynchronizeCollections)
-            {
-                availablePercent /= 4;
-            }
-            else
-            {
-                availablePercent /= 3;
-            }
+            availablePercent /= 4;
 
             var collectedEpisodes = new List<Episode>();
             var playedEpisodes = new List<Episode>();
@@ -459,46 +456,35 @@ namespace Trakt.ScheduledTasks
                         var isPlayedTraktTv = false;
                         var traktWatchedShow = Extensions.FindMatch(episode.Series, traktWatchedShows);
 
-                        if (traktWatchedShow?.Seasons != null && traktWatchedShow.Seasons.Count > 0)
+                        if (traktUser.PostSetUnwatched || traktUser.PostSetWatched)
                         {
-                            isPlayedTraktTv = traktWatchedShow.Seasons.Any(
-                                season => season.Number == episode.GetSeasonNumber()
-                                    && season.Episodes != null
-                                    && season.Episodes.Any(e => e.Number == episode.IndexNumber
-                                    && e.Plays > 0));
-                        }
+                            if (traktWatchedShow?.Seasons != null && traktWatchedShow.Seasons.Count > 0)
+                            {
+                                isPlayedTraktTv = traktWatchedShow.Seasons.Any(
+                                    season => season.Number == episode.GetSeasonNumber()
+                                        && season.Episodes != null
+                                        && season.Episodes.Any(e => Extensions.IsMatch(episode, e)
+                                        && e.Plays > 0));
+                            }
 
-                        // If the show has been played locally and is unplayed on trakt.tv then add it to the list
-                        if (userData != null && userData.Played && !isPlayedTraktTv)
-                        {
-                            if (traktUser.PostWatchedHistory)
+                            // If the show has been played locally and is unplayed on trakt.tv then add it to the list
+                            if (traktUser.PostWatchedHistory && userData != null && userData.Played && !isPlayedTraktTv)
                             {
                                 playedEpisodes.Add(episode);
                             }
-                            else if (!traktUser.SkipUnwatchedImportFromTrakt && userData.Played)
+                            else if (traktUser.PostUnwatchedHistory && userData != null && !userData.Played && isPlayedTraktTv)
                             {
-                                userData.Played = false;
-
-                                _userDataManager.SaveUserData(
-                                    user.Id,
-                                    episode,
-                                    userData,
-                                    UserDataSaveReason.Import,
-                                    cancellationToken);
+                                // If the show has not been played locally but is played on trakt.tv then add it to the unplayed list
+                                unplayedEpisodes.Add(episode);
                             }
-                        }
-                        else if (userData != null && !userData.Played && isPlayedTraktTv && traktUser.PostUnwatchedHistory)
-                        {
-                            // If the show has not been played locally but is played on trakt.tv then add it to the unplayed list
-                            unplayedEpisodes.Add(episode);
                         }
 
                         if (traktUser.SynchronizeCollections)
                         {
                             var traktCollectedShow = Extensions.FindMatch(episode.Series, traktCollectedShows);
                             if (traktCollectedShow?.Seasons == null
-                                || traktCollectedShow.Seasons.All(season => season.Number != episode.ParentIndexNumber)
-                                || traktCollectedShow.Seasons.First(season => season.Number == episode.ParentIndexNumber)
+                                || traktCollectedShow.Seasons.All(season => season.Number != episode.GetSeasonNumber())
+                                || traktCollectedShow.Seasons.First(season => season.Number == episode.GetSeasonNumber())
                                     .Episodes.All(e => e.Number != episode.IndexNumber))
                             {
                                 collectedEpisodes.Add(episode);
@@ -512,13 +498,10 @@ namespace Trakt.ScheduledTasks
             currentProgress += availablePercent;
             progress.Report(currentProgress);
 
-            if (traktUser.SynchronizeCollections)
-            {
-                // Send episodes to mark collected
-                await SendEpisodeCollectionUpdates(true, traktUser, collectedEpisodes, progress, currentProgress, availablePercent, cancellationToken).ConfigureAwait(false);
-                currentProgress += availablePercent;
-                progress.Report(currentProgress);
-            }
+            // Send episodes to mark collected
+            await SendEpisodeCollectionUpdates(true, traktUser, collectedEpisodes, progress, currentProgress, availablePercent, cancellationToken).ConfigureAwait(false);
+            currentProgress += availablePercent;
+            progress.Report(currentProgress);
 
             // Send episodes to mark watched
             await SendEpisodePlaystateUpdates(true, traktUser, playedEpisodes, progress, currentProgress, availablePercent, cancellationToken).ConfigureAwait(false);

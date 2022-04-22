@@ -98,7 +98,7 @@
         /// <summary>
         /// The paused shows URI.
         /// </summary>
-        public const string PausedShows = BaseUrl + "/sync/playback/shows";
+        public const string PausedEpisodes = BaseUrl + "/sync/playback/episodes";
 
         /// <summary>
         /// The collected movies URI.

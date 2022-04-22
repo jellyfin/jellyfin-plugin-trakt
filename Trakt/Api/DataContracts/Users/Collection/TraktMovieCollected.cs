@@ -25,5 +25,11 @@ namespace Trakt.Api.DataContracts.Users.Collection
         /// </summary>
         [JsonPropertyName("movie")]
         public TraktMovie Movie { get; set; }
+
+        /// <summary>
+        /// Gets or sets the updated date.
+        /// </summary>
+        [JsonPropertyName("updated_at")]
+        public string UpdatedAt { get; set; }
     }
 }

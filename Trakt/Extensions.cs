@@ -175,12 +175,12 @@ namespace Trakt
         }
 
         /// <summary>
-        /// Gets the ISO-8620 representation of a <see cref="DateTime"/>.
+        /// Gets the ISO-8601 representation of a <see cref="DateTime"/>.
         /// </summary>
-        /// <param name="dt">The <see cref="DateTime"/>.</param>
+        /// <param name="dateTime">The <see cref="DateTime"/>.</param>
         /// <returns>string.</returns>
-        public static string ToISO8601(this DateTime dt)
-            => dt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
+        public static string ToISO8601(this DateTime dateTime)
+            => dateTime.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fffffff'Z'", CultureInfo.InvariantCulture);
 
         /// <summary>
         /// Gets the season number of an <see cref="Episode"/>.
@@ -322,13 +322,13 @@ namespace Trakt
         public static bool IsMatch(BaseItem item, TraktMovie movie)
         {
             var imdb = item.GetProviderId(MetadataProvider.Imdb);
-            if (string.Equals(imdb, movie.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(imdb) && string.Equals(imdb, movie.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
             var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
-            if (string.Equals(tmdb, movie.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, movie.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
@@ -345,25 +345,25 @@ namespace Trakt
         public static bool IsMatch(Series item, TraktShow show)
         {
             var tvdb = item.GetProviderId(MetadataProvider.Tvdb);
-            if (string.Equals(tvdb, show.Ids.Tvdb, StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(tvdb) && string.Equals(tvdb, show.Ids.Tvdb, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
             var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
-            if (string.Equals(tmdb, show.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, show.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
             var imdb = item.GetProviderId(MetadataProvider.Imdb);
-            if (string.Equals(imdb, show.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(imdb) && string.Equals(imdb, show.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
             var tvrage = item.GetProviderId(MetadataProvider.TvRage);
-            if (string.Equals(tvrage, show.Ids.Tvrage, StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(tvrage) && string.Equals(tvrage, show.Ids.Tvrage, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
@@ -380,30 +380,49 @@ namespace Trakt
         public static bool IsMatch(Episode item, TraktEpisode episode)
         {
             var tvdb = item.GetProviderId(MetadataProvider.Tvdb);
-            if (string.Equals(tvdb, episode.Ids.Tvdb, StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(tvdb) && string.Equals(tvdb, episode.Ids.Tvdb, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
             var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
-            if (string.Equals(tmdb, episode.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, episode.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
             var imdb = item.GetProviderId(MetadataProvider.Imdb);
-            if (string.Equals(imdb, episode.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(imdb) && string.Equals(imdb, episode.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
             var tvrage = item.GetProviderId(MetadataProvider.TvRage);
-            if (string.Equals(tvrage, episode.Ids.Tvrage, StringComparison.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(tvrage) && string.Equals(tvrage, episode.Ids.Tvrage, StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Checks if a <see cref="Episode"/> matches a <see cref="TraktEpisodeWatched"/>.
+        /// </summary>
+        /// <param name="item">The <see cref="Episode"/>.</param>
+        /// <param name="episode">The <see cref="TraktEpisodeWatched"/>.</param>
+        /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktEpisodeWatched"/>.</returns>
+        public static bool IsMatch(Episode item, TraktEpisodeWatched episode)
+        {
+            var episodeNumber = episode.Number;
+            var itemIndexNumber = item.IndexNumber;
+            var itemIndexNumberEnd = item.IndexNumberEnd;
+
+            return !itemIndexNumber.HasValue
+                ? episodeNumber == -1
+                : (itemIndexNumberEnd.HasValue && itemIndexNumberEnd > itemIndexNumber
+                    ? itemIndexNumber <= episodeNumber && episodeNumber <= itemIndexNumberEnd
+                    : episodeNumber == itemIndexNumber);
         }
     }
 }

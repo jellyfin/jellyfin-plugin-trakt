@@ -72,7 +72,10 @@ namespace Trakt.Helpers
                 {
                     // Add to queue.
                     // Sync will be processed when the next timer elapsed event fires.
-                    _queuedEvents.Add(new LibraryEvent { Item = item, TraktUser = user, EventType = eventType });
+                    if (user.SynchronizeCollections)
+                    {
+                        _queuedEvents.Add(new LibraryEvent { Item = item, TraktUser = user, EventType = eventType });
+                    }
                 }
             }
         }
@@ -105,7 +108,6 @@ namespace Trakt.Helpers
                 if (!_queuedEvents.Any())
                 {
                     _logger.LogInformation("No events... stopping queue timer");
-                    // This may need to go
                     return;
                 }
 
@@ -113,19 +115,29 @@ namespace Trakt.Helpers
                 _queuedEvents.Clear();
             }
 
+            var queuedMovieDeletes = new List<LibraryEvent>();
+            var queuedMovieAdds = new List<LibraryEvent>();
+            var queuedMovieUpdates = new List<LibraryEvent>();
+            var queuedEpisodeDeletes = new List<LibraryEvent>();
+            var queuedEpisodeAdds = new List<LibraryEvent>();
+            var queuedEpisodeUpdates = new List<LibraryEvent>();
+            var queuedShowDeletes = new List<LibraryEvent>();
+            var queuedShowAdds = new List<LibraryEvent>();
+            var queuedShowUpdates = new List<LibraryEvent>();
+
             foreach (var traktUser in Plugin.Instance.PluginConfiguration.TraktUsers)
             {
                 var traktUserGuid = new Guid(traktUser.LinkedMbUserId);
 
-                var queuedMovieDeletes = new List<LibraryEvent>();
-                var queuedMovieAdds = new List<LibraryEvent>();
-                var queuedMovieUpdates = new List<LibraryEvent>();
-                var queuedEpisodeDeletes = new List<LibraryEvent>();
-                var queuedEpisodeAdds = new List<LibraryEvent>();
-                var queuedEpisodeUpdates = new List<LibraryEvent>();
-                var queuedShowDeletes = new List<LibraryEvent>();
-                var queuedShowAdds = new List<LibraryEvent>();
-                var queuedShowUpdates = new List<LibraryEvent>();
+                queuedMovieDeletes.Clear();
+                queuedMovieAdds.Clear();
+                queuedMovieUpdates.Clear();
+                queuedEpisodeDeletes.Clear();
+                queuedEpisodeAdds.Clear();
+                queuedEpisodeUpdates.Clear();
+                queuedShowDeletes.Clear();
+                queuedShowAdds.Clear();
+                queuedShowUpdates.Clear();
 
                 foreach (var ev in queue)
                 {
@@ -171,11 +183,11 @@ namespace Trakt.Helpers
 
                 await ProcessQueuedEpisodeEvents(queuedEpisodeDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
                 await ProcessQueuedEpisodeEvents(queuedEpisodeAdds, traktUser, EventType.Add).ConfigureAwait(false);
-                await ProcessQueuedEpisodeEvents(queuedEpisodeUpdates, traktUser, EventType.Add).ConfigureAwait(false);
+                await ProcessQueuedEpisodeEvents(queuedEpisodeUpdates, traktUser, EventType.Update).ConfigureAwait(false);
 
                 await ProcessQueuedShowEvents(queuedShowDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
-                await ProcessQueuedShowEvents(queuedShowAdds, traktUser, EventType.Remove).ConfigureAwait(false);
-                await ProcessQueuedShowEvents(queuedShowUpdates, traktUser, EventType.Remove).ConfigureAwait(false);
+                await ProcessQueuedShowEvents(queuedShowAdds, traktUser, EventType.Add).ConfigureAwait(false);
+                await ProcessQueuedShowEvents(queuedShowUpdates, traktUser, EventType.Update).ConfigureAwait(false);
             }
         }
 

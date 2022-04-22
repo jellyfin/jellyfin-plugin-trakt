@@ -122,7 +122,7 @@ namespace Trakt
         /// <param name="itemChangeEventArgs">The <see cref="ItemChangeEventArgs"/>.</param>
         private void LibraryManagerItemRemoved(object sender, ItemChangeEventArgs itemChangeEventArgs)
         {
-            if (itemChangeEventArgs.Item is not Movie && itemChangeEventArgs.Item is not Episode && itemChangeEventArgs.Item is not Series)
+            if (itemChangeEventArgs.Item is not Movie and not Episode and not Series)
             {
                 return;
             }
@@ -144,7 +144,7 @@ namespace Trakt
         private void LibraryManagerItemAdded(object sender, ItemChangeEventArgs itemChangeEventArgs)
         {
             // Don't do anything if it's not a supported media type
-            if (itemChangeEventArgs.Item is not Movie && itemChangeEventArgs.Item is not Episode && itemChangeEventArgs.Item is not Series)
+            if (itemChangeEventArgs.Item is not Movie and not Episode and not Series)
             {
                 return;
             }
@@ -166,7 +166,7 @@ namespace Trakt
         private void LibraryManagerItemUpdated(object sender, ItemChangeEventArgs itemChangeEventArgs)
         {
             // Don't do anything if it's not a supported media type
-            if (itemChangeEventArgs.Item is not Movie && itemChangeEventArgs.Item is not Episode && itemChangeEventArgs.Item is not Series)
+            if (itemChangeEventArgs.Item is not Movie and not Episode and not Series)
             {
                 return;
             }
@@ -195,6 +195,12 @@ namespace Trakt
                 return;
             }
 
+            if (playbackProgressEventArgs.Item is not Movie && playbackProgressEventArgs.Item is not Episode)
+            {
+                _logger.LogDebug("Syncing playback of {Item} is not supported by trakt.tv.", playbackProgressEventArgs.Item.Path);
+                return;
+            }
+
             foreach (var user in playbackProgressEventArgs.Users)
             {
                 // Since Jellyfin supports user profiles we need to do a user lookup every time something starts
@@ -214,7 +220,7 @@ namespace Trakt
 
                 if (!_traktApi.CanSync(playbackProgressEventArgs.Item, traktUser))
                 {
-                    _logger.LogDebug("Syncing playback for {Item} is forbidden for user {User}.", playbackProgressEventArgs.Item.Path, user.Username);
+                    _logger.LogDebug("Syncing playback of {Item} is forbidden for user {User}.", playbackProgressEventArgs.Item.Path, user.Username);
                     continue;
                 }
 
@@ -270,6 +276,12 @@ namespace Trakt
                 return;
             }
 
+            if (playbackProgressEventArgs.Item is not Movie && playbackProgressEventArgs.Item is not Episode)
+            {
+                _logger.LogDebug("Syncing playback of {Item} is not supported by trakt.tv.", playbackProgressEventArgs.Item.Path);
+                return;
+            }
+
             foreach (var user in playbackProgressEventArgs.Users)
             {
                 // Since Emby is user profile friendly, I'm going to need to do a user lookup every time something starts
@@ -289,7 +301,7 @@ namespace Trakt
 
                 if (!_traktApi.CanSync(playbackProgressEventArgs.Item, traktUser))
                 {
-                    _logger.LogDebug("Syncing playback for {Item} is forbidden for user {User}.", playbackProgressEventArgs.Item.Path, user.Username);
+                    _logger.LogDebug("Syncing playback of {Item} is forbidden for user {User}.", playbackProgressEventArgs.Item.Path, user.Username);
                     continue;
                 }
 
@@ -377,6 +389,12 @@ namespace Trakt
                 return;
             }
 
+            if (playbackStoppedEventArgs.Item is not Movie && playbackStoppedEventArgs.Item is not Episode)
+            {
+                _logger.LogDebug("Syncing playback of {Item} is not supported by trakt.tv.", playbackStoppedEventArgs.Item.Path);
+                return;
+            }
+
             _logger.LogInformation("Playback stopped");
 
             foreach (var user in playbackStoppedEventArgs.Users)
@@ -397,7 +415,7 @@ namespace Trakt
 
                 if (!_traktApi.CanSync(playbackStoppedEventArgs.Item, traktUser))
                 {
-                    _logger.LogDebug("Syncing playback for {Item} is forbidden for user {User}.", playbackStoppedEventArgs.Item.Name, user.Username);
+                    _logger.LogDebug("Syncing playback of {Item} is forbidden for user {User}.", playbackStoppedEventArgs.Item.Name, user.Username);
                     continue;
                 }
 
@@ -443,7 +461,7 @@ namespace Trakt
                                 traktUser,
                                 progressPercent).ConfigureAwait(false);
                         }
-                        else
+                        else if (video is Episode episode)
                         {
                             await _traktApi.SendEpisodeStatusUpdateAsync(
                                 video as Episode,

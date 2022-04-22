@@ -52,12 +52,9 @@ namespace Trakt.Helpers
 
             if (userDataSaveEventArgs.Item is Movie movie)
             {
-                if (userDataSaveEventArgs.UserData.Played)
+                if (traktUser.PostSetWatched && userDataSaveEventArgs.UserData.Played)
                 {
-                    if (traktUser.PostSetWatched)
-                    {
-                        userPackage.SeenMovies.Add(movie);
-                    }
+                    userPackage.SeenMovies.Add(movie);
 
                     // Force update trakt.tv if we have more than 100 seen movies in the queue due to API
                     if (userPackage.SeenMovies.Count >= 100)
@@ -70,12 +67,9 @@ namespace Trakt.Helpers
                         userPackage.SeenMovies.Clear();
                     }
                 }
-                else
+                else if (traktUser.PostSetUnwatched)
                 {
-                    if (traktUser.PostSetUnwatched)
-                    {
-                        userPackage.UnSeenMovies.Add(movie);
-                    }
+                    userPackage.UnSeenMovies.Add(movie);
 
                     // Force update trakt.tv if we have more than 100 unseen movies in the queue due to API
                     if (userPackage.UnSeenMovies.Count >= 100)
@@ -150,19 +144,13 @@ namespace Trakt.Helpers
                 }
             }
 
-            if (userDataSaveEventArgs.UserData.Played)
+            if (traktUser.PostSetWatched && userDataSaveEventArgs.UserData.Played)
             {
-                if (traktUser.PostSetWatched)
-                {
-                    userPackage.SeenEpisodes.Add(episode);
-                }
+                userPackage.SeenEpisodes.Add(episode);
             }
-            else
+            else if (traktUser.PostSetUnwatched)
             {
-                if (traktUser.PostSetUnwatched)
-                {
-                    userPackage.UnSeenEpisodes.Add(episode);
-                }
+                userPackage.UnSeenEpisodes.Add(episode);
             }
         }
 

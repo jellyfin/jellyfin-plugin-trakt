@@ -643,13 +643,13 @@ namespace Trakt.Api
         }
 
         /// <summary>
-        /// Get paused shows.
+        /// Get paused episodes.
         /// </summary>
         /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
         /// <returns>Task{List{DataContracts.Users.Playback.TraktEpisodePaused}}.</returns>
-        public async Task<List<DataContracts.Users.Playback.TraktEpisodePaused>> SendGetPausedShowsRequest(TraktUser traktUser)
+        public async Task<List<DataContracts.Users.Playback.TraktEpisodePaused>> SendGetPausedEpisodesRequest(TraktUser traktUser)
         {
-            return await GetFromTrakt<List<DataContracts.Users.Playback.TraktEpisodePaused>>(TraktUris.PausedShows, traktUser).ConfigureAwait(false);
+            return await GetFromTrakt<List<DataContracts.Users.Playback.TraktEpisodePaused>>(TraktUris.PausedEpisodes, traktUser).ConfigureAwait(false);
         }
 
         /// <summary>
