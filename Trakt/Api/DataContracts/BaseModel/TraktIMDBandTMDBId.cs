@@ -1,3 +1,5 @@
+#nullable enable
+
 using System.Text.Json.Serialization;
 
 namespace Trakt.Api.DataContracts.BaseModel
@@ -11,7 +13,7 @@ namespace Trakt.Api.DataContracts.BaseModel
         /// Gets or sets the IMDb id.
         /// </summary>
         [JsonPropertyName("imdb")]
-        public string Imdb { get; set; }
+        public string? Imdb { get; set; }
 
         /// <summary>
         /// Gets or sets the TMDb id.

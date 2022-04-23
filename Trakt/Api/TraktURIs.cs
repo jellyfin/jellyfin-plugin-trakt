@@ -91,6 +91,16 @@
         public const string WatchedShows = BaseUrl + "/sync/watched/shows";
 
         /// <summary>
+        /// The paused movies URI.
+        /// </summary>
+        public const string PausedMovies = BaseUrl + "/sync/playback/movies";
+
+        /// <summary>
+        /// The paused shows URI.
+        /// </summary>
+        public const string PausedEpisodes = BaseUrl + "/sync/playback/episodes";
+
+        /// <summary>
         /// The collected movies URI.
         /// </summary>
         public const string CollectedMovies = BaseUrl + "/sync/collection/movies?extended=metadata";

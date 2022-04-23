@@ -11,7 +11,6 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Session;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.IO;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Helpers;
@@ -24,13 +23,13 @@ namespace Trakt
     /// </summary>
     public class ServerMediator : IServerEntryPoint, IDisposable
     {
-        private readonly ISessionManager _sessionManager;
         private readonly ILibraryManager _libraryManager;
         private readonly ILogger<ServerMediator> _logger;
-        private readonly UserDataManagerEventsHelper _userDataManagerEventsHelper;
+        private readonly ISessionManager _sessionManager;
         private readonly IUserDataManager _userDataManager;
-        private TraktApi _traktApi;
-        private LibraryManagerEventsHelper _libraryManagerEventsHelper;
+        private readonly UserDataManagerEventsHelper _userDataManagerEventsHelper;
+        private readonly LibraryManagerEventsHelper _libraryManagerEventsHelper;
+        private readonly TraktApi _traktApi;
 
         private Dictionary<string, bool> _playbackPause;
 
@@ -43,15 +42,13 @@ namespace Trakt
         /// <param name="loggerFactory">The <see cref="ILoggerFactory"/>.</param>
         /// <param name="httpClientFactory">The <see cref="IHttpClientFactory"/>.</param>
         /// <param name="appHost">The <see cref="IServerApplicationHost"/>.</param>
-        /// <param name="fileSystem">The <see cref="IFileSystem"/>.</param>
         public ServerMediator(
             ISessionManager sessionManager,
             IUserDataManager userDataManager,
             ILibraryManager libraryManager,
             ILoggerFactory loggerFactory,
             IHttpClientFactory httpClientFactory,
-            IServerApplicationHost appHost,
-            IFileSystem fileSystem)
+            IServerApplicationHost appHost)
         {
             _sessionManager = sessionManager;
             _libraryManager = libraryManager;
@@ -60,7 +57,7 @@ namespace Trakt
             _logger = loggerFactory.CreateLogger<ServerMediator>();
             _playbackPause = new Dictionary<string, bool>();
 
-            _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, fileSystem);
+            _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager);
             _libraryManagerEventsHelper = new LibraryManagerEventsHelper(loggerFactory.CreateLogger<LibraryManagerEventsHelper>(), _traktApi);
             _userDataManagerEventsHelper = new UserDataManagerEventsHelper(loggerFactory.CreateLogger<UserDataManagerEventsHelper>(), _traktApi);
         }
@@ -111,7 +108,9 @@ namespace Trakt
             _sessionManager.PlaybackProgress += KernelPlaybackProgress;
             _sessionManager.PlaybackStopped += KernelPlaybackStopped;
             _libraryManager.ItemAdded += LibraryManagerItemAdded;
+            _libraryManager.ItemUpdated += LibraryManagerItemUpdated;
             _libraryManager.ItemRemoved += LibraryManagerItemRemoved;
+
             return Task.CompletedTask;
         }
 
@@ -123,7 +122,7 @@ namespace Trakt
         /// <param name="itemChangeEventArgs">The <see cref="ItemChangeEventArgs"/>.</param>
         private void LibraryManagerItemRemoved(object sender, ItemChangeEventArgs itemChangeEventArgs)
         {
-            if (!(itemChangeEventArgs.Item is Movie) && !(itemChangeEventArgs.Item is Episode) && !(itemChangeEventArgs.Item is Series))
+            if (itemChangeEventArgs.Item is not Movie and not Episode and not Series)
             {
                 return;
             }
@@ -145,7 +144,7 @@ namespace Trakt
         private void LibraryManagerItemAdded(object sender, ItemChangeEventArgs itemChangeEventArgs)
         {
             // Don't do anything if it's not a supported media type
-            if (!(itemChangeEventArgs.Item is Movie) && !(itemChangeEventArgs.Item is Episode) && !(itemChangeEventArgs.Item is Series))
+            if (itemChangeEventArgs.Item is not Movie and not Episode and not Series)
             {
                 return;
             }
@@ -156,6 +155,28 @@ namespace Trakt
             }
 
             _libraryManagerEventsHelper.QueueItem(itemChangeEventArgs.Item, EventType.Add);
+        }
+
+        /// <summary>
+        /// Library item was updated.
+        /// Let trakt.tv know which item was updated in the user's library.
+        /// </summary>
+        /// <param name="sender">The sending entity.</param>
+        /// <param name="itemChangeEventArgs">The <see cref="ItemChangeEventArgs"/>.</param>
+        private void LibraryManagerItemUpdated(object sender, ItemChangeEventArgs itemChangeEventArgs)
+        {
+            // Don't do anything if it's not a supported media type
+            if (itemChangeEventArgs.Item is not Movie and not Episode and not Series)
+            {
+                return;
+            }
+
+            if (itemChangeEventArgs.Item.LocationType == LocationType.Virtual)
+            {
+                return;
+            }
+
+            _libraryManagerEventsHelper.QueueItem(itemChangeEventArgs.Item, EventType.Update);
         }
 
         /// <summary>
@@ -171,6 +192,12 @@ namespace Trakt
             if (playbackProgressEventArgs.Users == null || !playbackProgressEventArgs.Users.Any() || playbackProgressEventArgs.Item == null)
             {
                 _logger.LogError("Event details incomplete. Cannot process current media");
+                return;
+            }
+
+            if (playbackProgressEventArgs.Item is not Movie && playbackProgressEventArgs.Item is not Episode)
+            {
+                _logger.LogDebug("Syncing playback of {Item} is not supported by trakt.tv.", playbackProgressEventArgs.Item.Path);
                 return;
             }
 
@@ -193,7 +220,7 @@ namespace Trakt
 
                 if (!_traktApi.CanSync(playbackProgressEventArgs.Item, traktUser))
                 {
-                    _logger.LogDebug("Syncing playback for {Item} is forbidden for user {User}.", playbackProgressEventArgs.Item.Path, user.Username);
+                    _logger.LogDebug("Syncing playback of {Item} is forbidden for user {User}.", playbackProgressEventArgs.Item.Path, user.Username);
                     continue;
                 }
 
@@ -249,6 +276,12 @@ namespace Trakt
                 return;
             }
 
+            if (playbackProgressEventArgs.Item is not Movie && playbackProgressEventArgs.Item is not Episode)
+            {
+                _logger.LogDebug("Syncing playback of {Item} is not supported by trakt.tv.", playbackProgressEventArgs.Item.Path);
+                return;
+            }
+
             foreach (var user in playbackProgressEventArgs.Users)
             {
                 // Since Emby is user profile friendly, I'm going to need to do a user lookup every time something starts
@@ -268,7 +301,7 @@ namespace Trakt
 
                 if (!_traktApi.CanSync(playbackProgressEventArgs.Item, traktUser))
                 {
-                    _logger.LogDebug("Syncing playback for {Item} is forbidden for user {User}.", playbackProgressEventArgs.Item.Path, user.Username);
+                    _logger.LogDebug("Syncing playback of {Item} is forbidden for user {User}.", playbackProgressEventArgs.Item.Path, user.Username);
                     continue;
                 }
 
@@ -356,6 +389,12 @@ namespace Trakt
                 return;
             }
 
+            if (playbackStoppedEventArgs.Item is not Movie && playbackStoppedEventArgs.Item is not Episode)
+            {
+                _logger.LogDebug("Syncing playback of {Item} is not supported by trakt.tv.", playbackStoppedEventArgs.Item.Path);
+                return;
+            }
+
             _logger.LogInformation("Playback stopped");
 
             foreach (var user in playbackStoppedEventArgs.Users)
@@ -376,7 +415,7 @@ namespace Trakt
 
                 if (!_traktApi.CanSync(playbackStoppedEventArgs.Item, traktUser))
                 {
-                    _logger.LogDebug("Syncing playback for {Item} is forbidden for user {User}.", playbackStoppedEventArgs.Item.Name, user.Username);
+                    _logger.LogDebug("Syncing playback of {Item} is forbidden for user {User}.", playbackStoppedEventArgs.Item.Name, user.Username);
                     continue;
                 }
 
@@ -422,7 +461,7 @@ namespace Trakt
                                 traktUser,
                                 progressPercent).ConfigureAwait(false);
                         }
-                        else
+                        else if (video is Episode episode)
                         {
                             await _traktApi.SendEpisodeStatusUpdateAsync(
                                 video as Episode,
@@ -459,12 +498,11 @@ namespace Trakt
                 _userDataManager.UserDataSaved -= OnUserDataSaved;
                 _sessionManager.PlaybackStart -= KernelPlaybackStart;
                 _sessionManager.PlaybackStopped -= KernelPlaybackStopped;
+                _sessionManager.PlaybackProgress -= KernelPlaybackProgress;
                 _libraryManager.ItemAdded -= LibraryManagerItemAdded;
+                _libraryManager.ItemUpdated -= LibraryManagerItemUpdated;
                 _libraryManager.ItemRemoved -= LibraryManagerItemRemoved;
-                _traktApi = null;
                 _libraryManagerEventsHelper.Dispose();
-                _libraryManagerEventsHelper = null;
-                _userDataManagerEventsHelper.Dispose();
             }
         }
     }

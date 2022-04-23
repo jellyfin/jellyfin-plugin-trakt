@@ -16,12 +16,13 @@ namespace Trakt.Model
         {
             SkipUnwatchedImportFromTrakt = true;
             SkipWatchedImportFromTrakt = false;
+            SkipPlaybackProgressImportFromTrakt = false;
             PostWatchedHistory = true;
-            PostUnwatchedHistory = true;
+            PostUnwatchedHistory = false;
             PostSetWatched = true;
-            PostSetUnwatched = true;
+            PostSetUnwatched = false;
             ExtraLogging = false;
-            ExportMediaInfo = false;
+            ExportMediaInfo = true;
             SynchronizeCollections = true;
             Scrobble = true;
         }
@@ -50,6 +51,11 @@ namespace Trakt.Model
         /// Gets or sets a value indicating whether the skip unwatched import option is enabled or not.
         /// </summary>
         public bool SkipUnwatchedImportFromTrakt { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the skip playback progress import option is enabled or not.
+        /// </summary>
+        public bool SkipPlaybackProgressImportFromTrakt { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the skip watched import option is enabled or not.

@@ -17,7 +17,6 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
-using MediaBrowser.Model.IO;
 using Microsoft.Extensions.Logging;
 using Microsoft.Net.Http.Headers;
 using Trakt.Api.DataContracts;
@@ -46,7 +45,6 @@ namespace Trakt.Api
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IServerApplicationHost _appHost;
         private readonly IUserDataManager _userDataManager;
-        private readonly IFileSystem _fileSystem;
         private readonly JsonSerializerOptions _jsonOptions = JsonDefaults.Options;
 
         /// <summary>
@@ -56,18 +54,15 @@ namespace Trakt.Api
         /// <param name="httpClientFactory">The <see cref="IHttpClientFactory"/>.</param>
         /// <param name="appHost">The <see cref="IServerApplicationHost"/>.</param>
         /// <param name="userDataManager">The <see cref="IUserDataManager"/>.</param>
-        /// <param name="fileSystem">The <see cref="IFileSystem"/>.</param>
         public TraktApi(
             ILogger<TraktApi> logger,
             IHttpClientFactory httpClientFactory,
             IServerApplicationHost appHost,
-            IUserDataManager userDataManager,
-            IFileSystem fileSystem)
+            IUserDataManager userDataManager)
         {
             _httpClientFactory = httpClientFactory;
             _appHost = appHost;
             _userDataManager = userDataManager;
-            _fileSystem = fileSystem;
             _logger = logger;
         }
 
@@ -84,7 +79,8 @@ namespace Trakt.Api
                 return false;
             }
 
-            if (traktUser.LocationsExcluded != null && traktUser.LocationsExcluded.Any(location => _fileSystem.ContainsSubPath(location, item.Path)))
+            if (traktUser.LocationsExcluded != null
+                && traktUser.LocationsExcluded.Any(directory => item.Path.Contains(directory, StringComparison.OrdinalIgnoreCase)))
             {
                 return false;
             }
@@ -255,7 +251,7 @@ namespace Trakt.Api
             EventType eventType,
             CancellationToken cancellationToken)
         {
-            if (movies == null)
+            if (movies is null || movies.Count == 0)
             {
                 throw new ArgumentNullException(nameof(movies));
             }
@@ -263,11 +259,6 @@ namespace Trakt.Api
             if (traktUser == null)
             {
                 throw new ArgumentNullException(nameof(traktUser));
-            }
-
-            if (eventType == EventType.Update)
-            {
-                return null;
             }
 
             var moviesPayload = movies.Select(m =>
@@ -291,7 +282,7 @@ namespace Trakt.Api
                 return traktMovieCollected;
             });
 
-            var url = eventType == EventType.Add ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
+            var url = (eventType == EventType.Add || eventType == EventType.Update) ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
             var responses = new List<TraktSyncResponse>();
             var chunks = moviesPayload.ToChunks(100);
             foreach (var chunk in chunks)
@@ -322,7 +313,7 @@ namespace Trakt.Api
             EventType eventType,
             CancellationToken cancellationToken)
         {
-            if (episodes == null)
+            if (episodes is null || episodes.Count == 0)
             {
                 throw new ArgumentNullException(nameof(episodes));
             }
@@ -330,11 +321,6 @@ namespace Trakt.Api
             if (traktUser == null)
             {
                 throw new ArgumentNullException(nameof(traktUser));
-            }
-
-            if (eventType == EventType.Update)
-            {
-                return null;
             }
 
             var responses = new List<TraktSyncResponse>();
@@ -427,10 +413,12 @@ namespace Trakt.Api
 
                         if (traktUser.ExportMediaInfo)
                         {
-                            // traktEpisodeCollected.Is3D = episode.Is3D;
+                            var defaultVideoStream = episode.GetDefaultVideoStream();
                             traktEpisodeCollected.AudioChannels = audioStream.GetAudioChannels();
                             traktEpisodeCollected.Audio = audioStream.GetCodecRepresetation();
-                            traktEpisodeCollected.Resolution = episode.GetDefaultVideoStream().GetResolution();
+                            traktEpisodeCollected.Resolution = defaultVideoStream.GetResolution();
+                            traktEpisodeCollected.Is3D = episode.Is3D;
+                            traktEpisodeCollected.Hdr = defaultVideoStream.GetHdr();
                         }
 
                         syncSeason.Episodes.Add(traktEpisodeCollected);
@@ -444,7 +432,7 @@ namespace Trakt.Api
                 Shows = showPayload
             };
 
-            var url = eventType == EventType.Add ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
+            var url = (eventType == EventType.Add || eventType == EventType.Update) ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
             var response = await PostToTrakt<TraktSyncResponse>(url, data, traktUser, cancellationToken).ConfigureAwait(false);
             if (useProviderIDs && response.NotFound.Episodes.Count > 0)
             {
@@ -478,11 +466,6 @@ namespace Trakt.Api
             if (traktUser == null)
             {
                 throw new ArgumentNullException(nameof(traktUser));
-            }
-
-            if (eventType == EventType.Update)
-            {
-                return null;
             }
 
             var showPayload = new List<TraktShowCollected>
@@ -647,6 +630,26 @@ namespace Trakt.Api
         public async Task<List<DataContracts.Users.Watched.TraktShowWatched>> SendGetWatchedShowsRequest(TraktUser traktUser)
         {
             return await GetFromTrakt<List<DataContracts.Users.Watched.TraktShowWatched>>(TraktUris.WatchedShows, traktUser).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get all paused movies.
+        /// </summary>
+        /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+        /// <returns>Task{List{DataContracts.Users.Playback.TraktMoviePaused}}.</returns>
+        public async Task<List<DataContracts.Users.Playback.TraktMoviePaused>> SendGetAllPausedMoviesRequest(TraktUser traktUser)
+        {
+            return await GetFromTrakt<List<DataContracts.Users.Playback.TraktMoviePaused>>(TraktUris.PausedMovies, traktUser).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Get paused episodes.
+        /// </summary>
+        /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+        /// <returns>Task{List{DataContracts.Users.Playback.TraktEpisodePaused}}.</returns>
+        public async Task<List<DataContracts.Users.Playback.TraktEpisodePaused>> SendGetPausedEpisodesRequest(TraktUser traktUser)
+        {
+            return await GetFromTrakt<List<DataContracts.Users.Playback.TraktEpisodePaused>>(TraktUris.PausedEpisodes, traktUser).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -1118,6 +1121,11 @@ namespace Trakt.Api
                 response.EnsureSuccessStatusCode();
                 return await response.Content.ReadFromJsonAsync<T>(_jsonOptions, cancellationToken).ConfigureAwait(false);
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception handled in PostToTrakt");
+                throw;
+            }
             finally
             {
                 _traktResourcePool.Release();
@@ -1188,8 +1196,8 @@ namespace Trakt.Api
             where TReturn : TraktTVId, new()
         {
             TReturn retval = GetTraktIMDBTMDBIds<TInput, TReturn>(mediaObject);
-            retval.Tvdb = mediaObject.GetProviderId(MetadataProvider.Tvdb).ConvertToInt();
-            retval.Tvrage = mediaObject.GetProviderId(MetadataProvider.TvRage).ConvertToInt();
+            retval.Tvdb = mediaObject.GetProviderId(MetadataProvider.Tvdb);
+            retval.Tvrage = mediaObject.GetProviderId(MetadataProvider.TvRage);
             return retval;
         }
 
@@ -1200,8 +1208,8 @@ namespace Trakt.Api
                 sre => sre.Ids != null
                 && sre.Ids.Imdb == series.GetProviderId(MetadataProvider.Imdb)
                 && sre.Ids.Tmdb == series.GetProviderId(MetadataProvider.Tmdb).ConvertToInt()
-                && sre.Ids.Tvdb == series.GetProviderId(MetadataProvider.Tvdb).ConvertToInt()
-                && sre.Ids.Tvrage == series.GetProviderId(MetadataProvider.TvRage).ConvertToInt());
+                && sre.Ids.Tvdb == series.GetProviderId(MetadataProvider.Tvdb)
+                && sre.Ids.Tvrage == series.GetProviderId(MetadataProvider.TvRage));
         }
 
         private bool HasAnyProviderTvIds(BaseItem item)
@@ -1215,9 +1223,9 @@ namespace Trakt.Api
         private bool HasAnyProviderTvIds(TraktTVId item)
         {
             return !string.IsNullOrEmpty(item.Imdb)
-                || item.Tmdb.HasValue
-                || item.Tvdb.HasValue
-                || item.Tvrage.HasValue;
+                || !(item.Tmdb == null)
+                || !string.IsNullOrEmpty(item.Tvdb)
+                || !string.IsNullOrEmpty(item.Tvrage);
         }
     }
 }

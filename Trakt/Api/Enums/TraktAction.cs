@@ -13,9 +13,19 @@ namespace Trakt.Api.Enums
         checkin,
 
         /// <summary>
+        /// Pause action.
+        /// </summary>
+        pause,
+
+        /// <summary>
         /// Scrbble action.
         /// </summary>
         scrobble,
+
+        /// <summary>
+        /// Start action.
+        /// </summary>
+        start,
 
         /// <summary>
         /// Watch action.

@@ -2,12 +2,16 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Entities;
+using Trakt.Api.DataContracts.BaseModel;
 using Trakt.Api.DataContracts.Users.Collection;
+using Trakt.Api.DataContracts.Users.Playback;
+using Trakt.Api.DataContracts.Users.Watched;
 using Trakt.Api.Enums;
-using Trakt.Helpers;
+using Episode = MediaBrowser.Controller.Entities.TV.Episode;
 
 namespace Trakt
 {
@@ -54,27 +58,37 @@ namespace Trakt
                 : null;
             switch (audio)
             {
-                case "truehd":
-                    return TraktAudio.dolby_truehd;
-                case "dts":
+                case "aac":
+                    return TraktAudio.aac;
+                case "ac3":
+                    return TraktAudio.dolby_digital;
                 case "dca":
+                case "dts":
                     return TraktAudio.dts;
                 case "dtshd":
                     return TraktAudio.dts_ma;
-                case "ac3":
-                    return TraktAudio.dolby_digital;
-                case "aac":
-                    return TraktAudio.aac;
-                case "mp2":
-                    return TraktAudio.mp3;
-                case "pcm":
-                    return TraktAudio.lpcm;
-                case "ogg":
-                    return TraktAudio.ogg;
-                case "wma":
-                    return TraktAudio.wma;
+                case "eac3":
+                    return TraktAudio.dolby_digital_plus;
                 case "flac":
                     return TraktAudio.flac;
+                case "mp2":
+                    return TraktAudio.mp2;
+                case "mp3":
+                    return TraktAudio.mp3;
+                case "ogg":
+                case "vorbis":
+                    return TraktAudio.ogg;
+                case "opus":
+                    return TraktAudio.ogg_opus;
+                case "pcm":
+                    return TraktAudio.lpcm;
+                case "truehd":
+                    return TraktAudio.dolby_truehd;
+                case "wma":
+                case "wmav2":
+                case "wmapro":
+                case "wmavoice":
+                    return TraktAudio.wma;
                 default:
                     return null;
             }
@@ -161,12 +175,12 @@ namespace Trakt
         }
 
         /// <summary>
-        /// Gets the ISO-8620 representation of a <see cref="DateTime"/>.
+        /// Gets the ISO-8601 representation of a <see cref="DateTime"/>.
         /// </summary>
-        /// <param name="dt">The <see cref="DateTime"/>.</param>
+        /// <param name="dateTime">The <see cref="DateTime"/>.</param>
         /// <returns>string.</returns>
-        public static string ToISO8601(this DateTime dt)
-            => dt.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", CultureInfo.InvariantCulture);
+        public static string ToISO8601(this DateTime dateTime)
+            => dateTime.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fffffff'Z'", CultureInfo.InvariantCulture);
 
         /// <summary>
         /// Gets the season number of an <see cref="Episode"/>.
@@ -234,26 +248,181 @@ namespace Trakt
         }
 
         /// <summary>
-        /// Splits a progress into multiple parts.
+        /// Gets a watched match for a series.
         /// </summary>
-        /// <param name="parent">The progress.</param>
-        /// <param name="parts">The number of parts to split into.</param>
-        /// <returns>ISplittableProgress{double}.</returns>
-        public static ISplittableProgress<double> Split(this IProgress<double> parent, int parts)
+        /// <param name="item">The <see cref="Series"/>.</param>
+        /// <param name="results">The <see cref="IEnumerable{TraktShowWatched}"/>.</param>
+        /// <returns>TraktShowWatched.</returns>
+        public static TraktShowWatched FindMatch(Series item, IEnumerable<TraktShowWatched> results)
         {
-            var current = parent.ToSplittableProgress();
-            return current.Split(parts);
+            return results.FirstOrDefault(i => IsMatch(item, i.Show));
         }
 
         /// <summary>
-        /// Converts a progress into a splittable progress.
+        /// Gets a collected match for a series.
         /// </summary>
-        /// <param name="progress">The progress.</param>
-        /// <returns>ISplittableProgress{double}.</returns>
-        public static ISplittableProgress<double> ToSplittableProgress(this IProgress<double> progress)
+        /// <param name="item">The <see cref="Series"/>.</param>
+        /// <param name="results">>The <see cref="IEnumerable{TraktShowCollected}"/>.</param>
+        /// <returns>TraktShowCollected.</returns>
+        public static TraktShowCollected FindMatch(Series item, IEnumerable<TraktShowCollected> results)
         {
-            var splittable = new SplittableProgress(progress.Report);
-            return splittable;
+            return results.FirstOrDefault(i => IsMatch(item, i.Show));
+        }
+
+        /// <summary>
+        /// Gets a paused match for a series.
+        /// </summary>
+        /// <param name="item">The <see cref="Episode"/>.</param>
+        /// <param name="results">>The <see cref="IEnumerable{TraktShowCollected}"/>.</param>
+        /// <returns>TraktShowCollected.</returns>
+        public static TraktEpisodePaused FindMatch(Episode item, IEnumerable<TraktEpisodePaused> results)
+        {
+            return results.FirstOrDefault(i => IsMatch(item, i.Episode));
+        }
+
+        /// <summary>
+        /// Gets a watched match for a movie.
+        /// </summary>
+        /// <param name="item">The <see cref="BaseItem"/>.</param>
+        /// <param name="results">>The <see cref="IEnumerable{TraktMovieWatched}"/>.</param>
+        /// <returns>TraktMovieWatched.</returns>
+        public static TraktMovieWatched FindMatch(BaseItem item, IEnumerable<TraktMovieWatched> results)
+        {
+            return results.FirstOrDefault(i => IsMatch(item, i.Movie));
+        }
+
+        /// <summary>
+        /// Gets a collected match for a movie.
+        /// </summary>
+        /// <param name="item">The <see cref="BaseItem"/>.</param>
+        /// <param name="results">>The <see cref="IEnumerable{TraktMovieCollected}"/>.</param>
+        /// <returns>TraktMovieCollected.</returns>
+        public static TraktMovieCollected FindMatch(BaseItem item, IEnumerable<TraktMovieCollected> results)
+        {
+            return results.FirstOrDefault(i => IsMatch(item, i.Movie));
+        }
+
+        /// <summary>
+        /// Gets a paused match for a movie.
+        /// </summary>
+        /// <param name="item">The <see cref="BaseItem"/>.</param>
+        /// <param name="results">>The <see cref="IEnumerable{TraktMoviePaused}"/>.</param>
+        /// <returns>TraktMoviePaused.</returns>
+        public static TraktMoviePaused FindMatch(BaseItem item, IEnumerable<TraktMoviePaused> results)
+        {
+            return results.FirstOrDefault(i => IsMatch(item, i.Movie));
+        }
+
+        /// <summary>
+        /// Checks if a <see cref="BaseItem"/> matches a <see cref="TraktMovie"/>.
+        /// </summary>
+        /// <param name="item">The <see cref="BaseItem"/>.</param>
+        /// <param name="movie">The IEnumerable of <see cref="TraktMovie"/>.</param>
+        /// <returns><see cref="bool"/> indicating if the <see cref="BaseItem"/> matches a <see cref="TraktMovie"/>.</returns>
+        public static bool IsMatch(BaseItem item, TraktMovie movie)
+        {
+            var imdb = item.GetProviderId(MetadataProvider.Imdb);
+            if (!string.IsNullOrEmpty(imdb) && string.Equals(imdb, movie.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
+            if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, movie.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if a <see cref="Series"/> matches a <see cref="TraktShow"/>.
+        /// </summary>
+        /// <param name="item">The <see cref="Series"/>.</param>
+        /// <param name="show">The <see cref="TraktShow"/>.</param>
+        /// <returns><see cref="bool"/> indicating if the <see cref="Series"/> matches a <see cref="TraktShow"/>.</returns>
+        public static bool IsMatch(Series item, TraktShow show)
+        {
+            var tvdb = item.GetProviderId(MetadataProvider.Tvdb);
+            if (!string.IsNullOrEmpty(tvdb) && string.Equals(tvdb, show.Ids.Tvdb, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
+            if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, show.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var imdb = item.GetProviderId(MetadataProvider.Imdb);
+            if (!string.IsNullOrEmpty(imdb) && string.Equals(imdb, show.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var tvrage = item.GetProviderId(MetadataProvider.TvRage);
+            if (!string.IsNullOrEmpty(tvrage) && string.Equals(tvrage, show.Ids.Tvrage, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if a <see cref="Episode"/> matches a <see cref="TraktEpisode"/>.
+        /// </summary>
+        /// <param name="item">The <see cref="Episode"/>.</param>
+        /// <param name="episode">The <see cref="TraktEpisode"/>.</param>
+        /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktEpisode"/>.</returns>
+        public static bool IsMatch(Episode item, TraktEpisode episode)
+        {
+            var tvdb = item.GetProviderId(MetadataProvider.Tvdb);
+            if (!string.IsNullOrEmpty(tvdb) && string.Equals(tvdb, episode.Ids.Tvdb, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
+            if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, episode.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var imdb = item.GetProviderId(MetadataProvider.Imdb);
+            if (!string.IsNullOrEmpty(imdb) && string.Equals(imdb, episode.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            var tvrage = item.GetProviderId(MetadataProvider.TvRage);
+            if (!string.IsNullOrEmpty(tvrage) && string.Equals(tvrage, episode.Ids.Tvrage, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Checks if a <see cref="Episode"/> matches a <see cref="TraktEpisodeWatched"/>.
+        /// </summary>
+        /// <param name="item">The <see cref="Episode"/>.</param>
+        /// <param name="episode">The <see cref="TraktEpisodeWatched"/>.</param>
+        /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktEpisodeWatched"/>.</returns>
+        public static bool IsMatch(Episode item, TraktEpisodeWatched episode)
+        {
+            var episodeNumber = episode.Number;
+            var itemIndexNumber = item.IndexNumber;
+            var itemIndexNumberEnd = item.IndexNumberEnd;
+
+            return !itemIndexNumber.HasValue
+                ? episodeNumber == -1
+                : (itemIndexNumberEnd.HasValue && itemIndexNumberEnd > itemIndexNumber
+                    ? itemIndexNumber <= episodeNumber && episodeNumber <= itemIndexNumberEnd
+                    : episodeNumber == itemIndexNumber);
         }
     }
 }

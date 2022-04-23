@@ -11,13 +11,13 @@ namespace Trakt.Api.DataContracts.BaseModel
         /// Gets or sets the season number.
         /// </summary>
         [JsonPropertyName("season")]
-        public int? Season { get; set; }
+        public int Season { get; set; }
 
         /// <summary>
         /// Gets or sets the episode number.
         /// </summary>
         [JsonPropertyName("number")]
-        public int? Number { get; set; }
+        public int Number { get; set; }
 
         /// <summary>
         /// Gets or sets the episode title.
