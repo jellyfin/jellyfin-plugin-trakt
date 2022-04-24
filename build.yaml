@@ -3,7 +3,7 @@ name: "Trakt"
 guid: "4fe3201e-d6ae-4f2e-8917-e12bda571281"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-trakt.png"
 version: "15"
-targetAbi: "10.8.0.0"
+targetAbi: "10.7.7.0"
 framework: "net6.0"
 owner: "jellyfin"
 overview: "Record your watched media with Trakt"
@@ -14,13 +14,20 @@ category: "General"
 artifacts:
   - "Trakt.dll"
 changelog: |2-
+  ### New features and improvements ###
+  - Implement handling of update events and progress sync, fix scheduled tasks (#120) @Shadowghost
+  - Add pagination to scheduled tasks (#111) @crobibero
+  - Implement deauth (#114) @Shadowghost
+  - Sync Pause and Resume, enable analyzers (#112) @Shadowghost
+
   ### Bug Fixes ###
-  - Retry episode scrobble without IDs if episode was not found by trakt (#102) @SenorSmartyPants
-  - Fix episodes with IDs (#100) @SenorSmartyPants
+  - Implement handling of update events and progress sync, fix scheduled tasks (#120) @Shadowghost
+  - Send pause instead of stop on uncompleted playback to prevent scrobble (#117) @Shadowghost
+  - Require success response before deserializing (#115) @crobibero
 
   ### Code or Repo Maintenance ###
-  - 10.8 support (#110) @crobibero
-  - Use meta ci (#108) @crobibero
-
-  ### CI & build changes ###
-  - Use meta ci (#108) @crobibero
+  - Switch to native episode number check and datetime string conversion (#124) @Shadowghost
+  - Fix codeql warnings (#123) @crobibero
+  - Use file-scoped namespace everywhere (#122) @crobibero
+  - Migrate API to use enums, update properties (#118) @Shadowghost
+  - Update .Net version in readme (#119) @sambartik
