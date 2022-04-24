@@ -1,22 +1,21 @@
 using System.Text.Json.Serialization;
 
-namespace Trakt.Api.DataContracts.Scrobble
+namespace Trakt.Api.DataContracts.Scrobble;
+
+/// <summary>
+/// The trakt.tv social media class.
+/// </summary>
+public class SocialMedia
 {
     /// <summary>
-    /// The trakt.tv social media class.
+    /// Gets or sets a value indicating whether twittwe posting should be enabled.
     /// </summary>
-    public class SocialMedia
-    {
-        /// <summary>
-        /// Gets or sets a value indicating whether twittwe posting should be enabled.
-        /// </summary>
-        [JsonPropertyName("twitter")]
-        public bool Twitter { get; set; }
+    [JsonPropertyName("twitter")]
+    public bool Twitter { get; set; }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether tumblr posting should be enabled.
-        /// </summary>
-        [JsonPropertyName("tumblr")]
-        public bool Tumblr { get; set; }
-    }
+    /// <summary>
+    /// Gets or sets a value indicating whether tumblr posting should be enabled.
+    /// </summary>
+    [JsonPropertyName("tumblr")]
+    public bool Tumblr { get; set; }
 }

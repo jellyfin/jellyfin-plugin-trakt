@@ -1,26 +1,25 @@
 #pragma warning disable SA1300
 #pragma warning disable CA1707
 
-namespace Trakt.Api.Enums
+namespace Trakt.Api.Enums;
+
+/// <summary>
+/// Enum TraktItemType.
+/// </summary>
+public enum TraktItemType
 {
     /// <summary>
-    /// Enum TraktItemType.
+    /// Episode type.
     /// </summary>
-    public enum TraktItemType
-    {
-        /// <summary>
-        /// Episode type.
-        /// </summary>
-        episode,
+    episode,
 
-        /// <summary>
-        /// Movie type.
-        /// </summary>
-        movie,
+    /// <summary>
+    /// Movie type.
+    /// </summary>
+    movie,
 
-        /// <summary>
-        /// Show type.
-        /// </summary>
-        show
-    }
+    /// <summary>
+    /// Show type.
+    /// </summary>
+    show
 }

@@ -1,23 +1,22 @@
-namespace Trakt.Model.Enums
+namespace Trakt.Model.Enums;
+
+/// <summary>
+/// Enum EventType.
+/// </summary>
+public enum EventType
 {
     /// <summary>
-    /// Enum EventType.
+    /// The addevent.
     /// </summary>
-    public enum EventType
-    {
-        /// <summary>
-        /// The addevent.
-        /// </summary>
-        Add,
+    Add,
 
-        /// <summary>
-        /// The remove event.
-        /// </summary>
-        Remove,
+    /// <summary>
+    /// The remove event.
+    /// </summary>
+    Remove,
 
-        /// <summary>
-        /// The update event.
-        /// </summary>
-        Update
-    }
+    /// <summary>
+    /// The update event.
+    /// </summary>
+    Update
 }

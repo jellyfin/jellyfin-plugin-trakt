@@ -1,35 +1,34 @@
 #pragma warning disable SA1300
 
-namespace Trakt.Api.Enums
+namespace Trakt.Api.Enums;
+
+/// <summary>
+/// Enum TraktHdr.
+/// </summary>
+public enum TraktAction
 {
     /// <summary>
-    /// Enum TraktHdr.
+    /// Check-In action.
     /// </summary>
-    public enum TraktAction
-    {
-        /// <summary>
-        /// Check-In action.
-        /// </summary>
-        checkin,
+    checkin,
 
-        /// <summary>
-        /// Pause action.
-        /// </summary>
-        pause,
+    /// <summary>
+    /// Pause action.
+    /// </summary>
+    pause,
 
-        /// <summary>
-        /// Scrbble action.
-        /// </summary>
-        scrobble,
+    /// <summary>
+    /// Scrbble action.
+    /// </summary>
+    scrobble,
 
-        /// <summary>
-        /// Start action.
-        /// </summary>
-        start,
+    /// <summary>
+    /// Start action.
+    /// </summary>
+    start,
 
-        /// <summary>
-        /// Watch action.
-        /// </summary>
-        watch
-    }
+    /// <summary>
+    /// Watch action.
+    /// </summary>
+    watch
 }
