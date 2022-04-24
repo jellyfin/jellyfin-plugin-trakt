@@ -93,7 +93,7 @@ public class SyncLibraryTask : IScheduledTask
 
         // Purely for progress reporting
         double currentProgress = 0;
-        var percentPerUser = 100.0 / users.Count;
+        var percentPerUser = 100d / users.Count;
 
         foreach (var user in users)
         {
