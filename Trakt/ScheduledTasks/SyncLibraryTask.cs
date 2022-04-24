@@ -463,9 +463,9 @@ public class SyncLibraryTask : IScheduledTask
                         {
                             isPlayedTraktTv = traktWatchedShow.Seasons.Any(
                                 season => season.Number == episode.GetSeasonNumber()
-                                          && season.Episodes != null
-                                          && season.Episodes.Any(e => Extensions.IsMatch(episode, e)
-                                                                      && e.Plays > 0));
+                                    && season.Episodes != null
+                                    && season.Episodes.Any(e => episode.ContainsEpisodeNumber(e.Number)
+                                        && e.Plays > 0));
                         }
 
                         // If the show has been played locally and is unplayed on trakt.tv then add it to the list

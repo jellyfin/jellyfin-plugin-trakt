@@ -334,7 +334,7 @@ public class SyncFromTraktTask : IScheduledTask
                     if (matchedWatchedSeason != null)
                     {
                         // Check for matching episodes including multi-episode entities
-                        var matchedWatchedEpisode = matchedWatchedSeason.Episodes.FirstOrDefault(x => Extensions.IsMatch(episode, x));
+                        var matchedWatchedEpisode = matchedWatchedSeason.Episodes.FirstOrDefault(x => episode.ContainsEpisodeNumber(x.Number));
 
                         // Prepend a check if the matched episode is on a rewatch cycle and
                         // discard it if the last play date was before the reset date

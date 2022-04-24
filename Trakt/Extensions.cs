@@ -180,7 +180,7 @@ public static class Extensions
     /// <param name="dateTime">The <see cref="DateTime"/>.</param>
     /// <returns>string.</returns>
     public static string ToISO8601(this DateTime dateTime)
-        => dateTime.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fffffff'Z'", CultureInfo.InvariantCulture);
+        => dateTime.ToUniversalTime().ToString("o", CultureInfo.InvariantCulture);
 
     /// <summary>
     /// Gets the season number of an <see cref="Episode"/>.
@@ -404,24 +404,5 @@ public static class Extensions
         }
 
         return false;
-    }
-
-    /// <summary>
-    /// Checks if a <see cref="Episode"/> matches a <see cref="TraktEpisodeWatched"/>.
-    /// </summary>
-    /// <param name="item">The <see cref="Episode"/>.</param>
-    /// <param name="episode">The <see cref="TraktEpisodeWatched"/>.</param>
-    /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktEpisodeWatched"/>.</returns>
-    public static bool IsMatch(Episode item, TraktEpisodeWatched episode)
-    {
-        var episodeNumber = episode.Number;
-        var itemIndexNumber = item.IndexNumber;
-        var itemIndexNumberEnd = item.IndexNumberEnd;
-
-        return !itemIndexNumber.HasValue
-            ? episodeNumber == -1
-            : (itemIndexNumberEnd.HasValue && itemIndexNumberEnd > itemIndexNumber
-                ? itemIndexNumber <= episodeNumber && episodeNumber <= itemIndexNumberEnd
-                : episodeNumber == itemIndexNumber);
     }
 }
