@@ -101,7 +101,7 @@ internal class LibraryManagerEventsHelper : IDisposable
     private async Task OnQueueTimerCallbackInternal()
     {
         _logger.LogInformation("Timer elapsed - processing queued items");
-        var queue = new List<LibraryEvent>();
+        List<LibraryEvent> queue;
 
         lock (_queuedEvents)
         {

@@ -13,6 +13,7 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Querying;
 using MediaBrowser.Model.Tasks;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Api.DataContracts.Sync;
@@ -283,7 +284,7 @@ public class SyncLibraryTask : IScheduledTask
             _logger.LogInformation("Movies to {State} collection {Count}", collected ? "add to" : "remove from", movies.Count);
             try
             {
-                var dataContracts = new List<TraktSyncResponse>();
+                List<TraktSyncResponse> dataContracts;
                 var percentPerRequest = availablePercent / (movies.Count / 100.0);
 
                 // Force update trakt.tv if we have more than 100 movies in the queue due to API
@@ -345,7 +346,7 @@ public class SyncLibraryTask : IScheduledTask
             _logger.LogInformation("Movies to set {State}watched: {Count}", seen ? string.Empty : "un", movies.Count);
             try
             {
-                var dataContracts = new List<TraktSyncResponse>();
+                List<TraktSyncResponse> dataContracts;
                 var percentPerRequest = availablePercent / (movies.Count / 100.0);
 
                 // Force update trakt.tv if we have more than 100 movies in the queue due to API
@@ -528,7 +529,7 @@ public class SyncLibraryTask : IScheduledTask
             _logger.LogInformation("Episodes to {State} collection {Count}", collected ? "add to" : "remove from", episodes.Count);
             try
             {
-                var dataContracts = new List<TraktSyncResponse>();
+                List<TraktSyncResponse> dataContracts;
                 var percentPerRequest = availablePercent / (episodes.Count / 100.0);
 
                 // Force update trakt.tv if we have more than 100 movies in the queue due to API
@@ -590,7 +591,7 @@ public class SyncLibraryTask : IScheduledTask
             _logger.LogInformation("Episodes to set {State}watched: {Count}", seen ? string.Empty : "un", episodes.Count);
             try
             {
-                var dataContracts = new List<TraktSyncResponse>();
+                List<TraktSyncResponse> dataContracts;
                 var percentPerRequest = availablePercent / (episodes.Count / 100.0);
 
                 // Force update trakt.tv if we have more than 100 movies in the queue due to API
@@ -656,9 +657,12 @@ public class SyncLibraryTask : IScheduledTask
                         _logger.LogDebug("Removed movies: {Count}", dataContract.Deleted.Movies);
                     }
 
-                    foreach (var traktMovie in dataContract.NotFound.Movies)
+                    if (dataContract.NotFound is not null)
                     {
-                        _logger.LogError("Movie not found on trakt.tv: {@TraktMovie}", traktMovie);
+                        foreach (var traktMovie in dataContract.NotFound.Movies)
+                        {
+                            _logger.LogError("Movie not found on trakt.tv: {@TraktMovie}", traktMovie);
+                        }
                     }
                 }
 
@@ -679,9 +683,12 @@ public class SyncLibraryTask : IScheduledTask
                         _logger.LogDebug("Removed episodes: {Count}", dataContract.Deleted.Episodes);
                     }
 
-                    foreach (var traktEpisode in dataContract.NotFound.Episodes)
+                    if (dataContract.NotFound is not null)
                     {
-                        _logger.LogError("Episode not found on trakt.tv: {@TraktEpisode}", traktEpisode);
+                        foreach (var traktEpisode in dataContract.NotFound.Episodes)
+                        {
+                            _logger.LogError("Episode not found on trakt.tv: {@TraktEpisode}", traktEpisode);
+                        }
                     }
                 }
             }

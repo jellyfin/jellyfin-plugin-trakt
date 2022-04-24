@@ -40,7 +40,7 @@ internal class UserDataManagerEventsHelper
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
     public void ProcessUserDataSaveEventArgs(UserDataSaveEventArgs userDataSaveEventArgs, TraktUser traktUser)
     {
-        var userPackage = _userDataPackages.FirstOrDefault(user => user.TraktUser.Equals(traktUser));
+        var userPackage = _userDataPackages.FirstOrDefault(user => user.TraktUser.LinkedMbUserId.Equals(traktUser.LinkedMbUserId, StringComparison.Ordinal));
 
         if (userPackage == null)
         {
