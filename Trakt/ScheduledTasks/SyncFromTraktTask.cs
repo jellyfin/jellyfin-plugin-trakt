@@ -87,7 +87,7 @@ public class SyncFromTraktTask : IScheduledTask
         }
 
         // Purely for progress reporting
-        var percentPerUser = 100 / users.Count;
+        var percentPerUser = 100d / users.Count;
         double currentProgress = 0;
         var numComplete = 0;
 

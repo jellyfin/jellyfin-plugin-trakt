@@ -464,7 +464,7 @@ public class ServerMediator : IServerEntryPoint, IDisposable
                     else if (video is Episode episode)
                     {
                         await _traktApi.SendEpisodeStatusUpdateAsync(
-                            video as Episode,
+                            episode,
                             MediaStatus.Paused,
                             traktUser,
                             progressPercent).ConfigureAwait(false);

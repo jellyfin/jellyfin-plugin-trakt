@@ -1064,7 +1064,7 @@ public class TraktApi
         var httpClient = GetHttpClient();
 
         var bytes = JsonSerializer.SerializeToUtf8Bytes(data, _jsonOptions);
-        var content = new ByteArrayContent(bytes);
+        using var content = new ByteArrayContent(bytes);
         content.Headers.Add(HeaderNames.ContentType, MediaTypeNames.Application.Json);
 
         await _traktResourcePool.WaitAsync().ConfigureAwait(false);
@@ -1110,7 +1110,7 @@ public class TraktApi
         }
 
         var bytes = JsonSerializer.SerializeToUtf8Bytes(data, _jsonOptions);
-        var content = new ByteArrayContent(bytes);
+        using var content = new ByteArrayContent(bytes);
         content.Headers.Add(HeaderNames.ContentType, MediaTypeNames.Application.Json);
 
         await _traktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
