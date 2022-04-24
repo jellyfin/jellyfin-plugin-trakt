@@ -2,53 +2,52 @@
 using Trakt.Api.DataContracts.BaseModel;
 using Trakt.Api.Enums;
 
-namespace Trakt.Api.DataContracts.Scrobble
+namespace Trakt.Api.DataContracts.Scrobble;
+
+/// <summary>
+/// The trakt.tv scrobble response class.
+/// </summary>
+public class TraktScrobbleResponse
 {
     /// <summary>
-    /// The trakt.tv scrobble response class.
+    /// Gets or sets the id.
     /// </summary>
-    public class TraktScrobbleResponse
-    {
-        /// <summary>
-        /// Gets or sets the id.
-        /// </summary>
-        [JsonPropertyName("id")]
-        public string Id { get; set; }
+    [JsonPropertyName("id")]
+    public string Id { get; set; }
 
-        /// <summary>
-        /// Gets or sets the action.
-        /// </summary>
-        [JsonPropertyName("action")]
-        public TraktAction Action { get; set; }
+    /// <summary>
+    /// Gets or sets the action.
+    /// </summary>
+    [JsonPropertyName("action")]
+    public TraktAction Action { get; set; }
 
-        /// <summary>
-        /// Gets or sets the progress.
-        /// </summary>
-        [JsonPropertyName("progress")]
-        public float Progress { get; set; }
+    /// <summary>
+    /// Gets or sets the progress.
+    /// </summary>
+    [JsonPropertyName("progress")]
+    public float Progress { get; set; }
 
-        /// <summary>
-        /// Gets or sets the sharing options.
-        /// </summary>
-        [JsonPropertyName("sharing")]
-        public SocialMedia Sharing { get; set; }
+    /// <summary>
+    /// Gets or sets the sharing options.
+    /// </summary>
+    [JsonPropertyName("sharing")]
+    public SocialMedia Sharing { get; set; }
 
-        /// <summary>
-        /// Gets or sets the movie.
-        /// </summary>
-        [JsonPropertyName("movie")]
-        public TraktMovie Movie { get; set; }
+    /// <summary>
+    /// Gets or sets the movie.
+    /// </summary>
+    [JsonPropertyName("movie")]
+    public TraktMovie Movie { get; set; }
 
-        /// <summary>
-        /// Gets or sets the episode.
-        /// </summary>
-        [JsonPropertyName("episode")]
-        public TraktEpisode Episode { get; set; }
+    /// <summary>
+    /// Gets or sets the episode.
+    /// </summary>
+    [JsonPropertyName("episode")]
+    public TraktEpisode Episode { get; set; }
 
-        /// <summary>
-        /// Gets or sets the show.
-        /// </summary>
-        [JsonPropertyName("show")]
-        public TraktShow Show { get; set; }
-    }
+    /// <summary>
+    /// Gets or sets the show.
+    /// </summary>
+    [JsonPropertyName("show")]
+    public TraktShow Show { get; set; }
 }

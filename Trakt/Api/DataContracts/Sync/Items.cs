@@ -1,22 +1,21 @@
 using System.Text.Json.Serialization;
 
-namespace Trakt.Api.DataContracts.Sync
+namespace Trakt.Api.DataContracts.Sync;
+
+/// <summary>
+/// The trakt.tv sync items class.
+/// </summary>
+public class Items
 {
     /// <summary>
-    /// The trakt.tv sync items class.
+    /// Gets or sets the movies.
     /// </summary>
-    public class Items
-    {
-        /// <summary>
-        /// Gets or sets the movies.
-        /// </summary>
-        [JsonPropertyName("movies")]
-        public int Movies { get; set; }
+    [JsonPropertyName("movies")]
+    public int Movies { get; set; }
 
-        /// <summary>
-        /// Gets or sets the episodes.
-        /// </summary>
-        [JsonPropertyName("episodes")]
-        public int Episodes { get; set; }
-    }
+    /// <summary>
+    /// Gets or sets the episodes.
+    /// </summary>
+    [JsonPropertyName("episodes")]
+    public int Episodes { get; set; }
 }

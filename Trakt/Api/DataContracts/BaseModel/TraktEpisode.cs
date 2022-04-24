@@ -1,34 +1,33 @@
 using System.Text.Json.Serialization;
 
-namespace Trakt.Api.DataContracts.BaseModel
+namespace Trakt.Api.DataContracts.BaseModel;
+
+/// <summary>
+/// The trakt.tv episode class.
+/// </summary>
+public class TraktEpisode
 {
     /// <summary>
-    /// The trakt.tv episode class.
+    /// Gets or sets the season number.
     /// </summary>
-    public class TraktEpisode
-    {
-        /// <summary>
-        /// Gets or sets the season number.
-        /// </summary>
-        [JsonPropertyName("season")]
-        public int Season { get; set; }
+    [JsonPropertyName("season")]
+    public int Season { get; set; }
 
-        /// <summary>
-        /// Gets or sets the episode number.
-        /// </summary>
-        [JsonPropertyName("number")]
-        public int Number { get; set; }
+    /// <summary>
+    /// Gets or sets the episode number.
+    /// </summary>
+    [JsonPropertyName("number")]
+    public int Number { get; set; }
 
-        /// <summary>
-        /// Gets or sets the episode title.
-        /// </summary>
-        [JsonPropertyName("title")]
-        public string Title { get; set; }
+    /// <summary>
+    /// Gets or sets the episode title.
+    /// </summary>
+    [JsonPropertyName("title")]
+    public string Title { get; set; }
 
-        /// <summary>
-        /// Gets or sets the episode ids.
-        /// </summary>
-        [JsonPropertyName("ids")]
-        public TraktEpisodeId Ids { get; set; }
-    }
+    /// <summary>
+    /// Gets or sets the episode ids.
+    /// </summary>
+    [JsonPropertyName("ids")]
+    public TraktEpisodeId Ids { get; set; }
 }

@@ -2,14 +2,13 @@ using MediaBrowser.Controller.Entities;
 using Trakt.Model;
 using Trakt.Model.Enums;
 
-namespace Trakt.Helpers
+namespace Trakt.Helpers;
+
+internal class LibraryEvent
 {
-    internal class LibraryEvent
-    {
-        public BaseItem Item { get; set; }
+    public BaseItem Item { get; set; }
 
-        public TraktUser TraktUser { get; set; }
+    public TraktUser TraktUser { get; set; }
 
-        public EventType EventType { get; set; }
-    }
+    public EventType EventType { get; set; }
 }

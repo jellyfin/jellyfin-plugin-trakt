@@ -1,23 +1,22 @@
-﻿namespace Trakt.Model.Enums
+﻿namespace Trakt.Model.Enums;
+
+/// <summary>
+/// Enum MediaStatus.
+/// </summary>
+public enum MediaStatus
 {
     /// <summary>
-    /// Enum MediaStatus.
+    /// The watching state.
     /// </summary>
-    public enum MediaStatus
-    {
-        /// <summary>
-        /// The watching state.
-        /// </summary>
-        Watching,
+    Watching,
 
-        /// <summary>
-        /// The paused state.
-        /// </summary>
-        Paused,
+    /// <summary>
+    /// The paused state.
+    /// </summary>
+    Paused,
 
-        /// <summary>
-        /// The stopped state.
-        /// </summary>
-        Stop
-    }
+    /// <summary>
+    /// The stopped state.
+    /// </summary>
+    Stop
 }

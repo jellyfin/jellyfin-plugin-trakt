@@ -13,416 +13,415 @@ using Trakt.Api.DataContracts.Users.Watched;
 using Trakt.Api.Enums;
 using Episode = MediaBrowser.Controller.Entities.TV.Episode;
 
-namespace Trakt
+namespace Trakt;
+
+/// <summary>
+/// Class for trakt.tv plugin extension functions.
+/// </summary>
+public static class Extensions
 {
     /// <summary>
-    /// Class for trakt.tv plugin extension functions.
+    /// Convert string to int.
     /// </summary>
-    public static class Extensions
+    /// <param name="input">String to convert to int.</param>
+    /// <returns>int?.</returns>
+    public static int? ConvertToInt(this string input)
     {
-        /// <summary>
-        /// Convert string to int.
-        /// </summary>
-        /// <param name="input">String to convert to int.</param>
-        /// <returns>int?.</returns>
-        public static int? ConvertToInt(this string input)
+        if (int.TryParse(input, out int result))
         {
-            if (int.TryParse(input, out int result))
-            {
-                return result;
-            }
-
-            return null;
+            return result;
         }
 
-        /// <summary>
-        /// Checks if <see cref="TraktMetadata"/> is empty.
-        /// </summary>
-        /// <param name="metadata">String to convert to int.</param>
-        /// <returns><see cref="bool"/> indicating if the provided <see cref="TraktMetadata"/> is empty.</returns>
-        public static bool IsEmpty(this TraktMetadata metadata)
-            => metadata.MediaType == null
-               && metadata.Resolution == null
-               && metadata.Audio == null
-               && string.IsNullOrEmpty(metadata.AudioChannels);
+        return null;
+    }
 
-        /// <summary>
-        /// Gets the trakt.tv codec representation of a <see cref="MediaStream"/>.
-        /// </summary>
-        /// <param name="audioStream">The <see cref="MediaStream"/>.</param>
-        /// <returns>TraktAudio.</returns>
-        public static TraktAudio? GetCodecRepresetation(this MediaStream audioStream)
+    /// <summary>
+    /// Checks if <see cref="TraktMetadata"/> is empty.
+    /// </summary>
+    /// <param name="metadata">String to convert to int.</param>
+    /// <returns><see cref="bool"/> indicating if the provided <see cref="TraktMetadata"/> is empty.</returns>
+    public static bool IsEmpty(this TraktMetadata metadata)
+        => metadata.MediaType == null
+           && metadata.Resolution == null
+           && metadata.Audio == null
+           && string.IsNullOrEmpty(metadata.AudioChannels);
+
+    /// <summary>
+    /// Gets the trakt.tv codec representation of a <see cref="MediaStream"/>.
+    /// </summary>
+    /// <param name="audioStream">The <see cref="MediaStream"/>.</param>
+    /// <returns>TraktAudio.</returns>
+    public static TraktAudio? GetCodecRepresetation(this MediaStream audioStream)
+    {
+        var audio = audioStream != null && !string.IsNullOrEmpty(audioStream.Codec)
+            ? audioStream.Codec.ToLowerInvariant().Replace(' ', '_')
+            : null;
+        switch (audio)
         {
-            var audio = audioStream != null && !string.IsNullOrEmpty(audioStream.Codec)
-                ? audioStream.Codec.ToLowerInvariant().Replace(' ', '_')
-                : null;
-            switch (audio)
-            {
-                case "aac":
-                    return TraktAudio.aac;
-                case "ac3":
-                    return TraktAudio.dolby_digital;
-                case "dca":
-                case "dts":
-                    return TraktAudio.dts;
-                case "dtshd":
-                    return TraktAudio.dts_ma;
-                case "eac3":
-                    return TraktAudio.dolby_digital_plus;
-                case "flac":
-                    return TraktAudio.flac;
-                case "mp2":
-                    return TraktAudio.mp2;
-                case "mp3":
-                    return TraktAudio.mp3;
-                case "ogg":
-                case "vorbis":
-                    return TraktAudio.ogg;
-                case "opus":
-                    return TraktAudio.ogg_opus;
-                case "pcm":
-                    return TraktAudio.lpcm;
-                case "truehd":
-                    return TraktAudio.dolby_truehd;
-                case "wma":
-                case "wmav2":
-                case "wmapro":
-                case "wmavoice":
-                    return TraktAudio.wma;
-                default:
-                    return null;
-            }
-        }
-
-        /// <summary>
-        /// Checks if metadata of new collected movie is different from the already collected.
-        /// </summary>
-        /// <param name="collectedMovie">The <see cref="TraktMovieCollected"/>.</param>
-        /// <param name="movie">The <see cref="Movie"/>.</param>
-        /// <returns><see cref="bool"/> indicating if the new movie has different metadata to the already collected.</returns>
-        public static bool MetadataIsDifferent(this TraktMovieCollected collectedMovie, Movie movie)
-        {
-            var audioStream = movie.GetMediaStreams().FirstOrDefault(x => x.Type == MediaStreamType.Audio);
-
-            var resolution = movie.GetDefaultVideoStream().GetResolution();
-            var is3D = movie.Is3D;
-            var hdr = movie.GetDefaultVideoStream().GetHdr();
-            var audio = GetCodecRepresetation(audioStream);
-            var audioChannels = audioStream.GetAudioChannels();
-
-            if (collectedMovie.Metadata == null || collectedMovie.Metadata.IsEmpty())
-            {
-                return resolution != null
-                       || audio != null
-                       || !string.IsNullOrEmpty(audioChannels);
-            }
-
-            return collectedMovie.Metadata.Audio != audio
-                   || collectedMovie.Metadata.AudioChannels != audioChannels
-                   || collectedMovie.Metadata.Resolution != resolution
-                   || collectedMovie.Metadata.Is3D != is3D
-                   || collectedMovie.Metadata.Hdr != hdr;
-        }
-
-        /// <summary>
-        /// Gets the resolution of a <see cref="MediaStream"/>.
-        /// </summary>
-        /// <param name="videoStream">The <see cref="MediaStream"/>.</param>
-        /// <returns>string.</returns>
-        public static TraktResolution? GetResolution(this MediaStream videoStream)
-        {
-            if (videoStream == null)
-            {
+            case "aac":
+                return TraktAudio.aac;
+            case "ac3":
+                return TraktAudio.dolby_digital;
+            case "dca":
+            case "dts":
+                return TraktAudio.dts;
+            case "dtshd":
+                return TraktAudio.dts_ma;
+            case "eac3":
+                return TraktAudio.dolby_digital_plus;
+            case "flac":
+                return TraktAudio.flac;
+            case "mp2":
+                return TraktAudio.mp2;
+            case "mp3":
+                return TraktAudio.mp3;
+            case "ogg":
+            case "vorbis":
+                return TraktAudio.ogg;
+            case "opus":
+                return TraktAudio.ogg_opus;
+            case "pcm":
+                return TraktAudio.lpcm;
+            case "truehd":
+                return TraktAudio.dolby_truehd;
+            case "wma":
+            case "wmav2":
+            case "wmapro":
+            case "wmavoice":
+                return TraktAudio.wma;
+            default:
                 return null;
-            }
+        }
+    }
 
-            if (!videoStream.Width.HasValue)
-            {
-                return null;
-            }
+    /// <summary>
+    /// Checks if metadata of new collected movie is different from the already collected.
+    /// </summary>
+    /// <param name="collectedMovie">The <see cref="TraktMovieCollected"/>.</param>
+    /// <param name="movie">The <see cref="Movie"/>.</param>
+    /// <returns><see cref="bool"/> indicating if the new movie has different metadata to the already collected.</returns>
+    public static bool MetadataIsDifferent(this TraktMovieCollected collectedMovie, Movie movie)
+    {
+        var audioStream = movie.GetMediaStreams().FirstOrDefault(x => x.Type == MediaStreamType.Audio);
 
-            if (videoStream.Width.Value >= 3800)
-            {
-                return TraktResolution.uhd_4k;
-            }
+        var resolution = movie.GetDefaultVideoStream().GetResolution();
+        var is3D = movie.Is3D;
+        var hdr = movie.GetDefaultVideoStream().GetHdr();
+        var audio = GetCodecRepresetation(audioStream);
+        var audioChannels = audioStream.GetAudioChannels();
 
-            if (videoStream.Width.Value >= 1900)
-            {
-                return TraktResolution.hd_1080p;
-            }
-
-            if (videoStream.Width.Value >= 1270)
-            {
-                return TraktResolution.hd_720p;
-            }
-
-            if (videoStream.Width.Value >= 700)
-            {
-                return TraktResolution.sd_480p;
-            }
-
-            return null;
+        if (collectedMovie.Metadata == null || collectedMovie.Metadata.IsEmpty())
+        {
+            return resolution != null
+                   || audio != null
+                   || !string.IsNullOrEmpty(audioChannels);
         }
 
-        /// <summary>
-        /// Gets the HDR type of a <see cref="MediaStream"/>.
-        /// </summary>
-        /// <param name="videoStream">The <see cref="MediaStream"/>.</param>
-        /// <returns>string.</returns>
-        public static TraktHdr? GetHdr(this MediaStream videoStream)
+        return collectedMovie.Metadata.Audio != audio
+               || collectedMovie.Metadata.AudioChannels != audioChannels
+               || collectedMovie.Metadata.Resolution != resolution
+               || collectedMovie.Metadata.Is3D != is3D
+               || collectedMovie.Metadata.Hdr != hdr;
+    }
+
+    /// <summary>
+    /// Gets the resolution of a <see cref="MediaStream"/>.
+    /// </summary>
+    /// <param name="videoStream">The <see cref="MediaStream"/>.</param>
+    /// <returns>string.</returns>
+    public static TraktResolution? GetResolution(this MediaStream videoStream)
+    {
+        if (videoStream == null)
         {
             return null;
         }
 
-        /// <summary>
-        /// Gets the ISO-8601 representation of a <see cref="DateTime"/>.
-        /// </summary>
-        /// <param name="dateTime">The <see cref="DateTime"/>.</param>
-        /// <returns>string.</returns>
-        public static string ToISO8601(this DateTime dateTime)
-            => dateTime.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fffffff'Z'", CultureInfo.InvariantCulture);
-
-        /// <summary>
-        /// Gets the season number of an <see cref="Episode"/>.
-        /// </summary>
-        /// <param name="episode">The <see cref="Episode"/>.</param>
-        /// <returns>int.</returns>
-        public static int GetSeasonNumber(this Episode episode)
-            => (episode.ParentIndexNumber != 0 ? episode.ParentIndexNumber ?? 1 : episode.ParentIndexNumber).Value;
-
-        /// <summary>
-        /// Gets the number of audio channels of a <see cref="MediaStream"/>.
-        /// </summary>
-        /// <param name="audioStream">The <see cref="MediaStream"/>.</param>
-        /// <returns>string.</returns>
-        public static string GetAudioChannels(this MediaStream audioStream)
+        if (!videoStream.Width.HasValue)
         {
-            if (audioStream == null || string.IsNullOrEmpty(audioStream.ChannelLayout))
-            {
-                return null;
-            }
-
-            var channels = audioStream.ChannelLayout.Split('(')[0];
-            switch (channels)
-            {
-                case "7":
-                    return "6.1";
-                case "6":
-                    return "5.1";
-                case "5":
-                    return "5.0";
-                case "4":
-                    return "4.0";
-                case "3":
-                    return "2.1";
-                case "stereo":
-                    return "2.0";
-                case "mono":
-                    return "1.0";
-                default:
-                    return channels;
-            }
+            return null;
         }
 
-        /// <summary>
-        /// Transforms an enumerable into a list with a speciifc amount of chunks.
-        /// </summary>
-        /// <param name="enumerable">The IEnumberable{T}.</param>
-        /// <param name="chunkSize">Size of the Chunks.</param>
-        /// <returns>IList{IEnumerable{T}}.</returns>
-        /// <typeparam name="T">The type of IEnumerable.</typeparam>
-        public static IList<IEnumerable<T>> ToChunks<T>(this IEnumerable<T> enumerable, int chunkSize)
+        if (videoStream.Width.Value >= 3800)
         {
-            var itemsReturned = 0;
-            var list = enumerable.ToList(); // Prevent multiple execution of IEnumerable.
-            var count = list.Count;
-            var chunks = new List<IEnumerable<T>>();
-            while (itemsReturned < count)
-            {
-                chunks.Add(list.Take(chunkSize).ToList());
-                list = list.Skip(chunkSize).ToList();
-                itemsReturned += chunkSize;
-            }
-
-            return chunks;
+            return TraktResolution.uhd_4k;
         }
 
-        /// <summary>
-        /// Gets a watched match for a series.
-        /// </summary>
-        /// <param name="item">The <see cref="Series"/>.</param>
-        /// <param name="results">The <see cref="IEnumerable{TraktShowWatched}"/>.</param>
-        /// <returns>TraktShowWatched.</returns>
-        public static TraktShowWatched FindMatch(Series item, IEnumerable<TraktShowWatched> results)
+        if (videoStream.Width.Value >= 1900)
         {
-            return results.FirstOrDefault(i => IsMatch(item, i.Show));
+            return TraktResolution.hd_1080p;
         }
 
-        /// <summary>
-        /// Gets a collected match for a series.
-        /// </summary>
-        /// <param name="item">The <see cref="Series"/>.</param>
-        /// <param name="results">>The <see cref="IEnumerable{TraktShowCollected}"/>.</param>
-        /// <returns>TraktShowCollected.</returns>
-        public static TraktShowCollected FindMatch(Series item, IEnumerable<TraktShowCollected> results)
+        if (videoStream.Width.Value >= 1270)
         {
-            return results.FirstOrDefault(i => IsMatch(item, i.Show));
+            return TraktResolution.hd_720p;
         }
 
-        /// <summary>
-        /// Gets a paused match for a series.
-        /// </summary>
-        /// <param name="item">The <see cref="Episode"/>.</param>
-        /// <param name="results">>The <see cref="IEnumerable{TraktShowCollected}"/>.</param>
-        /// <returns>TraktShowCollected.</returns>
-        public static TraktEpisodePaused FindMatch(Episode item, IEnumerable<TraktEpisodePaused> results)
+        if (videoStream.Width.Value >= 700)
         {
-            return results.FirstOrDefault(i => IsMatch(item, i.Episode));
+            return TraktResolution.sd_480p;
         }
 
-        /// <summary>
-        /// Gets a watched match for a movie.
-        /// </summary>
-        /// <param name="item">The <see cref="BaseItem"/>.</param>
-        /// <param name="results">>The <see cref="IEnumerable{TraktMovieWatched}"/>.</param>
-        /// <returns>TraktMovieWatched.</returns>
-        public static TraktMovieWatched FindMatch(BaseItem item, IEnumerable<TraktMovieWatched> results)
+        return null;
+    }
+
+    /// <summary>
+    /// Gets the HDR type of a <see cref="MediaStream"/>.
+    /// </summary>
+    /// <param name="videoStream">The <see cref="MediaStream"/>.</param>
+    /// <returns>string.</returns>
+    public static TraktHdr? GetHdr(this MediaStream videoStream)
+    {
+        return null;
+    }
+
+    /// <summary>
+    /// Gets the ISO-8601 representation of a <see cref="DateTime"/>.
+    /// </summary>
+    /// <param name="dateTime">The <see cref="DateTime"/>.</param>
+    /// <returns>string.</returns>
+    public static string ToISO8601(this DateTime dateTime)
+        => dateTime.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss.fffffff'Z'", CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// Gets the season number of an <see cref="Episode"/>.
+    /// </summary>
+    /// <param name="episode">The <see cref="Episode"/>.</param>
+    /// <returns>int.</returns>
+    public static int GetSeasonNumber(this Episode episode)
+        => (episode.ParentIndexNumber != 0 ? episode.ParentIndexNumber ?? 1 : episode.ParentIndexNumber).Value;
+
+    /// <summary>
+    /// Gets the number of audio channels of a <see cref="MediaStream"/>.
+    /// </summary>
+    /// <param name="audioStream">The <see cref="MediaStream"/>.</param>
+    /// <returns>string.</returns>
+    public static string GetAudioChannels(this MediaStream audioStream)
+    {
+        if (audioStream == null || string.IsNullOrEmpty(audioStream.ChannelLayout))
         {
-            return results.FirstOrDefault(i => IsMatch(item, i.Movie));
+            return null;
         }
 
-        /// <summary>
-        /// Gets a collected match for a movie.
-        /// </summary>
-        /// <param name="item">The <see cref="BaseItem"/>.</param>
-        /// <param name="results">>The <see cref="IEnumerable{TraktMovieCollected}"/>.</param>
-        /// <returns>TraktMovieCollected.</returns>
-        public static TraktMovieCollected FindMatch(BaseItem item, IEnumerable<TraktMovieCollected> results)
+        var channels = audioStream.ChannelLayout.Split('(')[0];
+        switch (channels)
         {
-            return results.FirstOrDefault(i => IsMatch(item, i.Movie));
+            case "7":
+                return "6.1";
+            case "6":
+                return "5.1";
+            case "5":
+                return "5.0";
+            case "4":
+                return "4.0";
+            case "3":
+                return "2.1";
+            case "stereo":
+                return "2.0";
+            case "mono":
+                return "1.0";
+            default:
+                return channels;
+        }
+    }
+
+    /// <summary>
+    /// Transforms an enumerable into a list with a speciifc amount of chunks.
+    /// </summary>
+    /// <param name="enumerable">The IEnumberable{T}.</param>
+    /// <param name="chunkSize">Size of the Chunks.</param>
+    /// <returns>IList{IEnumerable{T}}.</returns>
+    /// <typeparam name="T">The type of IEnumerable.</typeparam>
+    public static IList<IEnumerable<T>> ToChunks<T>(this IEnumerable<T> enumerable, int chunkSize)
+    {
+        var itemsReturned = 0;
+        var list = enumerable.ToList(); // Prevent multiple execution of IEnumerable.
+        var count = list.Count;
+        var chunks = new List<IEnumerable<T>>();
+        while (itemsReturned < count)
+        {
+            chunks.Add(list.Take(chunkSize).ToList());
+            list = list.Skip(chunkSize).ToList();
+            itemsReturned += chunkSize;
         }
 
-        /// <summary>
-        /// Gets a paused match for a movie.
-        /// </summary>
-        /// <param name="item">The <see cref="BaseItem"/>.</param>
-        /// <param name="results">>The <see cref="IEnumerable{TraktMoviePaused}"/>.</param>
-        /// <returns>TraktMoviePaused.</returns>
-        public static TraktMoviePaused FindMatch(BaseItem item, IEnumerable<TraktMoviePaused> results)
+        return chunks;
+    }
+
+    /// <summary>
+    /// Gets a watched match for a series.
+    /// </summary>
+    /// <param name="item">The <see cref="Series"/>.</param>
+    /// <param name="results">The <see cref="IEnumerable{TraktShowWatched}"/>.</param>
+    /// <returns>TraktShowWatched.</returns>
+    public static TraktShowWatched FindMatch(Series item, IEnumerable<TraktShowWatched> results)
+    {
+        return results.FirstOrDefault(i => IsMatch(item, i.Show));
+    }
+
+    /// <summary>
+    /// Gets a collected match for a series.
+    /// </summary>
+    /// <param name="item">The <see cref="Series"/>.</param>
+    /// <param name="results">>The <see cref="IEnumerable{TraktShowCollected}"/>.</param>
+    /// <returns>TraktShowCollected.</returns>
+    public static TraktShowCollected FindMatch(Series item, IEnumerable<TraktShowCollected> results)
+    {
+        return results.FirstOrDefault(i => IsMatch(item, i.Show));
+    }
+
+    /// <summary>
+    /// Gets a paused match for a series.
+    /// </summary>
+    /// <param name="item">The <see cref="Episode"/>.</param>
+    /// <param name="results">>The <see cref="IEnumerable{TraktShowCollected}"/>.</param>
+    /// <returns>TraktShowCollected.</returns>
+    public static TraktEpisodePaused FindMatch(Episode item, IEnumerable<TraktEpisodePaused> results)
+    {
+        return results.FirstOrDefault(i => IsMatch(item, i.Episode));
+    }
+
+    /// <summary>
+    /// Gets a watched match for a movie.
+    /// </summary>
+    /// <param name="item">The <see cref="BaseItem"/>.</param>
+    /// <param name="results">>The <see cref="IEnumerable{TraktMovieWatched}"/>.</param>
+    /// <returns>TraktMovieWatched.</returns>
+    public static TraktMovieWatched FindMatch(BaseItem item, IEnumerable<TraktMovieWatched> results)
+    {
+        return results.FirstOrDefault(i => IsMatch(item, i.Movie));
+    }
+
+    /// <summary>
+    /// Gets a collected match for a movie.
+    /// </summary>
+    /// <param name="item">The <see cref="BaseItem"/>.</param>
+    /// <param name="results">>The <see cref="IEnumerable{TraktMovieCollected}"/>.</param>
+    /// <returns>TraktMovieCollected.</returns>
+    public static TraktMovieCollected FindMatch(BaseItem item, IEnumerable<TraktMovieCollected> results)
+    {
+        return results.FirstOrDefault(i => IsMatch(item, i.Movie));
+    }
+
+    /// <summary>
+    /// Gets a paused match for a movie.
+    /// </summary>
+    /// <param name="item">The <see cref="BaseItem"/>.</param>
+    /// <param name="results">>The <see cref="IEnumerable{TraktMoviePaused}"/>.</param>
+    /// <returns>TraktMoviePaused.</returns>
+    public static TraktMoviePaused FindMatch(BaseItem item, IEnumerable<TraktMoviePaused> results)
+    {
+        return results.FirstOrDefault(i => IsMatch(item, i.Movie));
+    }
+
+    /// <summary>
+    /// Checks if a <see cref="BaseItem"/> matches a <see cref="TraktMovie"/>.
+    /// </summary>
+    /// <param name="item">The <see cref="BaseItem"/>.</param>
+    /// <param name="movie">The IEnumerable of <see cref="TraktMovie"/>.</param>
+    /// <returns><see cref="bool"/> indicating if the <see cref="BaseItem"/> matches a <see cref="TraktMovie"/>.</returns>
+    public static bool IsMatch(BaseItem item, TraktMovie movie)
+    {
+        var imdb = item.GetProviderId(MetadataProvider.Imdb);
+        if (!string.IsNullOrEmpty(imdb) && string.Equals(imdb, movie.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
         {
-            return results.FirstOrDefault(i => IsMatch(item, i.Movie));
+            return true;
         }
 
-        /// <summary>
-        /// Checks if a <see cref="BaseItem"/> matches a <see cref="TraktMovie"/>.
-        /// </summary>
-        /// <param name="item">The <see cref="BaseItem"/>.</param>
-        /// <param name="movie">The IEnumerable of <see cref="TraktMovie"/>.</param>
-        /// <returns><see cref="bool"/> indicating if the <see cref="BaseItem"/> matches a <see cref="TraktMovie"/>.</returns>
-        public static bool IsMatch(BaseItem item, TraktMovie movie)
+        var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
+        if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, movie.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
         {
-            var imdb = item.GetProviderId(MetadataProvider.Imdb);
-            if (!string.IsNullOrEmpty(imdb) && string.Equals(imdb, movie.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
-            if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, movie.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            return false;
+            return true;
         }
 
-        /// <summary>
-        /// Checks if a <see cref="Series"/> matches a <see cref="TraktShow"/>.
-        /// </summary>
-        /// <param name="item">The <see cref="Series"/>.</param>
-        /// <param name="show">The <see cref="TraktShow"/>.</param>
-        /// <returns><see cref="bool"/> indicating if the <see cref="Series"/> matches a <see cref="TraktShow"/>.</returns>
-        public static bool IsMatch(Series item, TraktShow show)
+        return false;
+    }
+
+    /// <summary>
+    /// Checks if a <see cref="Series"/> matches a <see cref="TraktShow"/>.
+    /// </summary>
+    /// <param name="item">The <see cref="Series"/>.</param>
+    /// <param name="show">The <see cref="TraktShow"/>.</param>
+    /// <returns><see cref="bool"/> indicating if the <see cref="Series"/> matches a <see cref="TraktShow"/>.</returns>
+    public static bool IsMatch(Series item, TraktShow show)
+    {
+        var tvdb = item.GetProviderId(MetadataProvider.Tvdb);
+        if (!string.IsNullOrEmpty(tvdb) && string.Equals(tvdb, show.Ids.Tvdb, StringComparison.OrdinalIgnoreCase))
         {
-            var tvdb = item.GetProviderId(MetadataProvider.Tvdb);
-            if (!string.IsNullOrEmpty(tvdb) && string.Equals(tvdb, show.Ids.Tvdb, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
-            if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, show.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            var imdb = item.GetProviderId(MetadataProvider.Imdb);
-            if (!string.IsNullOrEmpty(imdb) && string.Equals(imdb, show.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            var tvrage = item.GetProviderId(MetadataProvider.TvRage);
-            if (!string.IsNullOrEmpty(tvrage) && string.Equals(tvrage, show.Ids.Tvrage, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            return false;
+            return true;
         }
 
-        /// <summary>
-        /// Checks if a <see cref="Episode"/> matches a <see cref="TraktEpisode"/>.
-        /// </summary>
-        /// <param name="item">The <see cref="Episode"/>.</param>
-        /// <param name="episode">The <see cref="TraktEpisode"/>.</param>
-        /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktEpisode"/>.</returns>
-        public static bool IsMatch(Episode item, TraktEpisode episode)
+        var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
+        if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, show.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
         {
-            var tvdb = item.GetProviderId(MetadataProvider.Tvdb);
-            if (!string.IsNullOrEmpty(tvdb) && string.Equals(tvdb, episode.Ids.Tvdb, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
-            if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, episode.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            var imdb = item.GetProviderId(MetadataProvider.Imdb);
-            if (!string.IsNullOrEmpty(imdb) && string.Equals(imdb, episode.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            var tvrage = item.GetProviderId(MetadataProvider.TvRage);
-            if (!string.IsNullOrEmpty(tvrage) && string.Equals(tvrage, episode.Ids.Tvrage, StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-
-            return false;
+            return true;
         }
 
-        /// <summary>
-        /// Checks if a <see cref="Episode"/> matches a <see cref="TraktEpisodeWatched"/>.
-        /// </summary>
-        /// <param name="item">The <see cref="Episode"/>.</param>
-        /// <param name="episode">The <see cref="TraktEpisodeWatched"/>.</param>
-        /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktEpisodeWatched"/>.</returns>
-        public static bool IsMatch(Episode item, TraktEpisodeWatched episode)
+        var imdb = item.GetProviderId(MetadataProvider.Imdb);
+        if (!string.IsNullOrEmpty(imdb) && string.Equals(imdb, show.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
         {
-            var episodeNumber = episode.Number;
-            var itemIndexNumber = item.IndexNumber;
-            var itemIndexNumberEnd = item.IndexNumberEnd;
-
-            return !itemIndexNumber.HasValue
-                ? episodeNumber == -1
-                : (itemIndexNumberEnd.HasValue && itemIndexNumberEnd > itemIndexNumber
-                    ? itemIndexNumber <= episodeNumber && episodeNumber <= itemIndexNumberEnd
-                    : episodeNumber == itemIndexNumber);
+            return true;
         }
+
+        var tvrage = item.GetProviderId(MetadataProvider.TvRage);
+        if (!string.IsNullOrEmpty(tvrage) && string.Equals(tvrage, show.Ids.Tvrage, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Checks if a <see cref="Episode"/> matches a <see cref="TraktEpisode"/>.
+    /// </summary>
+    /// <param name="item">The <see cref="Episode"/>.</param>
+    /// <param name="episode">The <see cref="TraktEpisode"/>.</param>
+    /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktEpisode"/>.</returns>
+    public static bool IsMatch(Episode item, TraktEpisode episode)
+    {
+        var tvdb = item.GetProviderId(MetadataProvider.Tvdb);
+        if (!string.IsNullOrEmpty(tvdb) && string.Equals(tvdb, episode.Ids.Tvdb, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
+        if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, episode.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var imdb = item.GetProviderId(MetadataProvider.Imdb);
+        if (!string.IsNullOrEmpty(imdb) && string.Equals(imdb, episode.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var tvrage = item.GetProviderId(MetadataProvider.TvRage);
+        if (!string.IsNullOrEmpty(tvrage) && string.Equals(tvrage, episode.Ids.Tvrage, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Checks if a <see cref="Episode"/> matches a <see cref="TraktEpisodeWatched"/>.
+    /// </summary>
+    /// <param name="item">The <see cref="Episode"/>.</param>
+    /// <param name="episode">The <see cref="TraktEpisodeWatched"/>.</param>
+    /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktEpisodeWatched"/>.</returns>
+    public static bool IsMatch(Episode item, TraktEpisodeWatched episode)
+    {
+        var episodeNumber = episode.Number;
+        var itemIndexNumber = item.IndexNumber;
+        var itemIndexNumberEnd = item.IndexNumberEnd;
+
+        return !itemIndexNumber.HasValue
+            ? episodeNumber == -1
+            : (itemIndexNumberEnd.HasValue && itemIndexNumberEnd > itemIndexNumber
+                ? itemIndexNumber <= episodeNumber && episodeNumber <= itemIndexNumberEnd
+                : episodeNumber == itemIndexNumber);
     }
 }

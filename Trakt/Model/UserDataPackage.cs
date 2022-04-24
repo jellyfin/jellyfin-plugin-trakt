@@ -4,31 +4,30 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using Trakt.Model;
 
-namespace Trakt.Helpers
+namespace Trakt.Helpers;
+
+/// <summary>
+/// Class that contains all the items to be reported to trakt.tv and supporting properties.
+/// </summary>
+internal class UserDataPackage
 {
-    /// <summary>
-    /// Class that contains all the items to be reported to trakt.tv and supporting properties.
-    /// </summary>
-    internal class UserDataPackage
+    public UserDataPackage()
     {
-        public UserDataPackage()
-        {
-            SeenMovies = new List<Movie>();
-            UnSeenMovies = new List<Movie>();
-            SeenEpisodes = new List<Episode>();
-            UnSeenEpisodes = new List<Episode>();
-        }
-
-        public TraktUser TraktUser { get; set; }
-
-        public Guid? CurrentSeriesId { get; set; }
-
-        public ICollection<Movie> SeenMovies { get; set; }
-
-        public ICollection<Movie> UnSeenMovies { get; set; }
-
-        public ICollection<Episode> SeenEpisodes { get; set; }
-
-        public ICollection<Episode> UnSeenEpisodes { get; set; }
+        SeenMovies = new List<Movie>();
+        UnSeenMovies = new List<Movie>();
+        SeenEpisodes = new List<Episode>();
+        UnSeenEpisodes = new List<Episode>();
     }
+
+    public TraktUser TraktUser { get; set; }
+
+    public Guid? CurrentSeriesId { get; set; }
+
+    public ICollection<Movie> SeenMovies { get; set; }
+
+    public ICollection<Movie> UnSeenMovies { get; set; }
+
+    public ICollection<Episode> SeenEpisodes { get; set; }
+
+    public ICollection<Episode> UnSeenEpisodes { get; set; }
 }
