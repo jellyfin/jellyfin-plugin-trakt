@@ -40,6 +40,8 @@ namespace Trakt.Api;
 public class TraktApi
 {
     private static readonly SemaphoreSlim _traktResourcePool = new SemaphoreSlim(1, 1);
+    private static readonly TimeSpan _tooManyRequestDelay = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan _badGatewayDelay = TimeSpan.FromSeconds(30);
 
     private readonly ILogger<TraktApi> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -1142,8 +1144,12 @@ public class TraktApi
                 response = await function().ConfigureAwait(false);
                 if (response.StatusCode == HttpStatusCode.TooManyRequests)
                 {
-                    var delay = response.Headers.RetryAfter.Delta ?? TimeSpan.FromSeconds(1);
+                    var delay = response.Headers.RetryAfter?.Delta ?? _tooManyRequestDelay;
                     await Task.Delay(delay).ConfigureAwait(false);
+                }
+                else if (response.StatusCode == HttpStatusCode.BadGateway)
+                {
+                    await Task.Delay(_badGatewayDelay).ConfigureAwait(false);
                 }
                 else
                 {
