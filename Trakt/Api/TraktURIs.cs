@@ -93,12 +93,12 @@ public static class TraktUris
     /// <summary>
     /// The paused movies URI.
     /// </summary>
-    public const string PausedMovies = BaseUrl + "/sync/playback/movies";
+    public const string PausedMovies = BaseUrl + "/sync/playback/movies?start_at=2000-01-01T00:00:00.000Z";
 
     /// <summary>
     /// The paused shows URI.
     /// </summary>
-    public const string PausedEpisodes = BaseUrl + "/sync/playback/episodes";
+    public const string PausedEpisodes = BaseUrl + "/sync/playback/episodes?start_at=2000-01-01T00:00:00.000Z";
 
     /// <summary>
     /// The collected movies URI.

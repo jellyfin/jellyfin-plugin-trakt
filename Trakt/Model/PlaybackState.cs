@@ -1,5 +1,3 @@
-using System;
-
 namespace Trakt.Model;
 
 internal class PlaybackState
