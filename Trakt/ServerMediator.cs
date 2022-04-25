@@ -14,6 +14,7 @@ using MediaBrowser.Model.Entities;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Helpers;
+using Trakt.Model;
 using Trakt.Model.Enums;
 
 namespace Trakt;
@@ -31,7 +32,7 @@ public class ServerMediator : IServerEntryPoint, IDisposable
     private readonly LibraryManagerEventsHelper _libraryManagerEventsHelper;
     private readonly TraktApi _traktApi;
 
-    private Dictionary<string, bool> _playbackPause;
+    private Dictionary<string, PlaybackState> _playbackState;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ServerMediator"/> class.
@@ -55,7 +56,7 @@ public class ServerMediator : IServerEntryPoint, IDisposable
         _userDataManager = userDataManager;
 
         _logger = loggerFactory.CreateLogger<ServerMediator>();
-        _playbackPause = new Dictionary<string, bool>();
+        _playbackState = new Dictionary<string, PlaybackState>();
 
         _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager);
         _libraryManagerEventsHelper = new LibraryManagerEventsHelper(loggerFactory.CreateLogger<LibraryManagerEventsHelper>(), _traktApi);
@@ -240,7 +241,10 @@ public class ServerMediator : IServerEntryPoint, IDisposable
                         MediaStatus.Watching,
                         traktUser,
                         progressPercent).ConfigureAwait(false);
-                    _playbackPause[traktUser.LinkedMbUserId] = false;
+
+                    _playbackState[traktUser.LinkedMbUserId] = new PlaybackState();
+                    _playbackState[traktUser.LinkedMbUserId].PlaybackProgress = playbackProgressEventArgs.PlaybackPositionTicks ?? 0L;
+                    _playbackState[traktUser.LinkedMbUserId].IsPaused = false;
                 }
                 else if (video is Episode episode)
                 {
@@ -250,7 +254,10 @@ public class ServerMediator : IServerEntryPoint, IDisposable
                         MediaStatus.Watching,
                         traktUser,
                         progressPercent).ConfigureAwait(false);
-                    _playbackPause[traktUser.LinkedMbUserId] = false;
+
+                    _playbackState[traktUser.LinkedMbUserId] = new PlaybackState();
+                    _playbackState[traktUser.LinkedMbUserId].PlaybackProgress = playbackProgressEventArgs.PlaybackPositionTicks ?? 0L;
+                    _playbackState[traktUser.LinkedMbUserId].IsPaused = false;
                 }
             }
             catch (Exception ex)
@@ -325,7 +332,9 @@ public class ServerMediator : IServerEntryPoint, IDisposable
                             MediaStatus.Paused,
                             traktUser,
                             progressPercent).ConfigureAwait(false);
-                        _playbackPause[traktUser.LinkedMbUserId] = true;
+
+                        _playbackState[traktUser.LinkedMbUserId].PlaybackProgress = playbackProgressEventArgs.PlaybackPositionTicks ?? 0L;
+                        _playbackState[traktUser.LinkedMbUserId].IsPaused = true;
                     }
                     else if (video is Episode episode)
                     {
@@ -335,36 +344,67 @@ public class ServerMediator : IServerEntryPoint, IDisposable
                             MediaStatus.Paused,
                             traktUser,
                             progressPercent).ConfigureAwait(false);
-                        _playbackPause[traktUser.LinkedMbUserId] = true;
+
+                        _playbackState[traktUser.LinkedMbUserId].PlaybackProgress = playbackProgressEventArgs.PlaybackPositionTicks ?? 0L;
+                        _playbackState[traktUser.LinkedMbUserId].IsPaused = false;
                     }
                 }
                 else
                 {
-                    _playbackPause.TryGetValue(traktUser.LinkedMbUserId, out bool paused);
-                    if (paused)
+                    if (_playbackState.TryGetValue(traktUser.LinkedMbUserId, out PlaybackState state))
                     {
-                        _logger.LogDebug("Playback resumed");
-
-                        if (video is Movie movie)
+                        if (state.IsPaused)
                         {
-                            _logger.LogDebug("Sending movie playback status update to trakt.tv for user {User}.", user.Username);
-                            await _traktApi.SendMovieStatusUpdateAsync(
-                                movie,
-                                MediaStatus.Watching,
-                                traktUser,
-                                progressPercent).ConfigureAwait(false);
-                        }
-                        else if (video is Episode episode)
-                        {
-                            _logger.LogDebug("Sending episode playback status update to trakt.tv for user {User}.", user.Username);
-                            await _traktApi.SendEpisodeStatusUpdateAsync(
-                                episode,
-                                MediaStatus.Watching,
-                                traktUser,
-                                progressPercent).ConfigureAwait(false);
-                        }
+                            _logger.LogDebug("Playback resumed");
 
-                        _playbackPause[traktUser.LinkedMbUserId] = false;
+                            if (video is Movie movie)
+                            {
+                                _logger.LogDebug("Sending movie playback status update to trakt.tv for user {User}.", user.Username);
+                                await _traktApi.SendMovieStatusUpdateAsync(
+                                    movie,
+                                    MediaStatus.Watching,
+                                    traktUser,
+                                    progressPercent).ConfigureAwait(false);
+                            }
+                            else if (video is Episode episode)
+                            {
+                                _logger.LogDebug("Sending episode playback status update to trakt.tv for user {User}.", user.Username);
+                                await _traktApi.SendEpisodeStatusUpdateAsync(
+                                    episode,
+                                    MediaStatus.Watching,
+                                    traktUser,
+                                    progressPercent).ConfigureAwait(false);
+                            }
+
+                            _playbackState[traktUser.LinkedMbUserId].PlaybackProgress = playbackProgressEventArgs.PlaybackPositionTicks ?? 0L;
+                            _playbackState[traktUser.LinkedMbUserId].IsPaused = false;
+                        }
+                        else if (Math.Abs((playbackProgressEventArgs.PlaybackPositionTicks ?? 0L) - state.PlaybackProgress) > TimeSpan.TicksPerSecond * 5)
+                        {
+                            _logger.LogDebug("Playback skipped");
+
+                            if (video is Movie movie)
+                            {
+                                _logger.LogDebug("Sending movie playback status update to trakt.tv for user {User}.", user.Username);
+                                await _traktApi.SendMovieStatusUpdateAsync(
+                                    movie,
+                                    MediaStatus.Watching,
+                                    traktUser,
+                                    progressPercent).ConfigureAwait(false);
+                            }
+                            else if (video is Episode episode)
+                            {
+                                _logger.LogDebug("Sending episode playback status update to trakt.tv for user {User}.", user.Username);
+                                await _traktApi.SendEpisodeStatusUpdateAsync(
+                                    episode,
+                                    MediaStatus.Watching,
+                                    traktUser,
+                                    progressPercent).ConfigureAwait(false);
+                            }
+
+                            _playbackState[traktUser.LinkedMbUserId].PlaybackProgress = playbackProgressEventArgs.PlaybackPositionTicks ?? 0L;
+                            _playbackState[traktUser.LinkedMbUserId].IsPaused = false;
+                        }
                     }
                 }
             }
@@ -471,7 +511,7 @@ public class ServerMediator : IServerEntryPoint, IDisposable
                     }
                 }
 
-                _playbackPause[traktUser.LinkedMbUserId] = false;
+                _playbackState.Remove(traktUser.LinkedMbUserId);
             }
             catch (Exception ex)
             {

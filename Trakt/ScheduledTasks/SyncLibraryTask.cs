@@ -13,7 +13,6 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Querying;
 using MediaBrowser.Model.Tasks;
-using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Api.DataContracts.Sync;
