@@ -31,7 +31,7 @@ public class ServerMediator : IServerEntryPoint, IDisposable
     private readonly UserDataManagerEventsHelper _userDataManagerEventsHelper;
     private readonly LibraryManagerEventsHelper _libraryManagerEventsHelper;
     private readonly TraktApi _traktApi;
-    private Dictionary<string, PlaybackState> _playbackState;
+    private readonly Dictionary<string, PlaybackState> _playbackState;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ServerMediator"/> class.
