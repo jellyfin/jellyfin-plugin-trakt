@@ -9,9 +9,9 @@ namespace Trakt.Api.Enums;
 public enum TraktResolution
 {
     /// <summary>
-    /// HD 720p resolution.
+    /// HD 1080i resolution.
     /// </summary>
-    hd_720p,
+    hd_1080i,
 
     /// <summary>
     /// HD 1080p resolution.
@@ -19,9 +19,29 @@ public enum TraktResolution
     hd_1080p,
 
     /// <summary>
+    /// HD 720p resolution.
+    /// </summary>
+    hd_720p,
+
+    /// <summary>
+    /// SD 480i resolution.
+    /// </summary>
+    sd_480i,
+
+    /// <summary>
     /// SD 480p resolution.
     /// </summary>
     sd_480p,
+
+    /// <summary>
+    /// SD 576i resolution.
+    /// </summary>
+    sd_576i,
+
+    /// <summary>
+    /// SD 576p resolution.
+    /// </summary>
+    sd_576p,
 
     /// <summary>
     /// UHD 4k resolution.
