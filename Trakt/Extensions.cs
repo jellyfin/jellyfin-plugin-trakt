@@ -44,6 +44,7 @@ public static class Extensions
         => metadata.MediaType == null
            && metadata.Resolution == null
            && metadata.Audio == null
+           && metadata.Hdr == null
            && string.IsNullOrEmpty(metadata.AudioChannels);
 
     /// <summary>
@@ -65,8 +66,6 @@ public static class Extensions
             case "dca":
             case "dts":
                 return TraktAudio.dts;
-            case "dtshd":
-                return TraktAudio.dts_ma;
             case "eac3":
                 return TraktAudio.dolby_digital_plus;
             case "flac":
@@ -121,7 +120,8 @@ public static class Extensions
                || collectedMovie.Metadata.AudioChannels != audioChannels
                || collectedMovie.Metadata.Resolution != resolution
                || collectedMovie.Metadata.Is3D != is3D
-               || collectedMovie.Metadata.Hdr != hdr;
+               || collectedMovie.Metadata.Hdr != hdr
+               || collectedMovie.Metadata.MediaType != null;
     }
 
     /// <summary>
@@ -148,7 +148,7 @@ public static class Extensions
 
         if (videoStream.Width.Value >= 1900)
         {
-            return TraktResolution.hd_1080p;
+            return videoStream.IsInterlaced ? TraktResolution.hd_1080i : TraktResolution.hd_1080p;
         }
 
         if (videoStream.Width.Value >= 1270)
@@ -158,7 +158,14 @@ public static class Extensions
 
         if (videoStream.Width.Value >= 700)
         {
-            return TraktResolution.sd_480p;
+            if (videoStream.Height.HasValue && videoStream.Height.Value >= 576)
+            {
+                return videoStream.IsInterlaced ? TraktResolution.sd_576i : TraktResolution.sd_576p;
+            }
+            else
+            {
+                return videoStream.IsInterlaced ? TraktResolution.sd_480i : TraktResolution.sd_480p;
+            }
         }
 
         return null;
@@ -202,25 +209,48 @@ public static class Extensions
             return null;
         }
 
-        var channels = audioStream.ChannelLayout.Split('(')[0];
+        var channels = audioStream.ChannelLayout;
         switch (channels)
         {
-            case "7":
+            case "octagonal":
+            case "7.1(wide-side)":
+            case "7.1(wide)":
+            case "7.1":
+                return "7.1";
+            case "7.0(front)":
+            case "7.0":
+            case "6.1(back)":
+            case "6.1(front)":
+            case "6.1":
                 return "6.1";
-            case "6":
+            case "hexagonal":
+            case "6.0":
+            case "6.0(front)":
+            case "5.1(side)":
+            case "5.1":
                 return "5.1";
-            case "5":
+            case "5.0(side)":
+            case "5.0":
                 return "5.0";
-            case "4":
+            case "4.1":
+                return "4.1";
+            case "quad(side)":
+            case "quad":
+            case "4.0":
                 return "4.0";
-            case "3":
+            case "3.1":
+                return "3.1";
+            case "3.0(back)":
+            case "3.0":
+                return "3.0";
+            case "2.1":
                 return "2.1";
             case "stereo":
                 return "2.0";
             case "mono":
                 return "1.0";
             default:
-                return channels;
+                return null;
         }
     }
 

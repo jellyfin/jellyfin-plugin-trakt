@@ -279,6 +279,7 @@ public class TraktApi
                 traktMovieCollected.AudioChannels = audioStream.GetAudioChannels();
                 traktMovieCollected.Audio = audioStream.GetCodecRepresetation();
                 traktMovieCollected.Resolution = m.GetDefaultVideoStream().GetResolution();
+                traktMovieCollected.MediaType = Enums.TraktMediaType.digital;
             }
 
             return traktMovieCollected;
@@ -359,11 +360,13 @@ public class TraktApi
                 };
                 if (traktUser.ExportMediaInfo)
                 {
+                    var defaultVideoStream = episode.GetDefaultVideoStream();
                     traktEpisodeCollected.AudioChannels = audioStream.GetAudioChannels();
                     traktEpisodeCollected.Audio = audioStream.GetCodecRepresetation();
-                    traktEpisodeCollected.Resolution = episode.GetDefaultVideoStream().GetResolution();
+                    traktEpisodeCollected.Resolution = defaultVideoStream.GetResolution();
                     traktEpisodeCollected.Is3D = episode.Is3D;
-                    traktEpisodeCollected.Hdr = episode.GetDefaultVideoStream().GetHdr();
+                    traktEpisodeCollected.Hdr = defaultVideoStream.GetHdr();
+                    traktEpisodeCollected.MediaType = Enums.TraktMediaType.digital;
                 }
 
                 episodesPayload.Add(traktEpisodeCollected);
@@ -421,6 +424,7 @@ public class TraktApi
                         traktEpisodeCollected.Resolution = defaultVideoStream.GetResolution();
                         traktEpisodeCollected.Is3D = episode.Is3D;
                         traktEpisodeCollected.Hdr = defaultVideoStream.GetHdr();
+                        traktEpisodeCollected.MediaType = Enums.TraktMediaType.digital;
                     }
 
                     syncSeason.Episodes.Add(traktEpisodeCollected);
