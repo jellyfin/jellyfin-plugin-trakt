@@ -546,6 +546,7 @@ public class ServerMediator : IServerEntryPoint, IDisposable
             _libraryManager.ItemUpdated -= LibraryManagerItemUpdated;
             _libraryManager.ItemRemoved -= LibraryManagerItemRemoved;
             _libraryManagerEventsHelper.Dispose();
+            _userDataManagerEventsHelper.Dispose();
         }
     }
 }

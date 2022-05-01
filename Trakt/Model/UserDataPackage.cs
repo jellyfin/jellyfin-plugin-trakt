@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
-using Trakt.Model;
 
 namespace Trakt.Helpers;
 
@@ -18,8 +17,6 @@ internal class UserDataPackage
         SeenEpisodes = new List<Episode>();
         UnSeenEpisodes = new List<Episode>();
     }
-
-    public TraktUser TraktUser { get; set; }
 
     public Guid? CurrentSeriesId { get; set; }
 
