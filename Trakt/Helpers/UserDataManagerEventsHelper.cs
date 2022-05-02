@@ -19,7 +19,7 @@ internal class UserDataManagerEventsHelper : IDisposable
 {
     private readonly ILogger<UserDataManagerEventsHelper> _logger;
     private readonly TraktApi _traktApi;
-    private Dictionary<string, UserDataPackage> _userDataPackages;
+    private readonly Dictionary<string, UserDataPackage> _userDataPackages;
     private Timer _queueTimer;
 
     /// <summary>
@@ -159,12 +159,28 @@ internal class UserDataManagerEventsHelper : IDisposable
             }
         }
 
-        _userDataPackages[traktUser.LinkedMbUserId] = userPackage;
+        lock (_userDataPackages)
+        {
+            _userDataPackages[traktUser.LinkedMbUserId] = userPackage;
+        }
     }
 
     private void OnTimerCallback(object state)
     {
-        foreach (var package in _userDataPackages)
+        Dictionary<string, UserDataPackage> userDataQueue;
+        lock (_userDataPackages)
+        {
+            if (!_userDataPackages.Any())
+            {
+                _logger.LogInformation("No events... stopping queue timer");
+                return;
+            }
+
+            userDataQueue = new Dictionary<string, UserDataPackage>(_userDataPackages);
+            _userDataPackages.Clear();
+        }
+
+        foreach (var package in userDataQueue)
         {
             if (package.Value.UnSeenMovies.Any())
             {
