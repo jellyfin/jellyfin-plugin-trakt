@@ -41,7 +41,7 @@ public class TraktApi
 {
     private static readonly SemaphoreSlim _traktResourcePool = new SemaphoreSlim(1, 1);
     private static readonly TimeSpan _tooManyRequestDelay = TimeSpan.FromSeconds(1);
-    private static readonly TimeSpan _badGatewayDelay = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan _gatewayDelay = TimeSpan.FromSeconds(30);
 
     private readonly ILogger<TraktApi> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -1146,14 +1146,20 @@ public class TraktApi
             try
             {
                 response = await function().ConfigureAwait(false);
-                if (response.StatusCode == HttpStatusCode.TooManyRequests)
+                var statusCode = response.StatusCode;
+
+                if (statusCode.HasFlag(HttpStatusCode.TooManyRequests))
                 {
                     var delay = response.Headers.RetryAfter?.Delta ?? _tooManyRequestDelay;
+                    _logger.LogDebug("Too many requests while communicating with trakt.tv - waiting {Time}s", delay.TotalSeconds);
                     await Task.Delay(delay).ConfigureAwait(false);
                 }
-                else if (response.StatusCode == HttpStatusCode.BadGateway)
+                else if (statusCode.HasFlag(HttpStatusCode.BadGateway)
+                    || statusCode.HasFlag(HttpStatusCode.GatewayTimeout)
+                    || statusCode.HasFlag(HttpStatusCode.ServiceUnavailable))
                 {
-                    await Task.Delay(_badGatewayDelay).ConfigureAwait(false);
+                    _logger.LogDebug("Connectivity error while communicating with trakt.tv - waiting {Time}s", _gatewayDelay.TotalSeconds);
+                    await Task.Delay(_gatewayDelay).ConfigureAwait(false);
                 }
                 else
                 {
