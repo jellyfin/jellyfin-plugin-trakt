@@ -143,7 +143,6 @@ public class TraktController : ControllerBase
     /// <response code="200">Item rated successfully.</response>
     /// <returns>A <see cref="TraktSyncResponse"/>.</returns>
     [HttpPost("Users/{userId}/Items/{itemId}/Rate")]
-    [Authorize(Policy = "DefaultAuthorization")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<TraktSyncResponse>> TraktRateItem([FromRoute] string userId, [FromRoute] Guid itemId, [FromQuery] int rating)
     {
@@ -167,7 +166,6 @@ public class TraktController : ControllerBase
     /// <response code="200">Recommended movies returned.</response>
     /// <returns>A <see cref="List{TraktMovie}"/> with recommended movies.</returns>
     [HttpPost("Users/{userId}/RecommendedMovies")]
-    [Authorize(Policy = "DefaultAuthorization")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<List<TraktMovie>>> RecommendedTraktMovies([FromRoute] string userId)
     {
@@ -181,7 +179,6 @@ public class TraktController : ControllerBase
     /// <response code="200">Recommended shows returned.</response>
     /// <returns>A <see cref="List{TraktShow}"/> with recommended movies.</returns>
     [HttpPost("Users/{userId}/RecommendedShows")]
-    [Authorize(Policy = "DefaultAuthorization")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<List<TraktShow>>> RecommendedTraktShows([FromRoute] string userId)
     {

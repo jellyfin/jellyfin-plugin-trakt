@@ -1,6 +1,7 @@
 ﻿#pragma warning disable CA1819
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using MediaBrowser.Model.Plugins;
 using Trakt.Model;
@@ -26,7 +27,7 @@ public class PluginConfiguration : BasePluginConfiguration
     public TraktUser[] TraktUsers { get; set; }
 
     /// <summary>
-    /// Adds a user to the trakt users.
+    /// Adds a user to the trakt.tv users.
     /// </summary>
     /// <param name="userId">The user id.</param>
     public void AddUser(string userId)
@@ -49,5 +50,14 @@ public class PluginConfiguration : BasePluginConfiguration
         var traktUsers = TraktUsers.ToList();
         traktUsers.RemoveAll(user => user.LinkedMbUserId == userId);
         TraktUsers = traktUsers.ToArray();
+    }
+
+    /// <summary>
+    /// Gets a list of all trakt.tv users.
+    /// </summary>
+    /// <returns>IReadonlyList{TraktUser} with all trakt users.</returns>
+    public IReadOnlyList<TraktUser> GetAllTraktUsers()
+    {
+        return TraktUsers.ToList();
     }
 }

@@ -19,12 +19,13 @@ internal static class UserHelper
 
     public static TraktUser GetTraktUser(Guid userGuid)
     {
-        if (Plugin.Instance.PluginConfiguration.TraktUsers == null)
+        var traktUsers = Plugin.Instance.PluginConfiguration.GetAllTraktUsers();
+        if (traktUsers.Count == 0)
         {
             return null;
         }
 
-        return Plugin.Instance.PluginConfiguration.TraktUsers.FirstOrDefault(user =>
+        return traktUsers.FirstOrDefault(user =>
         {
             if (string.IsNullOrWhiteSpace(user.LinkedMbUserId))
             {

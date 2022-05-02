@@ -58,9 +58,9 @@ internal class LibraryManagerEventsHelper : IDisposable
             _queueTimer.Change(TimeSpan.FromMilliseconds(10000), Timeout.InfiniteTimeSpan);
         }
 
-        var users = Plugin.Instance.PluginConfiguration.TraktUsers;
+        var users = Plugin.Instance.PluginConfiguration.GetAllTraktUsers();
 
-        if (users == null || users.Length == 0)
+        if (users == null || users.Count == 0)
         {
             return;
         }
@@ -124,8 +124,9 @@ internal class LibraryManagerEventsHelper : IDisposable
         var queuedShowDeletes = new List<LibraryEvent>();
         var queuedShowAdds = new List<LibraryEvent>();
         var queuedShowUpdates = new List<LibraryEvent>();
+        var traktUsers = Plugin.Instance.PluginConfiguration.GetAllTraktUsers();
 
-        foreach (var traktUser in Plugin.Instance.PluginConfiguration.TraktUsers)
+        foreach (var traktUser in traktUsers)
         {
             var traktUserGuid = new Guid(traktUser.LinkedMbUserId);
 
