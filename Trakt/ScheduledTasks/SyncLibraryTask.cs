@@ -365,7 +365,7 @@ public class SyncLibraryTask : IScheduledTask
                     currentProgress += percentPerRequest;
                     progress.Report(currentProgress);
 
-                    LogTraktResponseDataContract(dataContracts, TraktItemType.episode);
+                    LogTraktResponseDataContract(dataContracts, TraktItemType.movie);
                 }
 
                 dataContracts = await _traktApi.SendMoviePlaystateUpdates(
@@ -378,7 +378,7 @@ public class SyncLibraryTask : IScheduledTask
                 currentProgress += percentPerRequest;
                 progress.Report(currentProgress);
 
-                LogTraktResponseDataContract(dataContracts, TraktItemType.episode);
+                LogTraktResponseDataContract(dataContracts, TraktItemType.movie);
             }
             catch (Exception e)
             {

@@ -40,34 +40,35 @@ internal class LibraryManagerEventsHelper : IDisposable
     /// <param name="eventType">The <see cref="EventType"/>.</param>
     public void QueueItem(BaseItem item, EventType eventType)
     {
-        if (item == null)
-        {
-            throw new ArgumentNullException(nameof(item));
-        }
-
-        if (_queueTimer == null)
-        {
-            _queueTimer = new Timer(
-                OnQueueTimerCallback,
-                null,
-                TimeSpan.FromMilliseconds(10000),
-                Timeout.InfiniteTimeSpan);
-        }
-        else
-        {
-            _queueTimer.Change(TimeSpan.FromMilliseconds(10000), Timeout.InfiniteTimeSpan);
-        }
-
-        var users = Plugin.Instance.PluginConfiguration.TraktUsers;
-
-        if (users == null || users.Length == 0)
-        {
-            return;
-        }
-
-        // Check if item can be synced for all users.
         lock (_queuedEvents)
         {
+            if (item == null)
+            {
+                throw new ArgumentNullException(nameof(item));
+            }
+
+            if (_queueTimer == null)
+            {
+                _queueTimer = new Timer(
+                    OnQueueTimerCallback,
+                    null,
+                    TimeSpan.FromMilliseconds(10000),
+                    Timeout.InfiniteTimeSpan);
+            }
+            else
+            {
+                _queueTimer.Change(TimeSpan.FromMilliseconds(10000), Timeout.InfiniteTimeSpan);
+            }
+
+            var users = Plugin.Instance.PluginConfiguration.GetAllTraktUsers();
+
+            if (users == null || users.Count == 0)
+            {
+                return;
+            }
+
+            // Check if item can be synced for all users.
+
             foreach (var user in users.Where(user => _traktApi.CanSync(item, user)))
             {
                 // Add to queue.
@@ -124,8 +125,9 @@ internal class LibraryManagerEventsHelper : IDisposable
         var queuedShowDeletes = new List<LibraryEvent>();
         var queuedShowAdds = new List<LibraryEvent>();
         var queuedShowUpdates = new List<LibraryEvent>();
+        var traktUsers = Plugin.Instance.PluginConfiguration.GetAllTraktUsers();
 
-        foreach (var traktUser in Plugin.Instance.PluginConfiguration.TraktUsers)
+        foreach (var traktUser in traktUsers)
         {
             var traktUserGuid = new Guid(traktUser.LinkedMbUserId);
 

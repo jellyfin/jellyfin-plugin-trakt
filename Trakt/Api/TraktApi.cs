@@ -41,7 +41,7 @@ public class TraktApi
 {
     private static readonly SemaphoreSlim _traktResourcePool = new SemaphoreSlim(1, 1);
     private static readonly TimeSpan _tooManyRequestDelay = TimeSpan.FromSeconds(1);
-    private static readonly TimeSpan _badGatewayDelay = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan _gatewayDelay = TimeSpan.FromSeconds(30);
 
     private readonly ILogger<TraktApi> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -90,7 +90,7 @@ public class TraktApi
         if (item is Movie movie)
         {
             return movie.HasProviderId(MetadataProvider.Imdb)
-                   || movie.HasProviderId(MetadataProvider.Tmdb);
+                || movie.HasProviderId(MetadataProvider.Tmdb);
         }
 
         if (item is Episode episode
@@ -230,8 +230,8 @@ public class TraktApi
             }
             else if (useProviderIds && HasAnyProviderTvIds(episode))
             {
-                // Try scrobbling without IDs
-                _logger.LogDebug("Resend episode status update, without episode IDs");
+                // Try scrobbling without ids
+                _logger.LogDebug("Resend episode status update, without episode ids");
                 responses = await SendEpisodeStatusUpdateAsync(episode, status, traktUser, progressPercent, false).ConfigureAwait(false);
             }
         }
@@ -341,7 +341,7 @@ public class TraktApi
         TraktUser traktUser,
         EventType eventType,
         CancellationToken cancellationToken,
-        bool useProviderIDs = true)
+        bool useProviderIds = true)
     {
         var episodesPayload = new List<TraktEpisodeCollected>();
         var showPayload = new List<TraktShowCollected>();
@@ -349,7 +349,7 @@ public class TraktApi
         {
             var audioStream = episode.GetMediaStreams().FirstOrDefault(stream => stream.Type == MediaStreamType.Audio);
 
-            if (useProviderIDs && HasAnyProviderTvIds(episode) &&
+            if (useProviderIds && HasAnyProviderTvIds(episode) &&
                 (!episode.IndexNumber.HasValue || !episode.IndexNumberEnd.HasValue ||
                  episode.IndexNumberEnd <= episode.IndexNumber))
             {
@@ -405,7 +405,7 @@ public class TraktApi
 
                     if (number == indexNumber)
                     {
-                        // Omit this from the rest because then we end up attaching the provider IDs of the first episode to the subsequent ones
+                        // Omit this from the rest because then we end up attaching the provider ids of the first episode to the subsequent ones
                         ids = GetTraktTvIds<Episode, TraktEpisodeId>(episode);
                     }
 
@@ -440,10 +440,10 @@ public class TraktApi
 
         var url = (eventType == EventType.Add || eventType == EventType.Update) ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
         var response = await PostToTrakt<TraktSyncResponse>(url, data, traktUser, cancellationToken).ConfigureAwait(false);
-        if (useProviderIDs && response.NotFound.Episodes.Count > 0)
+        if (useProviderIds && response.NotFound.Episodes.Count > 0)
         {
             // Send subset of episodes back to trakt.tv to try without ids
-            _logger.LogDebug("Resend episodes Library update, without episode IDs");
+            _logger.LogDebug("Resend episodes Library update, without episode ids");
             await SendLibraryUpdateInternalAsync(FindNotFoundEpisodes(episodes, response), traktUser, eventType, cancellationToken, false).ConfigureAwait(false);
         }
 
@@ -499,9 +499,9 @@ public class TraktApi
     /// <param name="item">The <see cref="BaseItem"/>.</param>
     /// <param name="rating">The rating.</param>
     /// <param name="traktUser">The <see cref="TraktUser"/> who's library is being updated.</param>
-    /// <param name="useEpisodeProviderIDs">If provider ids should be used for episode syncing.</param>
+    /// <param name="useEpisodeProviderIds">If provider ids should be used for episode syncing.</param>
     /// <returns>Task{TraktSyncResponse}.</returns>
-    public async Task<TraktSyncResponse> SendItemRating(BaseItem item, int rating, TraktUser traktUser, bool useEpisodeProviderIDs = true)
+    public async Task<TraktSyncResponse> SendItemRating(BaseItem item, int rating, TraktUser traktUser, bool useEpisodeProviderIds = true)
     {
         object data = new { };
         if (item is Movie)
@@ -522,7 +522,7 @@ public class TraktApi
         }
         else if (item is Episode episode)
         {
-            if (useEpisodeProviderIDs && HasAnyProviderTvIds(episode))
+            if (useEpisodeProviderIds && HasAnyProviderTvIds(episode))
             {
                 data = new
                 {
@@ -588,10 +588,10 @@ public class TraktApi
 
         var response = await PostToTrakt<TraktSyncResponse>(TraktUris.SyncRatingsAdd, data, traktUser).ConfigureAwait(false);
 
-        if (item is Episode && useEpisodeProviderIDs && response.NotFound.Episodes.Count > 0)
+        if (item is Episode && useEpisodeProviderIds && response.NotFound.Episodes.Count > 0)
         {
             // Try sync without ids
-            _logger.LogDebug("Resend episode rating, without episode IDs");
+            _logger.LogDebug("Resend episode rating, without episode ids");
             return await SendItemRating(item, rating, traktUser, false).ConfigureAwait(false);
         }
 
@@ -645,7 +645,7 @@ public class TraktApi
     /// <returns>Task{List{DataContracts.Users.Playback.TraktMoviePaused}}.</returns>
     public async Task<List<DataContracts.Users.Playback.TraktMoviePaused>> SendGetAllPausedMoviesRequest(TraktUser traktUser)
     {
-        return await GetFromTrakt<List<DataContracts.Users.Playback.TraktMoviePaused>>(TraktUris.PausedMovies + "?" + Random.Shared.NextInt64(), traktUser).ConfigureAwait(false);
+        return await GetFromTrakt<List<DataContracts.Users.Playback.TraktMoviePaused>>(TraktUris.PausedMovies, traktUser).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -655,7 +655,7 @@ public class TraktApi
     /// <returns>Task{List{DataContracts.Users.Playback.TraktEpisodePaused}}.</returns>
     public async Task<List<DataContracts.Users.Playback.TraktEpisodePaused>> SendGetPausedEpisodesRequest(TraktUser traktUser)
     {
-        return await GetFromTrakt<List<DataContracts.Users.Playback.TraktEpisodePaused>>(TraktUris.PausedEpisodes + "?" + Random.Shared.NextInt64(), traktUser).ConfigureAwait(false);
+        return await GetFromTrakt<List<DataContracts.Users.Playback.TraktEpisodePaused>>(TraktUris.PausedEpisodes, traktUser).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -783,7 +783,7 @@ public class TraktApi
         TraktUser traktUser,
         bool seen,
         CancellationToken cancellationToken,
-        bool useProviderIDs = true)
+        bool useProviderIds = true)
     {
         var data = new TraktSyncWatched
         {
@@ -798,7 +798,7 @@ public class TraktApi
                     .LastPlayedDate
                 : null;
 
-            if (useProviderIDs
+            if (useProviderIds
                 && HasAnyProviderTvIds(episode)
                 && (!episode.IndexNumber.HasValue
                     || !episode.IndexNumberEnd.HasValue
@@ -854,7 +854,7 @@ public class TraktApi
 
         var response = await PostToTrakt<TraktSyncResponse>(url, data, traktUser, cancellationToken).ConfigureAwait(false);
 
-        if (useProviderIDs && response.NotFound.Episodes.Count > 0)
+        if (useProviderIds && response.NotFound.Episodes.Count > 0)
         {
             // Send subset of episodes back to trakt.tv to try without ids
             _logger.LogDebug("Resend episodes playstate update, without episode ids");
@@ -1146,14 +1146,20 @@ public class TraktApi
             try
             {
                 response = await function().ConfigureAwait(false);
-                if (response.StatusCode == HttpStatusCode.TooManyRequests)
+                var statusCode = response.StatusCode;
+
+                if (statusCode.HasFlag(HttpStatusCode.TooManyRequests))
                 {
                     var delay = response.Headers.RetryAfter?.Delta ?? _tooManyRequestDelay;
+                    _logger.LogDebug("Too many requests while communicating with trakt.tv - waiting {Time}s", delay.TotalSeconds);
                     await Task.Delay(delay).ConfigureAwait(false);
                 }
-                else if (response.StatusCode == HttpStatusCode.BadGateway)
+                else if (statusCode.HasFlag(HttpStatusCode.BadGateway)
+                    || statusCode.HasFlag(HttpStatusCode.GatewayTimeout)
+                    || statusCode.HasFlag(HttpStatusCode.ServiceUnavailable))
                 {
-                    await Task.Delay(_badGatewayDelay).ConfigureAwait(false);
+                    _logger.LogDebug("Connectivity error while communicating with trakt.tv - waiting {Time}s", _gatewayDelay.TotalSeconds);
+                    await Task.Delay(_gatewayDelay).ConfigureAwait(false);
                 }
                 else
                 {

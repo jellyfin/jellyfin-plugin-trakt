@@ -19,7 +19,7 @@ internal class UserDataManagerEventsHelper : IDisposable
 {
     private readonly ILogger<UserDataManagerEventsHelper> _logger;
     private readonly TraktApi _traktApi;
-    private Dictionary<string, UserDataPackage> _userDataPackages;
+    private readonly Dictionary<string, UserDataPackage> _userDataPackages;
     private Timer _queueTimer;
 
     /// <summary>
@@ -41,130 +41,146 @@ internal class UserDataManagerEventsHelper : IDisposable
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
     public void ProcessUserDataSaveEventArgs(UserDataSaveEventArgs userDataSaveEventArgs, TraktUser traktUser)
     {
-        _userDataPackages.TryGetValue(traktUser.LinkedMbUserId, out var userPackage);
+        lock (_userDataPackages)
+        {
+            _userDataPackages.TryGetValue(traktUser.LinkedMbUserId, out var userPackage);
 
-        if (userPackage == null)
-        {
-            userPackage = new UserDataPackage();
-        }
-
-        if (_queueTimer == null)
-        {
-            _queueTimer = new Timer(
-                OnTimerCallback,
-                null,
-                TimeSpan.FromMilliseconds(5000),
-                Timeout.InfiniteTimeSpan);
-        }
-        else
-        {
-            _queueTimer.Change(TimeSpan.FromMilliseconds(5000), Timeout.InfiniteTimeSpan);
-        }
-
-        if (userDataSaveEventArgs.Item is Movie movie)
-        {
-            if (traktUser.PostSetWatched && userDataSaveEventArgs.UserData.Played)
+            if (userPackage == null)
             {
-                userPackage.SeenMovies.Add(movie);
-
-                // Force update trakt.tv if we have more than 100 seen movies in the queue due to API
-                if (userPackage.SeenMovies.Count >= 100)
-                {
-                    _traktApi.SendMoviePlaystateUpdates(
-                        userPackage.SeenMovies.ToList(),
-                        traktUser,
-                        true,
-                        CancellationToken.None).ConfigureAwait(false);
-                    userPackage.SeenMovies.Clear();
-                }
+                userPackage = new UserDataPackage();
             }
-            else if (traktUser.PostSetUnwatched)
-            {
-                userPackage.UnSeenMovies.Add(movie);
 
-                // Force update trakt.tv if we have more than 100 unseen movies in the queue due to API
-                if (userPackage.UnSeenMovies.Count >= 100)
-                {
-                    _traktApi.SendMoviePlaystateUpdates(
-                        userPackage.UnSeenMovies.ToList(),
-                        traktUser,
-                        false,
-                        CancellationToken.None).ConfigureAwait(false);
-                    userPackage.UnSeenMovies.Clear();
-                }
-            }
-        }
-        else if (userDataSaveEventArgs.Item is Episode episode)
-        {
-            // If it's not the series we're currently storing, upload our episodes and reset the arrays
-            if (userPackage.CurrentSeriesId != null)
+            if (_queueTimer == null)
             {
-                if (!userPackage.CurrentSeriesId.Equals(episode.Series.Id))
+                _queueTimer = new Timer(
+                    OnTimerCallback,
+                    null,
+                    TimeSpan.FromMilliseconds(5000),
+                    Timeout.InfiniteTimeSpan);
+            }
+            else
+            {
+                _queueTimer.Change(TimeSpan.FromMilliseconds(5000), Timeout.InfiniteTimeSpan);
+            }
+
+            if (userDataSaveEventArgs.Item is Movie movie)
+            {
+                if (traktUser.PostSetWatched && userDataSaveEventArgs.UserData.Played)
                 {
-                    if (userPackage.SeenEpisodes.Any())
+                    userPackage.SeenMovies.Add(movie);
+
+                    // Force update trakt.tv if we have more than 100 seen movies in the queue due to API
+                    if (userPackage.SeenMovies.Count >= 100)
                     {
-                        _traktApi.SendEpisodePlaystateUpdates(
-                            userPackage.SeenEpisodes.ToList(),
+                        _traktApi.SendMoviePlaystateUpdates(
+                            userPackage.SeenMovies.ToList(),
                             traktUser,
                             true,
                             CancellationToken.None).ConfigureAwait(false);
-                        userPackage.SeenEpisodes.Clear();
+                        userPackage.SeenMovies.Clear();
                     }
-
-                    if (userPackage.UnSeenEpisodes.Any())
-                    {
-                        _traktApi.SendEpisodePlaystateUpdates(
-                            userPackage.UnSeenEpisodes.ToList(),
-                            traktUser,
-                            false,
-                            CancellationToken.None).ConfigureAwait(false);
-                        userPackage.UnSeenEpisodes.Clear();
-                    }
-
-                    userPackage.CurrentSeriesId = episode.Series.Id;
                 }
-                else
+                else if (traktUser.PostSetUnwatched)
                 {
-                    // Force update trakt.tv if we have more than 100 seen episodes in the queue due to API
-                    if (userPackage.SeenEpisodes.Count >= 100)
-                    {
-                        _traktApi.SendEpisodePlaystateUpdates(
-                            userPackage.SeenEpisodes.ToList(),
-                            traktUser,
-                            true,
-                            CancellationToken.None).ConfigureAwait(false);
-                        userPackage.SeenEpisodes.Clear();
-                    }
+                    userPackage.UnSeenMovies.Add(movie);
 
-                    // Force update trakt.tv if we have more than 100 unseen episodes in the queue due to API
-                    if (userPackage.UnSeenEpisodes.Count >= 100)
+                    // Force update trakt.tv if we have more than 100 unseen movies in the queue due to API
+                    if (userPackage.UnSeenMovies.Count >= 100)
                     {
-                        _traktApi.SendEpisodePlaystateUpdates(
-                            userPackage.UnSeenEpisodes.ToList(),
+                        _traktApi.SendMoviePlaystateUpdates(
+                            userPackage.UnSeenMovies.ToList(),
                             traktUser,
                             false,
                             CancellationToken.None).ConfigureAwait(false);
-                        userPackage.UnSeenEpisodes.Clear();
+                        userPackage.UnSeenMovies.Clear();
                     }
                 }
             }
+            else if (userDataSaveEventArgs.Item is Episode episode)
+            {
+                // If it's not the series we're currently storing, upload our episodes and reset the arrays
+                if (userPackage.CurrentSeriesId != null)
+                {
+                    if (!userPackage.CurrentSeriesId.Equals(episode.Series.Id))
+                    {
+                        if (userPackage.SeenEpisodes.Any())
+                        {
+                            _traktApi.SendEpisodePlaystateUpdates(
+                                userPackage.SeenEpisodes.ToList(),
+                                traktUser,
+                                true,
+                                CancellationToken.None).ConfigureAwait(false);
+                            userPackage.SeenEpisodes.Clear();
+                        }
 
-            if (traktUser.PostSetWatched && userDataSaveEventArgs.UserData.Played)
-            {
-                userPackage.SeenEpisodes.Add(episode);
+                        if (userPackage.UnSeenEpisodes.Any())
+                        {
+                            _traktApi.SendEpisodePlaystateUpdates(
+                                userPackage.UnSeenEpisodes.ToList(),
+                                traktUser,
+                                false,
+                                CancellationToken.None).ConfigureAwait(false);
+                            userPackage.UnSeenEpisodes.Clear();
+                        }
+
+                        userPackage.CurrentSeriesId = episode.Series.Id;
+                    }
+                    else
+                    {
+                        // Force update trakt.tv if we have more than 100 seen episodes in the queue due to API
+                        if (userPackage.SeenEpisodes.Count >= 100)
+                        {
+                            _traktApi.SendEpisodePlaystateUpdates(
+                                userPackage.SeenEpisodes.ToList(),
+                                traktUser,
+                                true,
+                                CancellationToken.None).ConfigureAwait(false);
+                            userPackage.SeenEpisodes.Clear();
+                        }
+
+                        // Force update trakt.tv if we have more than 100 unseen episodes in the queue due to API
+                        if (userPackage.UnSeenEpisodes.Count >= 100)
+                        {
+                            _traktApi.SendEpisodePlaystateUpdates(
+                                userPackage.UnSeenEpisodes.ToList(),
+                                traktUser,
+                                false,
+                                CancellationToken.None).ConfigureAwait(false);
+                            userPackage.UnSeenEpisodes.Clear();
+                        }
+                    }
+                }
+
+                if (traktUser.PostSetWatched && userDataSaveEventArgs.UserData.Played)
+                {
+                    userPackage.SeenEpisodes.Add(episode);
+                }
+                else if (traktUser.PostSetUnwatched)
+                {
+                    userPackage.UnSeenEpisodes.Add(episode);
+                }
             }
-            else if (traktUser.PostSetUnwatched)
-            {
-                userPackage.UnSeenEpisodes.Add(episode);
-            }
+
+            _userDataPackages[traktUser.LinkedMbUserId] = userPackage;
         }
-
-        _userDataPackages[traktUser.LinkedMbUserId] = userPackage;
     }
 
     private void OnTimerCallback(object state)
     {
-        foreach (var package in _userDataPackages)
+        Dictionary<string, UserDataPackage> userDataQueue;
+        lock (_userDataPackages)
+        {
+            if (!_userDataPackages.Any())
+            {
+                _logger.LogInformation("No events... stopping queue timer");
+                return;
+            }
+
+            userDataQueue = new Dictionary<string, UserDataPackage>(_userDataPackages);
+            _userDataPackages.Clear();
+        }
+
+        foreach (var package in userDataQueue)
         {
             if (package.Value.UnSeenMovies.Any())
             {
