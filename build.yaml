@@ -3,7 +3,7 @@ name: "Trakt"
 guid: "4fe3201e-d6ae-4f2e-8917-e12bda571281"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-trakt.png"
 version: "17"
-targetAbi: "10.8.0.0"
+targetAbi: "10.7.7.0"
 framework: "net6.0"
 owner: "jellyfin"
 overview: "Record your watched media with Trakt"
@@ -14,9 +14,7 @@ category: "General"
 artifacts:
   - "Trakt.dll"
 changelog: |2-
-  ### New features and improvements ###
-  - Handle playback skipping and fix progress sync (#128) @Shadowghost
-
   ### Bug Fixes ###
-  - Add retry time to BadGateway response (#127) @crobibero
-  - Handle playback skipping and fix progress sync (#128) @Shadowghost
+  - Various Fixes (#136) @Shadowghost
+  - Fix live watched state sync (#134) @Shadowghost
+  - Fix metadata enums and mapping (#132) @Shadowghost
