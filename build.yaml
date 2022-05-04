@@ -14,9 +14,7 @@ category: "General"
 artifacts:
   - "Trakt.dll"
 changelog: |2-
-  ### New features and improvements ###
-  - Handle playback skipping and fix progress sync (#128) @Shadowghost
-
   ### Bug Fixes ###
-  - Add retry time to BadGateway response (#127) @crobibero
-  - Handle playback skipping and fix progress sync (#128) @Shadowghost
+  - Various Fixes (#136) @Shadowghost
+  - Fix live watched state sync (#134) @Shadowghost
+  - Fix metadata enums and mapping (#132) @Shadowghost
