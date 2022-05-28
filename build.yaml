@@ -3,7 +3,7 @@ name: "Trakt"
 guid: "4fe3201e-d6ae-4f2e-8917-e12bda571281"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-trakt.png"
 version: 19
-targetAbi: "10.7.7.0"
+targetAbi: "10.8.0.0"
 framework: "net6.0"
 owner: "jellyfin"
 overview: "Record your watched media with Trakt"
