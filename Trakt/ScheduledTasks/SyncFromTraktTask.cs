@@ -104,7 +104,6 @@ public class SyncFromTraktTask : IScheduledTask
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error syncing trakt.tv data for user {UserName}", user.Username);
-                throw;
             }
         }
     }
