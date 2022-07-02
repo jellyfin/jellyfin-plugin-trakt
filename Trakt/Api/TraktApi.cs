@@ -276,11 +276,12 @@ public class TraktApi
 
             if (traktUser.ExportMediaInfo)
             {
-                traktMovieCollected.AudioChannels = audioStream.GetAudioChannels();
-                traktMovieCollected.Audio = audioStream.GetCodecRepresetation();
-                traktMovieCollected.Resolution = m.GetDefaultVideoStream().GetResolution();
+                var defaultVideoStream = m.GetDefaultVideoStream();
+                traktMovieCollected.AudioChannels = audioStream?.GetAudioChannels();
+                traktMovieCollected.Audio = audioStream?.GetCodecRepresetation();
+                traktMovieCollected.Resolution = defaultVideoStream?.GetResolution();
                 traktMovieCollected.Is3D = m.Is3D;
-                traktMovieCollected.Hdr = m.GetDefaultVideoStream().GetHdr();
+                traktMovieCollected.Hdr = defaultVideoStream?.GetHdr();
                 traktMovieCollected.MediaType = Enums.TraktMediaType.digital;
             }
 
@@ -351,8 +352,9 @@ public class TraktApi
         {
             var audioStream = episode.GetMediaStreams().FirstOrDefault(stream => stream.Type == MediaStreamType.Audio);
 
-            if (useProviderIds && HasAnyProviderTvIds(episode) &&
-                (!episode.IndexNumber.HasValue
+            if (useProviderIds
+                && HasAnyProviderTvIds(episode)
+                && (!episode.IndexNumber.HasValue
                     || !episode.IndexNumberEnd.HasValue
                     || episode.IndexNumberEnd <= episode.IndexNumber))
             {
@@ -365,11 +367,11 @@ public class TraktApi
                 if (traktUser.ExportMediaInfo)
                 {
                     var defaultVideoStream = episode.GetDefaultVideoStream();
-                    traktEpisodeCollected.AudioChannels = audioStream.GetAudioChannels();
-                    traktEpisodeCollected.Audio = audioStream.GetCodecRepresetation();
-                    traktEpisodeCollected.Resolution = defaultVideoStream.GetResolution();
+                    traktEpisodeCollected.AudioChannels = audioStream?.GetAudioChannels();
+                    traktEpisodeCollected.Audio = audioStream?.GetCodecRepresetation();
+                    traktEpisodeCollected.Resolution = defaultVideoStream?.GetResolution();
                     traktEpisodeCollected.Is3D = episode.Is3D;
-                    traktEpisodeCollected.Hdr = defaultVideoStream.GetHdr();
+                    traktEpisodeCollected.Hdr = defaultVideoStream?.GetHdr();
                     traktEpisodeCollected.MediaType = Enums.TraktMediaType.digital;
                 }
 
@@ -423,11 +425,11 @@ public class TraktApi
                     if (traktUser.ExportMediaInfo)
                     {
                         var defaultVideoStream = episode.GetDefaultVideoStream();
-                        traktEpisodeCollected.AudioChannels = audioStream.GetAudioChannels();
-                        traktEpisodeCollected.Audio = audioStream.GetCodecRepresetation();
-                        traktEpisodeCollected.Resolution = defaultVideoStream.GetResolution();
+                        traktEpisodeCollected.AudioChannels = audioStream?.GetAudioChannels();
+                        traktEpisodeCollected.Audio = audioStream?.GetCodecRepresetation();
+                        traktEpisodeCollected.Resolution = defaultVideoStream?.GetResolution();
                         traktEpisodeCollected.Is3D = episode.Is3D;
-                        traktEpisodeCollected.Hdr = defaultVideoStream.GetHdr();
+                        traktEpisodeCollected.Hdr = defaultVideoStream?.GetHdr();
                         traktEpisodeCollected.MediaType = Enums.TraktMediaType.digital;
                     }
 

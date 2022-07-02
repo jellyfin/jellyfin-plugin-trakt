@@ -101,11 +101,13 @@ public static class Extensions
     /// <returns><see cref="bool"/> indicating if the new movie has different metadata to the already collected.</returns>
     public static bool MetadataIsDifferent(this TraktMovieCollected collectedMovie, Movie movie)
     {
-        var audioStream = movie.GetMediaStreams().FirstOrDefault(x => x.Type == MediaStreamType.Audio);
+        var mediaStreams = movie.GetMediaStreams();
+        var defaultVideoStream = mediaStreams.FirstOrDefault(x => x.Index == movie.DefaultVideoStreamIndex);
+        var audioStream = mediaStreams.FirstOrDefault(x => x.Type == MediaStreamType.Audio);
 
-        var resolution = movie.GetDefaultVideoStream().GetResolution();
+        var resolution = defaultVideoStream.GetResolution();
         var is3D = movie.Is3D;
-        var hdr = movie.GetDefaultVideoStream().GetHdr();
+        var hdr = defaultVideoStream.GetHdr();
         var audio = GetCodecRepresetation(audioStream);
         var audioChannels = audioStream.GetAudioChannels();
 
@@ -132,11 +134,13 @@ public static class Extensions
     /// <returns><see cref="bool"/> indicating if the new episode has different metadata to the already collected.</returns>
     public static bool MetadataIsDifferent(this TraktEpisodeCollected collectedEpisode, Episode episode)
     {
-        var audioStream = episode.GetMediaStreams().FirstOrDefault(x => x.Type == MediaStreamType.Audio);
+        var mediaStreams = episode.GetMediaStreams();
+        var defaultVideoStream = mediaStreams.FirstOrDefault(x => x.Index == episode.DefaultVideoStreamIndex);
+        var audioStream = mediaStreams.FirstOrDefault(x => x.Type == MediaStreamType.Audio);
 
-        var resolution = episode.GetDefaultVideoStream().GetResolution();
+        var resolution = defaultVideoStream.GetResolution();
         var is3D = episode.Is3D;
-        var hdr = episode.GetDefaultVideoStream().GetHdr();
+        var hdr = defaultVideoStream.GetHdr();
         var audio = GetCodecRepresetation(audioStream);
         var audioChannels = audioStream.GetAudioChannels();
 

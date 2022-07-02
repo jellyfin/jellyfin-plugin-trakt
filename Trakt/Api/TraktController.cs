@@ -62,7 +62,7 @@ public class TraktController : ControllerBase
         _logger.LogInformation("TraktDeviceAuthorization request received");
 
         // Create a user if we don't have one yet - TODO there should be an endpoint for this that creates a default user
-        var userGuid = new Guid(userId);
+        var userGuid = Guid.Parse(userId);
         var traktUser = UserHelper.GetTraktUser(userGuid);
         if (traktUser == null)
         {
@@ -94,7 +94,7 @@ public class TraktController : ControllerBase
         _logger.LogInformation("TraktDeviceDeauthorization request received");
 
         // Delete a user
-        var userGuid = new Guid(userId);
+        var userGuid = Guid.Parse(userId);
         var traktUser = UserHelper.GetTraktUser(userGuid);
         if (traktUser == null)
         {
@@ -122,7 +122,7 @@ public class TraktController : ControllerBase
     public ActionResult<object> TraktPollAuthorizationStatus([FromRoute] string userId)
     {
         _logger.LogInformation("TraktPollAuthorizationStatus request received");
-        var userGuid = new Guid(userId);
+        var userGuid = Guid.Parse(userId);
         var traktUser = UserHelper.GetTraktUser(userGuid);
         bool isAuthorized = traktUser.AccessToken != null && traktUser.RefreshToken != null;
 

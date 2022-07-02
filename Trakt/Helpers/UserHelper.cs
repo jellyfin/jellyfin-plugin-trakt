@@ -9,7 +9,7 @@ internal static class UserHelper
 {
     public static TraktUser GetTraktUser(string userId, bool authorized = false)
     {
-        return GetTraktUser(new Guid(userId), authorized);
+        return GetTraktUser(Guid.Parse(userId), authorized);
     }
 
     public static TraktUser GetTraktUser(User user, bool authorized = false)
