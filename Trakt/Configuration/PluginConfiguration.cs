@@ -29,13 +29,13 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>
     /// Adds a user to the trakt.tv users.
     /// </summary>
-    /// <param name="userId">The user id.</param>
-    public void AddUser(string userId)
+    /// <param name="userGuid">The user Guid.</param>
+    public void AddUser(Guid userGuid)
     {
         var traktUsers = TraktUsers.ToList();
         var traktUser = new TraktUser
         {
-            LinkedMbUserId = userId
+            LinkedMbUserId = userGuid
         };
         traktUsers.Add(traktUser);
         TraktUsers = traktUsers.ToArray();
@@ -44,11 +44,11 @@ public class PluginConfiguration : BasePluginConfiguration
     /// <summary>
     /// Removes a user from the trakt users.
     /// </summary>
-    /// <param name="userId">The user id.</param>
-    public void RemoveUser(string userId)
+    /// <param name="userGuid">The user id.</param>
+    public void RemoveUser(Guid userGuid)
     {
         var traktUsers = TraktUsers.ToList();
-        traktUsers.RemoveAll(user => user.LinkedMbUserId == userId);
+        traktUsers.RemoveAll(user => user.LinkedMbUserId == userGuid);
         TraktUsers = traktUsers.ToArray();
     }
 

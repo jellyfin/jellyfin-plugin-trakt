@@ -3,7 +3,7 @@ name: "Trakt"
 guid: "4fe3201e-d6ae-4f2e-8917-e12bda571281"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-trakt.png"
 version: 19
-targetAbi: "10.8.0.0"
+targetAbi: "10.8.1.0"
 framework: "net6.0"
 owner: "jellyfin"
 overview: "Record your watched media with Trakt"
@@ -15,10 +15,11 @@ artifacts:
   - "Trakt.dll"
 changelog: |2-
   ### Bug Fixes ###
-  - Properly handle 404 API responses (#144) @Shadowghost
+  - Fix unauthorized users not being skipped (#154) @Shadowghost
+  - Fix MediaType metadata (#154) @Shadowghost
+  - Don't fail tasks if one user fails (#154) @Shadowghost
 
-  ### Dependency updates ###
-  - chore(deps): bump StyleCop.Analyzers from 1.2.0-beta.406 to 1.2.0-beta.435 (#139) @dependabot
-
-  ### CI & build changes ###
-  - fix: meta ci workflows (#145) @h1dden-da3m0n
+  ### Features ###
+  - Implement HDR metadata (#154) @Shadowghost
+    - Implement metadata for episodes (#154) @Shadowghost
+  - Switch to GUIDs (this requires reauthentication of all users) (#154) @Shadowghost

@@ -19,7 +19,7 @@ internal class UserDataManagerEventsHelper : IDisposable
 {
     private readonly ILogger<UserDataManagerEventsHelper> _logger;
     private readonly TraktApi _traktApi;
-    private readonly Dictionary<string, UserDataPackage> _userDataPackages;
+    private readonly Dictionary<Guid, UserDataPackage> _userDataPackages;
     private Timer _queueTimer;
 
     /// <summary>
@@ -29,7 +29,7 @@ internal class UserDataManagerEventsHelper : IDisposable
     /// <param name="traktApi">The <see cref="TraktApi"/>.</param>
     public UserDataManagerEventsHelper(ILogger<UserDataManagerEventsHelper> logger, TraktApi traktApi)
     {
-        _userDataPackages = new Dictionary<string, UserDataPackage>();
+        _userDataPackages = new Dictionary<Guid, UserDataPackage>();
         _logger = logger;
         _traktApi = traktApi;
     }
@@ -167,7 +167,7 @@ internal class UserDataManagerEventsHelper : IDisposable
 
     private void OnTimerCallback(object state)
     {
-        Dictionary<string, UserDataPackage> userDataQueue;
+        Dictionary<Guid, UserDataPackage> userDataQueue;
         lock (_userDataPackages)
         {
             if (!_userDataPackages.Any())
@@ -176,7 +176,7 @@ internal class UserDataManagerEventsHelper : IDisposable
                 return;
             }
 
-            userDataQueue = new Dictionary<string, UserDataPackage>(_userDataPackages);
+            userDataQueue = new Dictionary<Guid, UserDataPackage>(_userDataPackages);
             _userDataPackages.Clear();
         }
 
@@ -186,7 +186,7 @@ internal class UserDataManagerEventsHelper : IDisposable
             {
                 _traktApi.SendMoviePlaystateUpdates(
                     package.Value.UnSeenMovies.ToList(),
-                    UserHelper.GetTraktUser(package.Key),
+                    UserHelper.GetTraktUser(package.Key, true),
                     false,
                     CancellationToken.None).ConfigureAwait(false);
                 package.Value.UnSeenMovies.Clear();
@@ -196,7 +196,7 @@ internal class UserDataManagerEventsHelper : IDisposable
             {
                 _traktApi.SendMoviePlaystateUpdates(
                     package.Value.SeenMovies.ToList(),
-                    UserHelper.GetTraktUser(package.Key),
+                    UserHelper.GetTraktUser(package.Key, true),
                     true,
                     CancellationToken.None).ConfigureAwait(false);
                 package.Value.SeenMovies.Clear();

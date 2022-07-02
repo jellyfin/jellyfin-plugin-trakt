@@ -14,6 +14,9 @@ public class TraktUser
     /// </summary>
     public TraktUser()
     {
+        AccessToken = null;
+        RefreshToken = null;
+        LinkedMbUserId = Guid.Empty;
         SkipUnwatchedImportFromTrakt = true;
         SkipWatchedImportFromTrakt = false;
         SkipPlaybackProgressImportFromTrakt = false;
@@ -25,6 +28,8 @@ public class TraktUser
         ExportMediaInfo = true;
         SynchronizeCollections = true;
         Scrobble = true;
+        LocationsExcluded = null;
+        AccessTokenExpiration = DateTime.MinValue;
     }
 
     /// <summary>
@@ -40,12 +45,7 @@ public class TraktUser
     /// <summary>
     /// Gets or sets the linked Mb user id.
     /// </summary>
-    public string LinkedMbUserId { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the advanced rating option is enabled or not.
-    /// </summary>
-    public bool UsesAdvancedRating { get; set; }
+    public Guid LinkedMbUserId { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether the skip unwatched import option is enabled or not.

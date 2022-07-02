@@ -127,10 +127,8 @@ internal class LibraryManagerEventsHelper : IDisposable
         var queuedShowUpdates = new List<LibraryEvent>();
         var traktUsers = Plugin.Instance.PluginConfiguration.GetAllTraktUsers();
 
-        foreach (var traktUser in traktUsers)
+        foreach (var traktUser in traktUsers.Where(traktUser => !string.IsNullOrWhiteSpace(traktUser.AccessToken)))
         {
-            var traktUserGuid = new Guid(traktUser.LinkedMbUserId);
-
             queuedMovieDeletes.Clear();
             queuedMovieAdds.Clear();
             queuedMovieUpdates.Clear();
@@ -143,8 +141,8 @@ internal class LibraryManagerEventsHelper : IDisposable
 
             foreach (var ev in queue)
             {
-                var eventTraktUserGuid = new Guid(ev.TraktUser.LinkedMbUserId);
-                if (eventTraktUserGuid.Equals(traktUserGuid))
+                var eventTraktUserGuid = ev.TraktUser.LinkedMbUserId;
+                if (eventTraktUserGuid.Equals(traktUser.LinkedMbUserId))
                 {
                     switch (ev.Item)
                     {

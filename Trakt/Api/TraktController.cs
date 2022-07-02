@@ -62,11 +62,13 @@ public class TraktController : ControllerBase
         _logger.LogInformation("TraktDeviceAuthorization request received");
 
         // Create a user if we don't have one yet - TODO there should be an endpoint for this that creates a default user
-        var traktUser = UserHelper.GetTraktUser(userId);
+        var userGuid = new Guid(userId);
+        var traktUser = UserHelper.GetTraktUser(userGuid);
         if (traktUser == null)
         {
-            Plugin.Instance.PluginConfiguration.AddUser(userId);
-            traktUser = UserHelper.GetTraktUser(userId);
+            _logger.LogWarning("No associated trakt.tv user found - creating one.");
+            Plugin.Instance.PluginConfiguration.AddUser(userGuid);
+            traktUser = UserHelper.GetTraktUser(userGuid);
             Plugin.Instance.SaveConfiguration();
         }
 
@@ -92,7 +94,8 @@ public class TraktController : ControllerBase
         _logger.LogInformation("TraktDeviceDeauthorization request received");
 
         // Delete a user
-        var traktUser = UserHelper.GetTraktUser(userId);
+        var userGuid = new Guid(userId);
+        var traktUser = UserHelper.GetTraktUser(userGuid);
         if (traktUser == null)
         {
             _logger.LogDebug("{User} not found.", userId);
@@ -100,7 +103,7 @@ public class TraktController : ControllerBase
         else
         {
             _traktApi.DeauthorizeDevice(traktUser);
-            Plugin.Instance.PluginConfiguration.RemoveUser(userId);
+            Plugin.Instance.PluginConfiguration.RemoveUser(userGuid);
             Plugin.Instance.SaveConfiguration();
         }
 
@@ -119,13 +122,14 @@ public class TraktController : ControllerBase
     public ActionResult<object> TraktPollAuthorizationStatus([FromRoute] string userId)
     {
         _logger.LogInformation("TraktPollAuthorizationStatus request received");
-        var traktUser = UserHelper.GetTraktUser(userId);
+        var userGuid = new Guid(userId);
+        var traktUser = UserHelper.GetTraktUser(userGuid);
         bool isAuthorized = traktUser.AccessToken != null && traktUser.RefreshToken != null;
 
-        if (Plugin.Instance.PollingTasks.TryGetValue(userId, out var task))
+        if (Plugin.Instance.PollingTasks.TryGetValue(userGuid, out var task))
         {
             isAuthorized = task.Result;
-            Plugin.Instance.PollingTasks.Remove(userId);
+            Plugin.Instance.PollingTasks.Remove(userGuid);
         }
 
         return new
@@ -156,7 +160,7 @@ public class TraktController : ControllerBase
             return null;
         }
 
-        return await _traktApi.SendItemRating(currentItem, rating, UserHelper.GetTraktUser(userId)).ConfigureAwait(false);
+        return await _traktApi.SendItemRating(currentItem, rating, UserHelper.GetTraktUser(userId, true)).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -169,7 +173,7 @@ public class TraktController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<List<TraktMovie>>> RecommendedTraktMovies([FromRoute] string userId)
     {
-        return await _traktApi.SendMovieRecommendationsRequest(UserHelper.GetTraktUser(userId)).ConfigureAwait(false);
+        return await _traktApi.SendMovieRecommendationsRequest(UserHelper.GetTraktUser(userId, true)).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -182,6 +186,6 @@ public class TraktController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<List<TraktShow>>> RecommendedTraktShows([FromRoute] string userId)
     {
-        return await _traktApi.SendShowRecommendationsRequest(UserHelper.GetTraktUser(userId)).ConfigureAwait(false);
+        return await _traktApi.SendShowRecommendationsRequest(UserHelper.GetTraktUser(userId, true)).ConfigureAwait(false);
     }
 }

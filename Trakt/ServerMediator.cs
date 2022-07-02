@@ -31,7 +31,7 @@ public class ServerMediator : IServerEntryPoint, IDisposable
     private readonly UserDataManagerEventsHelper _userDataManagerEventsHelper;
     private readonly LibraryManagerEventsHelper _libraryManagerEventsHelper;
     private readonly TraktApi _traktApi;
-    private readonly Dictionary<string, PlaybackState> _playbackState;
+    private readonly Dictionary<Guid, PlaybackState> _playbackState;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ServerMediator"/> class.
@@ -55,7 +55,7 @@ public class ServerMediator : IServerEntryPoint, IDisposable
         _userDataManager = userDataManager;
 
         _logger = loggerFactory.CreateLogger<ServerMediator>();
-        _playbackState = new Dictionary<string, PlaybackState>();
+        _playbackState = new Dictionary<Guid, PlaybackState>();
 
         _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager);
         _libraryManagerEventsHelper = new LibraryManagerEventsHelper(loggerFactory.CreateLogger<LibraryManagerEventsHelper>(), _traktApi);
@@ -78,7 +78,7 @@ public class ServerMediator : IServerEntryPoint, IDisposable
         if (userDataSaveEventArgs.Item != null)
         {
             // Determine if user has trakt.tv credentials
-            var traktUser = UserHelper.GetTraktUser(userDataSaveEventArgs.UserId);
+            var traktUser = UserHelper.GetTraktUser(userDataSaveEventArgs.UserId, true);
 
             // Can't progress if user has no trakt.tv credentials
             if (traktUser == null || !_traktApi.CanSync(userDataSaveEventArgs.Item, traktUser))
@@ -203,8 +203,7 @@ public class ServerMediator : IServerEntryPoint, IDisposable
 
         foreach (var user in playbackProgressEventArgs.Users)
         {
-            // Since Jellyfin supports user profiles we need to do a user lookup every time something starts
-            var traktUser = UserHelper.GetTraktUser(user);
+            var traktUser = UserHelper.GetTraktUser(user, true);
 
             if (traktUser == null)
             {
@@ -290,8 +289,7 @@ public class ServerMediator : IServerEntryPoint, IDisposable
 
         foreach (var user in playbackProgressEventArgs.Users)
         {
-            // Since Emby is user profile friendly, I'm going to need to do a user lookup every time something starts
-            var traktUser = UserHelper.GetTraktUser(user);
+            var traktUser = UserHelper.GetTraktUser(user, true);
 
             if (traktUser == null)
             {
@@ -442,7 +440,7 @@ public class ServerMediator : IServerEntryPoint, IDisposable
 
         foreach (var user in playbackStoppedEventArgs.Users)
         {
-            var traktUser = UserHelper.GetTraktUser(user);
+            var traktUser = UserHelper.GetTraktUser(user, true);
 
             if (traktUser == null)
             {

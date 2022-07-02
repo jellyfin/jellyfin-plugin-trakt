@@ -81,7 +81,7 @@ public class SyncLibraryTask : IScheduledTask
     /// <inheritdoc />
     public async Task ExecuteAsync(IProgress<double> progress, CancellationToken cancellationToken)
     {
-        var users = _userManager.Users.Where(u => UserHelper.GetTraktUser(u) != null).ToList();
+        var users = _userManager.Users.Where(u => UserHelper.GetTraktUser(u, true) != null).ToList();
 
         // No point going further if we don't have users.
         if (users.Count == 0)
@@ -91,12 +91,12 @@ public class SyncLibraryTask : IScheduledTask
         }
 
         // Purely for progress reporting
-        double currentProgress = 0;
+        double currentProgress = 0d;
         var percentPerUser = 100d / users.Count;
 
         foreach (var user in users)
         {
-            var traktUser = UserHelper.GetTraktUser(user);
+            var traktUser = UserHelper.GetTraktUser(user, true);
 
             if (!(traktUser.SynchronizeCollections || traktUser.PostUnwatchedHistory || traktUser.PostWatchedHistory))
             {
@@ -205,8 +205,7 @@ public class SyncLibraryTask : IScheduledTask
                     {
                         // If movie is not collected, or (export media info setting is enabled and every collected matching movie has different metadata), collect it
                         var collectedMatchingMovies = Extensions.FindMatch(libraryMovie, traktCollectedMovies);
-                        if (collectedMatchingMovies == null
-                            || (traktUser.ExportMediaInfo && collectedMatchingMovies.MetadataIsDifferent(libraryMovie)))
+                        if (collectedMatchingMovies == null || (traktUser.ExportMediaInfo && collectedMatchingMovies.MetadataIsDifferent(libraryMovie)))
                         {
                             collectedMovies.Add(libraryMovie);
                         }
@@ -280,7 +279,8 @@ public class SyncLibraryTask : IScheduledTask
     {
         if (movies.Count > 0)
         {
-            _logger.LogInformation("Movies to {State} collection {Count}", collected ? "add to" : "remove from", movies.Count);
+            var collectString = collected ? "add to" : "remove from";
+            _logger.LogInformation("Movies to {State} collection: {Count}", collectString, movies.Count);
             try
             {
                 List<TraktSyncResponse> dataContracts;
@@ -342,7 +342,8 @@ public class SyncLibraryTask : IScheduledTask
     {
         if (movies.Count > 0)
         {
-            _logger.LogInformation("Movies to set {State}watched: {Count}", seen ? string.Empty : "un", movies.Count);
+            var watchedString = seen ? "watched" : "unwatched";
+            _logger.LogInformation("Movies to set {State}: {Count}", watchedString, movies.Count);
             try
             {
                 List<TraktSyncResponse> dataContracts;
@@ -482,12 +483,19 @@ public class SyncLibraryTask : IScheduledTask
                     if (traktUser.SynchronizeCollections)
                     {
                         var traktCollectedShow = Extensions.FindMatch(episode.Series, traktCollectedShows);
-                        if (traktCollectedShow?.Seasons == null
-                            || traktCollectedShow.Seasons.All(season => season.Number != episode.GetSeasonNumber())
-                            || traktCollectedShow.Seasons.First(season => season.Number == episode.GetSeasonNumber())
-                                .Episodes.All(e => e.Number != episode.IndexNumber))
+
+                        if (traktCollectedShow?.Seasons == null || traktCollectedShow.Seasons.All(season => season.Number != episode.GetSeasonNumber()))
                         {
                             collectedEpisodes.Add(episode);
+                        }
+                        else
+                        {
+                            var traktCollectedSeason = traktCollectedShow?.Seasons.FirstOrDefault(season => season.Number == episode.GetSeasonNumber());
+                            var traktCollectedEpisode = traktCollectedSeason?.Episodes.FirstOrDefault(e => e.Number == episode.IndexNumber);
+                            if (traktCollectedEpisode == null || (traktUser.ExportMediaInfo && traktCollectedEpisode.MetadataIsDifferent(episode)))
+                            {
+                                collectedEpisodes.Add(episode);
+                            }
                         }
                     }
                 }
@@ -525,7 +533,8 @@ public class SyncLibraryTask : IScheduledTask
     {
         if (episodes.Count > 0)
         {
-            _logger.LogInformation("Episodes to {State} collection {Count}", collected ? "add to" : "remove from", episodes.Count);
+            var collectString = collected ? "add to" : "remove from";
+            _logger.LogInformation("Episodes to {State} collection {Count}", collectString, episodes.Count);
             try
             {
                 List<TraktSyncResponse> dataContracts;
@@ -587,7 +596,8 @@ public class SyncLibraryTask : IScheduledTask
     {
         if (episodes.Count > 0)
         {
-            _logger.LogInformation("Episodes to set {State}watched: {Count}", seen ? string.Empty : "un", episodes.Count);
+            var watchedString = seen ? "watched" : "unwatched";
+            _logger.LogInformation("Episodes to set {State}: {Count}", watchedString, episodes.Count);
             try
             {
                 List<TraktSyncResponse> dataContracts;

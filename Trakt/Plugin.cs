@@ -23,7 +23,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
         : base(applicationPaths, xmlSerializer)
     {
         Instance = this;
-        PollingTasks = new Dictionary<string, Task<bool>>();
+        PollingTasks = new Dictionary<Guid, Task<bool>>();
     }
 
     /// <inheritdoc />
@@ -48,7 +48,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     /// <summary>
     /// Gets the polling tasks.
     /// </summary>
-    public Dictionary<string, Task<bool>> PollingTasks { get; }
+    public Dictionary<Guid, Task<bool>> PollingTasks { get; }
 
     /// <summary>
     /// Return the plugin configuration page.

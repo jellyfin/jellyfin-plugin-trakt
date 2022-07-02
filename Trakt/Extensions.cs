@@ -121,7 +121,38 @@ public static class Extensions
                || collectedMovie.Metadata.Resolution != resolution
                || collectedMovie.Metadata.Is3D != is3D
                || collectedMovie.Metadata.Hdr != hdr
-               || collectedMovie.Metadata.MediaType != null;
+               || collectedMovie.Metadata.MediaType != TraktMediaType.digital;
+    }
+
+    /// <summary>
+    /// Checks if metadata of new collected episode is different from the already collected.
+    /// </summary>
+    /// <param name="collectedEpisode">The <see cref="TraktEpisodeCollected"/>.</param>
+    /// <param name="episode">The <see cref="Episode"/>.</param>
+    /// <returns><see cref="bool"/> indicating if the new episode has different metadata to the already collected.</returns>
+    public static bool MetadataIsDifferent(this TraktEpisodeCollected collectedEpisode, Episode episode)
+    {
+        var audioStream = episode.GetMediaStreams().FirstOrDefault(x => x.Type == MediaStreamType.Audio);
+
+        var resolution = episode.GetDefaultVideoStream().GetResolution();
+        var is3D = episode.Is3D;
+        var hdr = episode.GetDefaultVideoStream().GetHdr();
+        var audio = GetCodecRepresetation(audioStream);
+        var audioChannels = audioStream.GetAudioChannels();
+
+        if (collectedEpisode.Metadata == null || collectedEpisode.Metadata.IsEmpty())
+        {
+            return resolution != null
+                   || audio != null
+                   || !string.IsNullOrEmpty(audioChannels);
+        }
+
+        return collectedEpisode.Metadata.Audio != audio
+               || collectedEpisode.Metadata.AudioChannels != audioChannels
+               || collectedEpisode.Metadata.Resolution != resolution
+               || collectedEpisode.Metadata.Is3D != is3D
+               || collectedEpisode.Metadata.Hdr != hdr
+               || collectedEpisode.Metadata.MediaType != TraktMediaType.digital;
     }
 
     /// <summary>
@@ -178,7 +209,23 @@ public static class Extensions
     /// <returns>string.</returns>
     public static TraktHdr? GetHdr(this MediaStream videoStream)
     {
-        return null;
+        if (videoStream.DvProfile != null)
+        {
+            return TraktHdr.dolby_vision;
+        }
+
+        var rageType = videoStream.VideoRangeType;
+        switch (rageType)
+        {
+            case "DOVI":
+                return TraktHdr.dolby_vision;
+            case "HDR10":
+                return TraktHdr.hdr10;
+            case "HLG":
+                return TraktHdr.hlg;
+            default:
+                return null;
+        }
     }
 
     /// <summary>
