@@ -181,19 +181,19 @@ public static class Extensions
             return TraktResolution.uhd_4k;
         }
 
-        if (videoStream.Width.Value >= 1900)
+        if (videoStream.Width.Value >= 1400)
         {
             return videoStream.IsInterlaced ? TraktResolution.hd_1080i : TraktResolution.hd_1080p;
         }
 
-        if (videoStream.Width.Value >= 1270)
+        if (videoStream.Width.Value >= 950)
         {
             return TraktResolution.hd_720p;
         }
 
-        if (videoStream.Width.Value >= 700)
+        if (videoStream.Width.Value >= 630)
         {
-            if (videoStream.Height.HasValue && videoStream.Height.Value >= 576)
+            if (videoStream.Height.HasValue && videoStream.Height.Value >= 500)
             {
                 return videoStream.IsInterlaced ? TraktResolution.sd_576i : TraktResolution.sd_576p;
             }
