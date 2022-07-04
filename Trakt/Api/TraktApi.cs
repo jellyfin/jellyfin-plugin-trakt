@@ -351,7 +351,7 @@ public class TraktApi
         foreach (Episode episode in episodes)
         {
             var audioStream = episode.GetMediaStreams().FirstOrDefault(stream => stream.Type == MediaStreamType.Audio);
-
+            var defaultVideoStream = episode.GetDefaultVideoStream();
             if (useProviderIds
                 && HasAnyProviderTvIds(episode)
                 && (!episode.IndexNumber.HasValue
@@ -366,7 +366,6 @@ public class TraktApi
 
                 if (traktUser.ExportMediaInfo)
                 {
-                    var defaultVideoStream = episode.GetDefaultVideoStream();
                     traktEpisodeCollected.AudioChannels = audioStream?.GetAudioChannels();
                     traktEpisodeCollected.Audio = audioStream?.GetCodecRepresetation();
                     traktEpisodeCollected.Resolution = defaultVideoStream?.GetResolution();
@@ -424,7 +423,6 @@ public class TraktApi
 
                     if (traktUser.ExportMediaInfo)
                     {
-                        var defaultVideoStream = episode.GetDefaultVideoStream();
                         traktEpisodeCollected.AudioChannels = audioStream?.GetAudioChannels();
                         traktEpisodeCollected.Audio = audioStream?.GetCodecRepresetation();
                         traktEpisodeCollected.Resolution = defaultVideoStream?.GetResolution();
