@@ -191,19 +191,13 @@ public static class Extensions
             return TraktResolution.hd_720p;
         }
 
-        if (videoStream.Width.Value >= 630)
+        if (videoStream.Width.Value >= 630 && videoStream.Height.HasValue && videoStream.Height.Value >= 500)
         {
-            if (videoStream.Height.HasValue && videoStream.Height.Value >= 500)
-            {
-                return videoStream.IsInterlaced ? TraktResolution.sd_576i : TraktResolution.sd_576p;
-            }
-            else
-            {
-                return videoStream.IsInterlaced ? TraktResolution.sd_480i : TraktResolution.sd_480p;
-            }
+            return videoStream.IsInterlaced ? TraktResolution.sd_576i : TraktResolution.sd_576p;
         }
 
-        return null;
+        // Set 480p as fallback since trakt.tv does not allow lower resolutions
+        return videoStream.IsInterlaced ? TraktResolution.sd_480i : TraktResolution.sd_480p;
     }
 
     /// <summary>
