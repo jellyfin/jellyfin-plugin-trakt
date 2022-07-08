@@ -101,29 +101,27 @@ public static class Extensions
     /// <returns><see cref="bool"/> indicating if the new movie has different metadata to the already collected.</returns>
     public static bool MetadataIsDifferent(this TraktMovieCollected collectedMovie, Movie movie)
     {
+        var match = false;
         var mediaStreams = movie.GetMediaStreams();
         var defaultVideoStream = mediaStreams.FirstOrDefault(x => x.Index == movie.DefaultVideoStreamIndex);
         var audioStream = mediaStreams.FirstOrDefault(x => x.Type == MediaStreamType.Audio);
 
-        var resolution = defaultVideoStream.GetResolution();
-        var is3D = movie.Is3D;
-        var hdr = defaultVideoStream.GetHdr();
-        var audio = GetCodecRepresetation(audioStream);
-        var audioChannels = audioStream.GetAudioChannels();
-
-        if (collectedMovie.Metadata == null || collectedMovie.Metadata.IsEmpty())
+        if (defaultVideoStream != null)
         {
-            return resolution != null
-                   || audio != null
-                   || !string.IsNullOrEmpty(audioChannels);
+            var is3D = movie.Is3D;
+            var resolution = defaultVideoStream.GetResolution();
+            var hdr = defaultVideoStream.GetHdr();
+            match = match || collectedMovie.Metadata.Resolution != resolution || collectedMovie.Metadata.Is3D != is3D || collectedMovie.Metadata.Hdr != hdr;
         }
 
-        return collectedMovie.Metadata.Audio != audio
-               || collectedMovie.Metadata.AudioChannels != audioChannels
-               || collectedMovie.Metadata.Resolution != resolution
-               || collectedMovie.Metadata.Is3D != is3D
-               || collectedMovie.Metadata.Hdr != hdr
-               || collectedMovie.Metadata.MediaType != TraktMediaType.digital;
+        if (audioStream != null)
+        {
+            var audio = GetCodecRepresetation(audioStream);
+            var audioChannels = audioStream.GetAudioChannels();
+            match = match || collectedMovie.Metadata.Audio != audio || collectedMovie.Metadata.AudioChannels != audioChannels;
+        }
+
+        return match || collectedMovie.Metadata.MediaType != TraktMediaType.digital;
     }
 
     /// <summary>
@@ -134,29 +132,27 @@ public static class Extensions
     /// <returns><see cref="bool"/> indicating if the new episode has different metadata to the already collected.</returns>
     public static bool MetadataIsDifferent(this TraktEpisodeCollected collectedEpisode, Episode episode)
     {
+        var match = false;
         var mediaStreams = episode.GetMediaStreams();
         var defaultVideoStream = mediaStreams.FirstOrDefault(x => x.Index == episode.DefaultVideoStreamIndex);
         var audioStream = mediaStreams.FirstOrDefault(x => x.Type == MediaStreamType.Audio);
 
-        var resolution = defaultVideoStream.GetResolution();
-        var is3D = episode.Is3D;
-        var hdr = defaultVideoStream.GetHdr();
-        var audio = GetCodecRepresetation(audioStream);
-        var audioChannels = audioStream.GetAudioChannels();
-
-        if (collectedEpisode.Metadata == null || collectedEpisode.Metadata.IsEmpty())
+        if (defaultVideoStream != null)
         {
-            return resolution != null
-                   || audio != null
-                   || !string.IsNullOrEmpty(audioChannels);
+            var is3D = episode.Is3D;
+            var resolution = defaultVideoStream.GetResolution();
+            var hdr = defaultVideoStream.GetHdr();
+            match = match || collectedEpisode.Metadata.Resolution != resolution || collectedEpisode.Metadata.Is3D != is3D || collectedEpisode.Metadata.Hdr != hdr;
         }
 
-        return collectedEpisode.Metadata.Audio != audio
-               || collectedEpisode.Metadata.AudioChannels != audioChannels
-               || collectedEpisode.Metadata.Resolution != resolution
-               || collectedEpisode.Metadata.Is3D != is3D
-               || collectedEpisode.Metadata.Hdr != hdr
-               || collectedEpisode.Metadata.MediaType != TraktMediaType.digital;
+        if (audioStream != null)
+        {
+            var audio = GetCodecRepresetation(audioStream);
+            var audioChannels = audioStream.GetAudioChannels();
+            match = match || collectedEpisode.Metadata.Audio != audio || collectedEpisode.Metadata.AudioChannels != audioChannels;
+        }
+
+        return match || collectedEpisode.Metadata.MediaType != TraktMediaType.digital;
     }
 
     /// <summary>
