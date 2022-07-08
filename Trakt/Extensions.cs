@@ -21,6 +21,46 @@ namespace Trakt;
 public static class Extensions
 {
     /// <summary>
+    /// Minimum height for 576p videos.
+    /// </summary>
+    /// <remarks>
+    /// 500px is chosen to catch all videos larger than 480px with 20px deviation.
+    /// </remarks>
+    private const int MinHeight576P = 500;
+
+    /// <summary>
+    /// Minimum width for 576p videos.
+    /// </summary>
+    /// <remarks>
+    /// 630px is chosen to accomodate weird old videos, officially the lowest width for 4:3 576p video is 704px.
+    /// </remarks>
+    private const int MinWidth576P = 630;
+
+    /// <summary>
+    /// Minimum width for 720p videos.
+    /// </summary>
+    /// <remarks>
+    /// 950px is chosen to accomodate 4:3 videos and 10px deviation.
+    /// </remarks>
+    private const int MinWidth720P = 950;
+
+    /// <summary>
+    /// Minimum width for 1080p videos.
+    /// </summary>
+    /// <remarks>
+    /// 1400px is chosen to accomodate 4:3 videos and 40px deviation.
+    /// </remarks>
+    private const int MinWidth1080P = 1400;
+
+    /// <summary>
+    /// Minimum width for 2160p videos.
+    /// </summary>
+    /// <remarks>
+    /// Includes 40px deviation.
+    /// </remarks>
+    private const int MinWidth2160P = 3800;
+
+    /// <summary>
     /// Convert string to int.
     /// </summary>
     /// <param name="input">String to convert to int.</param>
@@ -172,22 +212,22 @@ public static class Extensions
             return null;
         }
 
-        if (videoStream.Width.Value >= 3800)
+        if (videoStream.Width.Value >= MinWidth2160P)
         {
             return TraktResolution.uhd_4k;
         }
 
-        if (videoStream.Width.Value >= 1400)
+        if (videoStream.Width.Value >= MinWidth1080P)
         {
             return videoStream.IsInterlaced ? TraktResolution.hd_1080i : TraktResolution.hd_1080p;
         }
 
-        if (videoStream.Width.Value >= 950)
+        if (videoStream.Width.Value >= MinWidth720P)
         {
             return TraktResolution.hd_720p;
         }
 
-        if (videoStream.Width.Value >= 630 && videoStream.Height.HasValue && videoStream.Height.Value >= 500)
+        if (videoStream.Width.Value >= MinWidth576P && videoStream.Height.HasValue && videoStream.Height.Value >= MinHeight576P)
         {
             return videoStream.IsInterlaced ? TraktResolution.sd_576i : TraktResolution.sd_576p;
         }
