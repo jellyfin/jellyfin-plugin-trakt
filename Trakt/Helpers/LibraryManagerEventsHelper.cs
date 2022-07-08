@@ -267,58 +267,58 @@ internal class LibraryManagerEventsHelper : IDisposable
     /// <returns>Task.</returns>
     private async Task ProcessQueuedEpisodeEvents(IReadOnlyCollection<LibraryEvent> events, TraktUser traktUser, EventType eventType)
     {
-        if (events.Count == 0)
+        try
         {
-            _logger.LogInformation("No episodes with event type {EventType} to process", eventType);
-            return;
-        }
-
-        _logger.LogInformation("Processing {Count} episodes with event type {EventType}", events.Count, eventType);
-
-        var episodes = events.Select(lev => (Episode)lev.Item)
-            .Where(lev => lev.Series != null
-                          && !string.IsNullOrEmpty(lev.Series.Name)
-                          && (!string.IsNullOrEmpty(lev.Series.GetProviderId(MetadataProvider.Tmdb))
-                              || !string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Tvdb)))
-                          && !traktUser.LocationsExcluded.Any(directory => lev.Path.Contains(directory, StringComparison.OrdinalIgnoreCase)))
-            .OrderBy(i => i.Series.Id)
-            .ToList();
-
-        // Can't progress further without episodes
-        if (!episodes.Any())
-        {
-            _logger.LogDebug("Episodes count is 0");
-
-            return;
-        }
-
-        var payload = new List<Episode>();
-        var currentSeriesId = episodes[0].Series.Id;
-
-        foreach (var ep in episodes)
-        {
-            if (!currentSeriesId.Equals(ep.Series.Id))
+            if (events.Count == 0)
             {
-                // We're starting a new series. Time to send the current one to trakt.tv
+                _logger.LogInformation("No episodes with event type {EventType} to process", eventType);
+                return;
+            }
+
+            _logger.LogInformation("Processing {Count} episodes with event type {EventType}", events.Count, eventType);
+
+            var episodes = events.Select(lev => (Episode)lev.Item)
+                .Where(lev => lev.Series != null
+                            && !string.IsNullOrEmpty(lev.Series.Name)
+                            && (!string.IsNullOrEmpty(lev.Series.GetProviderId(MetadataProvider.Tmdb))
+                                || !string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Tvdb)))
+                            && !traktUser.LocationsExcluded.Any(directory => lev.Path.Contains(directory, StringComparison.OrdinalIgnoreCase)))
+                .OrderBy(i => i.Series.Id)
+                .ToList();
+
+            // Can't progress further without episodes
+            if (!episodes.Any())
+            {
+                _logger.LogDebug("Episodes count is 0");
+
+                return;
+            }
+
+            var payload = new List<Episode>();
+            var currentSeriesId = episodes[0].Series.Id;
+
+            foreach (var ep in episodes)
+            {
+                if (!currentSeriesId.Equals(ep.Series.Id))
+                {
+                    // We're starting a new series. Time to send the current one to trakt.tv
+                    await _traktApi.SendLibraryUpdateAsync(payload, traktUser, eventType, CancellationToken.None).ConfigureAwait(false);
+
+                    currentSeriesId = ep.Series.Id;
+                    payload.Clear();
+                }
+
+                payload.Add(ep);
+            }
+
+            if (payload.Any())
+            {
                 await _traktApi.SendLibraryUpdateAsync(payload, traktUser, eventType, CancellationToken.None).ConfigureAwait(false);
-
-                currentSeriesId = ep.Series.Id;
-                payload.Clear();
             }
-
-            payload.Add(ep);
         }
-
-        if (payload.Any())
+        catch (Exception ex)
         {
-            try
-            {
-                await _traktApi.SendLibraryUpdateAsync(payload, traktUser, eventType, CancellationToken.None).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception handled processing queued episode events");
-            }
+            _logger.LogError(ex, "Exception handled processing queued episode events");
         }
     }
 
