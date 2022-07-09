@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -228,11 +228,36 @@ public class TraktApi
             {
                 responses.Add(response);
             }
-            else if (useProviderIds && HasAnyProviderTvIds(episode))
+            else
             {
-                // Try scrobbling without ids
-                _logger.LogDebug("Resend episode status update, without episode ids");
-                responses = await SendEpisodeStatusUpdateAsync(episode, status, traktUser, progressPercent, false).ConfigureAwait(false);
+                if (useProviderIds)
+                {
+                    if (HasAnyProviderTvIds(episode))
+                    {
+                        // Try scrobbling without ids
+                        _logger.LogDebug("Resend episode status update, without episode ids");
+                        responses = await SendEpisodeStatusUpdateAsync(episode, status, traktUser, progressPercent, false).ConfigureAwait(false);
+                    }
+                }
+                else
+                {
+                    string imdbId = episode.GetProviderId(MetadataProvider.Imdb);
+                    if (imdbId is not null && episode.GetSeasonNumber() == 0)
+                    {
+                        // if still not found after trying without ids and is a special, try it as a movie if it has movie ids
+                        // Trakt uses TMDB for metadata, but if JF has episode special tagged with TVDB special numbers, it won't match
+                        // unless we use imdb id and scrobble as a movie
+                        _logger.LogDebug("Resend special episode status update as a movie with imdb id");
+                        Movie movie = new Movie
+                        {
+                            Name = episode.Name,
+                            ProductionYear = episode.ProductionYear
+                        };
+                        movie.SetProviderId(MetadataProvider.Imdb, imdbId);
+                        response = await SendMovieStatusUpdateAsync(movie, status, traktUser, progressPercent).ConfigureAwait(false);
+                        responses.Add(response);
+                    }
+                }
             }
         }
 
