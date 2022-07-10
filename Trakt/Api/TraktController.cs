@@ -51,18 +51,17 @@ public class TraktController : ControllerBase
     /// <summary>
     /// Authorize this server with trakt.tv.
     /// </summary>
-    /// <param name="userId">The user id of the user connecting to trakt.tv.</param>
+    /// <param name="userGuid">The GUID of the user connecting to trakt.tv.</param>
     /// <response code="200">Authorization code requested successfully.</response>
     /// <returns>The trakt.tv authorization code.</returns>
-    [HttpPost("Users/{userId}/Authorize")]
+    [HttpPost("Users/{userGuid}/Authorize")]
     [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<object>> TraktDeviceAuthorization([FromRoute] string userId)
+    public async Task<ActionResult<object>> TraktDeviceAuthorization([FromRoute] Guid userGuid)
     {
         _logger.LogInformation("TraktDeviceAuthorization request received");
 
         // Create a user if we don't have one yet - TODO there should be an endpoint for this that creates a default user
-        var userGuid = Guid.Parse(userId);
         var traktUser = UserHelper.GetTraktUser(userGuid);
         if (traktUser == null)
         {
@@ -83,22 +82,21 @@ public class TraktController : ControllerBase
     /// <summary>
     /// Deauthorize this server with trakt.tv.
     /// </summary>
-    /// <param name="userId">The user id of the user connecting to trakt.tv.</param>
+    /// <param name="userGuid">The GUID of the user connecting to trakt.tv.</param>
     /// <response code="200">Deauthorization successful.</response>
     /// <returns>Empty string.</returns>
-    [HttpPost("Users/{userId}/Deauthorize")]
+    [HttpPost("Users/{userGuid}/Deauthorize")]
     [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public string TraktDeviceDeAuthorization([FromRoute] string userId)
+    public string TraktDeviceDeAuthorization([FromRoute] Guid userGuid)
     {
         _logger.LogInformation("TraktDeviceDeauthorization request received");
 
         // Delete a user
-        var userGuid = Guid.Parse(userId);
         var traktUser = UserHelper.GetTraktUser(userGuid);
         if (traktUser == null)
         {
-            _logger.LogDebug("{User} not found.", userId);
+            _logger.LogDebug("{User} not found.", userGuid);
         }
         else
         {
@@ -113,16 +111,15 @@ public class TraktController : ControllerBase
     /// <summary>
     /// Poll the trakt.tv device authorization status.
     /// </summary>
-    /// <param name="userId">The user id.</param>
+    /// <param name="userGuid">The user's GUID.</param>
     /// <response code="200">Polling successful.</response>
     /// <returns>A value indicating whether the authorization code was connected to a trakt.tv account.</returns>
-    [HttpGet("Users/{userId}/PollAuthorizationStatus")]
+    [HttpGet("Users/{userGuid}/PollAuthorizationStatus")]
     [Authorize(Policy = "RequiresElevation")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public ActionResult<object> TraktPollAuthorizationStatus([FromRoute] string userId)
+    public ActionResult<object> TraktPollAuthorizationStatus([FromRoute] Guid userGuid)
     {
         _logger.LogInformation("TraktPollAuthorizationStatus request received");
-        var userGuid = Guid.Parse(userId);
         var traktUser = UserHelper.GetTraktUser(userGuid);
         bool isAuthorized = traktUser.AccessToken != null && traktUser.RefreshToken != null;
 
@@ -141,14 +138,14 @@ public class TraktController : ControllerBase
     /// <summary>
     /// Rate an item.
     /// </summary>
-    /// <param name="userId">The user id.</param>
+    /// <param name="userGuid">The user's GUID.</param>
     /// <param name="itemId">The item id.</param>
     /// <param name="rating">Rating between 1 - 10 (0 = unrate).</param>
     /// <response code="200">Item rated successfully.</response>
     /// <returns>A <see cref="TraktSyncResponse"/>.</returns>
-    [HttpPost("Users/{userId}/Items/{itemId}/Rate")]
+    [HttpPost("Users/{userGuid}/Items/{itemId}/Rate")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<TraktSyncResponse>> TraktRateItem([FromRoute] string userId, [FromRoute] Guid itemId, [FromQuery] int rating)
+    public async Task<ActionResult<TraktSyncResponse>> TraktRateItem([FromRoute] Guid userGuid, [FromRoute] Guid itemId, [FromQuery] int rating)
     {
         _logger.LogInformation("RateItem request received");
 
@@ -160,32 +157,32 @@ public class TraktController : ControllerBase
             return null;
         }
 
-        return await _traktApi.SendItemRating(currentItem, rating, UserHelper.GetTraktUser(userId, true)).ConfigureAwait(false);
+        return await _traktApi.SendItemRating(currentItem, rating, UserHelper.GetTraktUser(userGuid, true)).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Get recommended trakt.tv movies.
     /// </summary>
-    /// <param name="userId">The user id.</param>
+    /// <param name="userGuid">The user's GUID.</param>
     /// <response code="200">Recommended movies returned.</response>
     /// <returns>A <see cref="List{TraktMovie}"/> with recommended movies.</returns>
-    [HttpPost("Users/{userId}/RecommendedMovies")]
+    [HttpPost("Users/{userGuid}/RecommendedMovies")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<TraktMovie>>> RecommendedTraktMovies([FromRoute] string userId)
+    public async Task<ActionResult<List<TraktMovie>>> RecommendedTraktMovies([FromRoute] Guid userGuid)
     {
-        return await _traktApi.SendMovieRecommendationsRequest(UserHelper.GetTraktUser(userId, true)).ConfigureAwait(false);
+        return await _traktApi.SendMovieRecommendationsRequest(UserHelper.GetTraktUser(userGuid, true)).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Get recommended trakt.tv shows.
     /// </summary>
-    /// <param name="userId">The user id.</param>
+    /// <param name="userGuid">The user's GUID.</param>
     /// <response code="200">Recommended shows returned.</response>
     /// <returns>A <see cref="List{TraktShow}"/> with recommended movies.</returns>
-    [HttpPost("Users/{userId}/RecommendedShows")]
+    [HttpPost("Users/{userGuid}/RecommendedShows")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<TraktShow>>> RecommendedTraktShows([FromRoute] string userId)
+    public async Task<ActionResult<List<TraktShow>>> RecommendedTraktShows([FromRoute] Guid userGuid)
     {
-        return await _traktApi.SendShowRecommendationsRequest(UserHelper.GetTraktUser(userId, true)).ConfigureAwait(false);
+        return await _traktApi.SendShowRecommendationsRequest(UserHelper.GetTraktUser(userGuid, true)).ConfigureAwait(false);
     }
 }
