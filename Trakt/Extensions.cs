@@ -21,6 +21,46 @@ namespace Trakt;
 public static class Extensions
 {
     /// <summary>
+    /// Minimum height for 576p videos.
+    /// </summary>
+    /// <remarks>
+    /// 500px is chosen to catch all videos larger than 480px with 20px deviation.
+    /// </remarks>
+    private const int MinHeight576P = 500;
+
+    /// <summary>
+    /// Minimum width for 576p videos.
+    /// </summary>
+    /// <remarks>
+    /// 630px is chosen to accomodate weird old videos, officially the lowest width for 4:3 576p video is 704px.
+    /// </remarks>
+    private const int MinWidth576P = 630;
+
+    /// <summary>
+    /// Minimum width for 720p videos.
+    /// </summary>
+    /// <remarks>
+    /// 950px is chosen to accomodate 4:3 videos and 10px deviation.
+    /// </remarks>
+    private const int MinWidth720P = 950;
+
+    /// <summary>
+    /// Minimum width for 1080p videos.
+    /// </summary>
+    /// <remarks>
+    /// 1400px is chosen to accomodate 4:3 videos and 40px deviation.
+    /// </remarks>
+    private const int MinWidth1080P = 1400;
+
+    /// <summary>
+    /// Minimum width for 2160p videos.
+    /// </summary>
+    /// <remarks>
+    /// Includes 40px deviation.
+    /// </remarks>
+    private const int MinWidth2160P = 3800;
+
+    /// <summary>
     /// Convert string to int.
     /// </summary>
     /// <param name="input">String to convert to int.</param>
@@ -101,27 +141,58 @@ public static class Extensions
     /// <returns><see cref="bool"/> indicating if the new movie has different metadata to the already collected.</returns>
     public static bool MetadataIsDifferent(this TraktMovieCollected collectedMovie, Movie movie)
     {
-        var audioStream = movie.GetMediaStreams().FirstOrDefault(x => x.Type == MediaStreamType.Audio);
+        var match = false;
+        var mediaStreams = movie.GetMediaStreams();
+        var defaultVideoStream = mediaStreams.FirstOrDefault(x => x.Index == movie.DefaultVideoStreamIndex);
+        var audioStream = mediaStreams.FirstOrDefault(x => x.Type == MediaStreamType.Audio);
 
-        var resolution = movie.GetDefaultVideoStream().GetResolution();
-        var is3D = movie.Is3D;
-        var hdr = movie.GetDefaultVideoStream().GetHdr();
-        var audio = GetCodecRepresetation(audioStream);
-        var audioChannels = audioStream.GetAudioChannels();
-
-        if (collectedMovie.Metadata == null || collectedMovie.Metadata.IsEmpty())
+        if (defaultVideoStream != null)
         {
-            return resolution != null
-                   || audio != null
-                   || !string.IsNullOrEmpty(audioChannels);
+            var is3D = movie.Is3D;
+            var resolution = defaultVideoStream.GetResolution();
+            var hdr = defaultVideoStream.GetHdr();
+            match = match || collectedMovie.Metadata.Resolution != resolution || collectedMovie.Metadata.Is3D != is3D || collectedMovie.Metadata.Hdr != hdr;
         }
 
-        return collectedMovie.Metadata.Audio != audio
-               || collectedMovie.Metadata.AudioChannels != audioChannels
-               || collectedMovie.Metadata.Resolution != resolution
-               || collectedMovie.Metadata.Is3D != is3D
-               || collectedMovie.Metadata.Hdr != hdr
-               || collectedMovie.Metadata.MediaType != null;
+        if (audioStream != null)
+        {
+            var audio = GetCodecRepresetation(audioStream);
+            var audioChannels = audioStream.GetAudioChannels();
+            match = match || collectedMovie.Metadata.Audio != audio || collectedMovie.Metadata.AudioChannels != audioChannels;
+        }
+
+        return match || collectedMovie.Metadata.MediaType != TraktMediaType.digital;
+    }
+
+    /// <summary>
+    /// Checks if metadata of new collected episode is different from the already collected.
+    /// </summary>
+    /// <param name="collectedEpisode">The <see cref="TraktEpisodeCollected"/>.</param>
+    /// <param name="episode">The <see cref="Episode"/>.</param>
+    /// <returns><see cref="bool"/> indicating if the new episode has different metadata to the already collected.</returns>
+    public static bool MetadataIsDifferent(this TraktEpisodeCollected collectedEpisode, Episode episode)
+    {
+        var match = false;
+        var mediaStreams = episode.GetMediaStreams();
+        var defaultVideoStream = mediaStreams.FirstOrDefault(x => x.Index == episode.DefaultVideoStreamIndex);
+        var audioStream = mediaStreams.FirstOrDefault(x => x.Type == MediaStreamType.Audio);
+
+        if (defaultVideoStream != null)
+        {
+            var is3D = episode.Is3D;
+            var resolution = defaultVideoStream.GetResolution();
+            var hdr = defaultVideoStream.GetHdr();
+            match = match || collectedEpisode.Metadata.Resolution != resolution || collectedEpisode.Metadata.Is3D != is3D || collectedEpisode.Metadata.Hdr != hdr;
+        }
+
+        if (audioStream != null)
+        {
+            var audio = GetCodecRepresetation(audioStream);
+            var audioChannels = audioStream.GetAudioChannels();
+            match = match || collectedEpisode.Metadata.Audio != audio || collectedEpisode.Metadata.AudioChannels != audioChannels;
+        }
+
+        return match || collectedEpisode.Metadata.MediaType != TraktMediaType.digital;
     }
 
     /// <summary>
@@ -141,34 +212,28 @@ public static class Extensions
             return null;
         }
 
-        if (videoStream.Width.Value >= 3800)
+        if (videoStream.Width.Value >= MinWidth2160P)
         {
             return TraktResolution.uhd_4k;
         }
 
-        if (videoStream.Width.Value >= 1900)
+        if (videoStream.Width.Value >= MinWidth1080P)
         {
             return videoStream.IsInterlaced ? TraktResolution.hd_1080i : TraktResolution.hd_1080p;
         }
 
-        if (videoStream.Width.Value >= 1270)
+        if (videoStream.Width.Value >= MinWidth720P)
         {
             return TraktResolution.hd_720p;
         }
 
-        if (videoStream.Width.Value >= 700)
+        if (videoStream.Width.Value >= MinWidth576P && videoStream.Height.HasValue && videoStream.Height.Value >= MinHeight576P)
         {
-            if (videoStream.Height.HasValue && videoStream.Height.Value >= 576)
-            {
-                return videoStream.IsInterlaced ? TraktResolution.sd_576i : TraktResolution.sd_576p;
-            }
-            else
-            {
-                return videoStream.IsInterlaced ? TraktResolution.sd_480i : TraktResolution.sd_480p;
-            }
+            return videoStream.IsInterlaced ? TraktResolution.sd_576i : TraktResolution.sd_576p;
         }
 
-        return null;
+        // Set 480p as fallback since trakt.tv does not allow lower resolutions
+        return videoStream.IsInterlaced ? TraktResolution.sd_480i : TraktResolution.sd_480p;
     }
 
     /// <summary>
@@ -178,7 +243,23 @@ public static class Extensions
     /// <returns>string.</returns>
     public static TraktHdr? GetHdr(this MediaStream videoStream)
     {
-        return null;
+        if (videoStream.DvProfile != null)
+        {
+            return TraktHdr.dolby_vision;
+        }
+
+        var rageType = videoStream.VideoRangeType;
+        switch (rageType)
+        {
+            case "DOVI":
+                return TraktHdr.dolby_vision;
+            case "HDR10":
+                return TraktHdr.hdr10;
+            case "HLG":
+                return TraktHdr.hlg;
+            default:
+                return null;
+        }
     }
 
     /// <summary>

@@ -7,17 +7,17 @@ namespace Trakt.Helpers;
 
 internal static class UserHelper
 {
-    public static TraktUser GetTraktUser(User user)
+    public static TraktUser GetTraktUser(string userId, bool authorized = false)
     {
-        return GetTraktUser(user.Id);
+        return GetTraktUser(Guid.Parse(userId), authorized);
     }
 
-    public static TraktUser GetTraktUser(string userId)
+    public static TraktUser GetTraktUser(User user, bool authorized = false)
     {
-        return GetTraktUser(new Guid(userId));
+        return GetTraktUser(user.Id, authorized);
     }
 
-    public static TraktUser GetTraktUser(Guid userGuid)
+    public static TraktUser GetTraktUser(Guid userGuid, bool authorized = false)
     {
         var traktUsers = Plugin.Instance.PluginConfiguration.GetAllTraktUsers();
         if (traktUsers.Count == 0)
@@ -27,13 +27,13 @@ internal static class UserHelper
 
         return traktUsers.FirstOrDefault(user =>
         {
-            if (string.IsNullOrWhiteSpace(user.LinkedMbUserId))
+            if (user.LinkedMbUserId == Guid.Empty
+                || (authorized && string.IsNullOrWhiteSpace(user.AccessToken)))
             {
                 return false;
             }
 
-            if (Guid.TryParse(user.LinkedMbUserId, out Guid traktUserGuid)
-                && traktUserGuid.Equals(userGuid))
+            if (user.LinkedMbUserId.Equals(userGuid))
             {
                 return true;
             }

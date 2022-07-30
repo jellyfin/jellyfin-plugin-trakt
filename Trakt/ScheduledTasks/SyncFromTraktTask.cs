@@ -77,7 +77,7 @@ public class SyncFromTraktTask : IScheduledTask
     /// <inheritdoc />
     public async Task ExecuteAsync(IProgress<double> progress, CancellationToken cancellationToken)
     {
-        var users = _userManager.Users.Where(u => UserHelper.GetTraktUser(u) != null).ToList();
+        var users = _userManager.Users.Where(user => UserHelper.GetTraktUser(user, true) != null).ToList();
 
         // No point going further if we don't have users.
         if (users.Count == 0)
@@ -104,14 +104,13 @@ public class SyncFromTraktTask : IScheduledTask
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error syncing trakt.tv data for user {UserName}", user.Username);
-                throw;
             }
         }
     }
 
     private async Task SyncTraktDataForUser(Jellyfin.Data.Entities.User user, double currentProgress, IProgress<double> progress, double percentPerUser, CancellationToken cancellationToken)
     {
-        var traktUser = UserHelper.GetTraktUser(user);
+        var traktUser = UserHelper.GetTraktUser(user, true);
 
         if (traktUser.SkipUnwatchedImportFromTrakt
             && traktUser.SkipWatchedImportFromTrakt

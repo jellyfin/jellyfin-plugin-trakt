@@ -109,11 +109,11 @@ public class TraktApi
     }
 
     /// <summary>
-    /// Report to trakt.tv that a movie is being watched, or has been watched.
+    /// Report to trakt.tv that a movie is being watched or has been watched.
     /// </summary>
     /// <param name="movie">The movie being watched/scrobbled.</param>
-    /// <param name="mediaStatus">MediaStatus enum dictating whether item is being watched or scrobbled.</param>
-    /// <param name="traktUser">The user that watching the current movie.</param>
+    /// <param name="mediaStatus">The <see cref="MediaStatus"/> indicating whether a movie is being watched or scrobbled.</param>
+    /// <param name="traktUser">The <see cref="TraktUser"/> who's watch progress is being updated.</param>
     /// <param name="progressPercent">The progress percentage.</param>
     /// <returns>A standard TraktResponse Data Contract.</returns>
     public async Task<TraktScrobbleResponse> SendMovieStatusUpdateAsync(Movie movie, MediaStatus mediaStatus, TraktUser traktUser, float progressPercent)
@@ -149,15 +149,15 @@ public class TraktApi
     }
 
     /// <summary>
-    /// Reports to trakt.tv that an episode is being watched. Or that episode(s) have been watched.
+    /// Reports to trakt.tv that an episode is being watched or has been watched.
     /// </summary>
     /// <param name="episode">The <see cref="Episode"/> being watched.</param>
-    /// <param name="status">The <see cref="MediaStatus"/> indicating whether an episode is being watched or scrobbled.</param>
-    /// <param name="traktUser">The <see cref="TraktUser"/> that's watching the episode.</param>
+    /// <param name="mediaStatus">The <see cref="MediaStatus"/> indicating whether an episode is being watched or scrobbled.</param>
+    /// <param name="traktUser">The <see cref="TraktUser"/> who's watch progress is being updated.</param>
     /// <param name="progressPercent">The progress percentage.</param>
     /// <param name="useProviderIds"><see cref="bool"/> specifying if provider ids should be used for lookup or not.</param>
     /// <returns>Task{List{TraktScrobbleResponse}}.</returns>
-    public async Task<List<TraktScrobbleResponse>> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus status, TraktUser traktUser, float progressPercent, bool useProviderIds = true)
+    public async Task<List<TraktScrobbleResponse>> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus mediaStatus, TraktUser traktUser, float progressPercent, bool useProviderIds = true)
     {
         var episodeDatas = new List<TraktScrobbleEpisode>();
 
@@ -206,7 +206,7 @@ public class TraktApi
         }
 
         string url;
-        switch (status)
+        switch (mediaStatus)
         {
             case MediaStatus.Watching:
                 url = TraktUris.ScrobbleStart;
@@ -232,7 +232,7 @@ public class TraktApi
             {
                 // Try scrobbling without ids
                 _logger.LogDebug("Resend episode status update, without episode ids");
-                responses = await SendEpisodeStatusUpdateAsync(episode, status, traktUser, progressPercent, false).ConfigureAwait(false);
+                responses = await SendEpisodeStatusUpdateAsync(episode, mediaStatus, traktUser, progressPercent, false).ConfigureAwait(false);
             }
         }
 
@@ -242,7 +242,7 @@ public class TraktApi
     /// <summary>
     /// Add or remove a list of movies to/from the user's trakt.tv library.
     /// </summary>
-    /// <param name="movies">The movies to add.</param>
+    /// <param name="movies">The movies to add or remove.</param>
     /// <param name="traktUser">The <see cref="TraktUser"/> who's library is being updated.</param>
     /// <param name="eventType">The <see cref="EventType"/>.</param>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
@@ -276,9 +276,12 @@ public class TraktApi
 
             if (traktUser.ExportMediaInfo)
             {
-                traktMovieCollected.AudioChannels = audioStream.GetAudioChannels();
-                traktMovieCollected.Audio = audioStream.GetCodecRepresetation();
-                traktMovieCollected.Resolution = m.GetDefaultVideoStream().GetResolution();
+                var defaultVideoStream = m.GetDefaultVideoStream();
+                traktMovieCollected.AudioChannels = audioStream?.GetAudioChannels();
+                traktMovieCollected.Audio = audioStream?.GetCodecRepresetation();
+                traktMovieCollected.Resolution = defaultVideoStream?.GetResolution();
+                traktMovieCollected.Is3D = m.Is3D;
+                traktMovieCollected.Hdr = defaultVideoStream?.GetHdr();
                 traktMovieCollected.MediaType = Enums.TraktMediaType.digital;
             }
 
@@ -305,7 +308,7 @@ public class TraktApi
     /// <summary>
     /// Add or remove a list of episodes to/from the user's trakt.tv library.
     /// </summary>
-    /// <param name="episodes">The episodes to add.</param>
+    /// <param name="episodes">The episodes to add or remove.</param>
     /// <param name="traktUser">The <see cref="TraktUser"/> who's library is being updated.</param>
     /// <param name="eventType">The <see cref="EventType"/>.</param>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
@@ -348,24 +351,26 @@ public class TraktApi
         foreach (Episode episode in episodes)
         {
             var audioStream = episode.GetMediaStreams().FirstOrDefault(stream => stream.Type == MediaStreamType.Audio);
-
-            if (useProviderIds && HasAnyProviderTvIds(episode) &&
-                (!episode.IndexNumber.HasValue || !episode.IndexNumberEnd.HasValue ||
-                 episode.IndexNumberEnd <= episode.IndexNumber))
+            var defaultVideoStream = episode.GetDefaultVideoStream();
+            if (useProviderIds
+                && HasAnyProviderTvIds(episode)
+                && (!episode.IndexNumber.HasValue
+                    || !episode.IndexNumberEnd.HasValue
+                    || episode.IndexNumberEnd <= episode.IndexNumber))
             {
                 var traktEpisodeCollected = new TraktEpisodeCollected
                 {
                     CollectedAt = episode.DateCreated.ToISO8601(),
                     Ids = GetTraktTvIds<Episode, TraktEpisodeId>(episode)
                 };
+
                 if (traktUser.ExportMediaInfo)
                 {
-                    var defaultVideoStream = episode.GetDefaultVideoStream();
-                    traktEpisodeCollected.AudioChannels = audioStream.GetAudioChannels();
-                    traktEpisodeCollected.Audio = audioStream.GetCodecRepresetation();
-                    traktEpisodeCollected.Resolution = defaultVideoStream.GetResolution();
+                    traktEpisodeCollected.AudioChannels = audioStream?.GetAudioChannels();
+                    traktEpisodeCollected.Audio = audioStream?.GetCodecRepresetation();
+                    traktEpisodeCollected.Resolution = defaultVideoStream?.GetResolution();
                     traktEpisodeCollected.Is3D = episode.Is3D;
-                    traktEpisodeCollected.Hdr = defaultVideoStream.GetHdr();
+                    traktEpisodeCollected.Hdr = defaultVideoStream?.GetHdr();
                     traktEpisodeCollected.MediaType = Enums.TraktMediaType.digital;
                 }
 
@@ -418,12 +423,11 @@ public class TraktApi
 
                     if (traktUser.ExportMediaInfo)
                     {
-                        var defaultVideoStream = episode.GetDefaultVideoStream();
-                        traktEpisodeCollected.AudioChannels = audioStream.GetAudioChannels();
-                        traktEpisodeCollected.Audio = audioStream.GetCodecRepresetation();
-                        traktEpisodeCollected.Resolution = defaultVideoStream.GetResolution();
+                        traktEpisodeCollected.AudioChannels = audioStream?.GetAudioChannels();
+                        traktEpisodeCollected.Audio = audioStream?.GetCodecRepresetation();
+                        traktEpisodeCollected.Resolution = defaultVideoStream?.GetResolution();
                         traktEpisodeCollected.Is3D = episode.Is3D;
-                        traktEpisodeCollected.Hdr = defaultVideoStream.GetHdr();
+                        traktEpisodeCollected.Hdr = defaultVideoStream?.GetHdr();
                         traktEpisodeCollected.MediaType = Enums.TraktMediaType.digital;
                     }
 
@@ -453,7 +457,7 @@ public class TraktApi
     /// <summary>
     /// Add or remove a show/series to/from the user's trakt.tv library.
     /// </summary>
-    /// <param name="show">The show to remove.</param>
+    /// <param name="show">The show/series to add or remove.</param>
     /// <param name="traktUser">The <see cref="TraktUser"/> who's library is being updated.</param>
     /// <param name="eventType">The <see cref="EventType"/>.</param>
     /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
@@ -503,6 +507,11 @@ public class TraktApi
     /// <returns>Task{TraktSyncResponse}.</returns>
     public async Task<TraktSyncResponse> SendItemRating(BaseItem item, int rating, TraktUser traktUser, bool useEpisodeProviderIds = true)
     {
+        if (traktUser == null)
+        {
+            return null;
+        }
+
         object data = new { };
         if (item is Movie)
         {
@@ -569,7 +578,7 @@ public class TraktApi
                 }
             }
         }
-        else // It's a Series
+        else // It's a series
         {
             data = new
             {
@@ -682,9 +691,9 @@ public class TraktApi
     /// Send a list of movies to trakt.tv that have been marked as watched or unwatched.
     /// </summary>
     /// <param name="movies">The list of movies to send.</param>
-    /// <param name="traktUser">The trakt.tv user profile that is being updated.</param>
+    /// <param name="traktUser">The <see cref="TraktUser"/> who's library is being updated.</param>
     /// <param name="seen">True if movies are being marked seen, false otherwise.</param>
-    /// <param name="cancellationToken">The Cancellation Token.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns>Task{List{TraktSyncResponse}}.</returns>
     // TODO: netstandard2.1: use IAsyncEnumerable
     public async Task<List<TraktSyncResponse>> SendMoviePlaystateUpdates(
@@ -706,7 +715,7 @@ public class TraktApi
         var moviesPayload = movies.Select(m =>
         {
             var lastPlayedDate = seen
-                ? _userDataManager.GetUserData(new Guid(traktUser.LinkedMbUserId), m).LastPlayedDate
+                ? _userDataManager.GetUserData(traktUser.LinkedMbUserId, m).LastPlayedDate
                 : null;
 
             return new TraktMovieWatched
@@ -717,6 +726,7 @@ public class TraktApi
                 WatchedAt = lastPlayedDate?.ToISO8601()
             };
         });
+
         var chunks = moviesPayload.ToChunks(100).ToList();
         var traktResponses = new List<TraktSyncResponse>();
 
@@ -742,9 +752,9 @@ public class TraktApi
     /// Send a list of episodes to trakt.tv that have been marked watched or unwatched.
     /// </summary>
     /// <param name="episodes">The list of episodes to send.</param>
-    /// <param name="traktUser">The trakt.tv user profile that is being updated.</param>
+    /// <param name="traktUser">The <see cref="TraktUser"/> who's library is being updated.</param>
     /// <param name="seen">True if episodes are being marked seen, false otherwise.</param>
-    /// <param name="cancellationToken">The Cancellation Token.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns>Task{List{TraktSyncResponse}}.</returns>
     public async Task<List<TraktSyncResponse>> SendEpisodePlaystateUpdates(
         ICollection<Episode> episodes,
@@ -794,7 +804,7 @@ public class TraktApi
         foreach (var episode in episodeChunk)
         {
             var lastPlayedDate = seen
-                ? _userDataManager.GetUserData(new Guid(traktUser.LinkedMbUserId), episode)
+                ? _userDataManager.GetUserData(traktUser.LinkedMbUserId, episode)
                     .LastPlayedDate
                 : null;
 
