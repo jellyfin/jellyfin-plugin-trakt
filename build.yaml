@@ -14,11 +14,8 @@ category: "General"
 artifacts:
   - "Trakt.dll"
 changelog: |2-
+  ### New features and improvements ###
+  - Various fixes and enhancements (#154) @Shadowghost
+
   ### Bug Fixes ###
-  - Fix unauthorized users not being skipped (#154) @Shadowghost
-  - Fix MediaType metadata (#154) @Shadowghost
-  - Don't fail tasks if one user fails (#154) @Shadowghost
-  ### Features ###
-  - Implement HDR metadata (#154) @Shadowghost
-    - Implement metadata for episodes (#154) @Shadowghost
-  - Switch to GUIDs (this requires reauthentication of all users) (#154) @Shadowghost
+  - Various fixes and enhancements (#154) @Shadowghost
