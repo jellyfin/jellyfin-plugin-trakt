@@ -216,24 +216,9 @@ public class SyncLibraryTask : IScheduledTask
                     // If the movie has been played locally and is unplayed on trakt.tv then add it to the list
                     if (userData.Played)
                     {
-                        if (movieWatched == null)
+                        if (movieWatched == null && traktUser.PostWatchedHistory)
                         {
-                            if (traktUser.PostWatchedHistory)
-                            {
-                                playedMovies.Add(libraryMovie);
-                            }
-
-                            if (!traktUser.SkipUnwatchedImportFromTrakt)
-                            {
-                                userData.Played = false;
-
-                                _userDataManager.SaveUserData(
-                                    user.Id,
-                                    libraryMovie,
-                                    userData,
-                                    UserDataSaveReason.Import,
-                                    cancellationToken);
-                            }
+                            playedMovies.Add(libraryMovie);
                         }
                     }
                     else
