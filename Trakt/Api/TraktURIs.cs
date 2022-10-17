@@ -119,14 +119,4 @@ public static class TraktUris
     /// The shows recommendations URI.
     /// </summary>
     public const string RecommendationsShows = BaseUrl + "/recommendations/shows";
-
-    /// <summary>
-    /// The movies recommendations dismiss URI.
-    /// </summary>
-    public const string RecommendationsMoviesDismiss = BaseUrl + "/recommendations/movies/{0}";
-
-    /// <summary>
-    /// The shows recommendations dismiss URI.
-    /// </summary>
-    public const string RecommendationsShowsDismiss = BaseUrl + "/recommendations/shows/{0}";
 }
