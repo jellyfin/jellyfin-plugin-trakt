@@ -6,7 +6,7 @@ internal class PlaybackState
 {
     public bool IsPaused { get; set; } = false;
 
-    public long PlaybackProgress { get; set; } = 0L;
+    public long PlaybackPositionTicks { get; set; } = 0L;
 
-    public DateTime PlaybackTime { get; set; } = DateTime.Now;
+    public DateTime PlaybackTime { get; set; } = DateTime.UtcNow;
 }
