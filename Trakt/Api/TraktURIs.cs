@@ -13,7 +13,7 @@ public static class TraktUris
     /// <summary>
     /// The client id.
     /// </summary>
-    public const string ClientId = "58f2251f1c9e7275e94fef723a8604e6848bbf86a0d97dda82382a6c3231608c";
+    public const string ClientId = "bfdd2e032c30c35b368f97ef4ec81587b899bcb028b91a1d4ba5589a4b6a7267";
 
     /// <summary>
     /// The client secret.
