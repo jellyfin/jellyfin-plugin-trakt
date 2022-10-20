@@ -21,13 +21,13 @@ public class TraktMoviePaused
     public TraktMovie Movie { get; set; }
 
     /// <summary>
-    /// Gets or sets the type.
+    /// Gets or sets the paused datetime.
     /// </summary>
     [JsonPropertyName("paused_at")]
     public string PausedAt { get; set; }
 
     /// <summary>
-    /// Gets or sets the movie year.
+    /// Gets or sets the progress.
     /// </summary>
     [JsonPropertyName("progress")]
     public double Progress { get; set; }
