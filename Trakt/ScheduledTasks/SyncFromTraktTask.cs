@@ -16,6 +16,7 @@ using MediaBrowser.Model.Querying;
 using MediaBrowser.Model.Tasks;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
+using Trakt.Api.DataContracts.Sync.History;
 using Trakt.Api.DataContracts.Users.Playback;
 using Trakt.Api.DataContracts.Users.Watched;
 using Trakt.Helpers;
@@ -122,6 +123,8 @@ public class SyncFromTraktTask : IScheduledTask
 
         List<TraktMovieWatched> traktWatchedMovies = new List<TraktMovieWatched>();
         List<TraktShowWatched> traktWatchedShows = new List<TraktShowWatched>();
+        List<TraktMovieWatchedHistory> traktWatchedMoviesHistory = new List<TraktMovieWatchedHistory>(); // not used for now, just for reference to get watched movies history count
+        List<TraktEpisodeWatchedHistory> traktWatchedEpisodesHistory = new List<TraktEpisodeWatchedHistory>(); // used for fall episode matching by ids
         List<TraktMoviePaused> traktPausedMovies = new List<TraktMoviePaused>();
         List<TraktEpisodePaused> traktPausedEpisodes = new List<TraktEpisodePaused>();
 
@@ -136,6 +139,8 @@ public class SyncFromTraktTask : IScheduledTask
             {
                 traktWatchedMovies.AddRange(await _traktApi.SendGetAllWatchedMoviesRequest(traktUser).ConfigureAwait(false));
                 traktWatchedShows.AddRange(await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false));
+                traktWatchedMoviesHistory.AddRange(await _traktApi.SendGetWatchedMoviesHistoryRequest(traktUser).ConfigureAwait(false));
+                traktWatchedEpisodesHistory.AddRange(await _traktApi.SendGetWatchedEpisodesHistoryRequest(traktUser).ConfigureAwait(false));
             }
 
             if (!traktUser.SkipPlaybackProgressImportFromTrakt)
@@ -151,8 +156,10 @@ public class SyncFromTraktTask : IScheduledTask
         }
 
         _logger.LogInformation("Trakt.tv watched movies for user {User}: {Count}", user.Username, traktWatchedMovies.Count);
+        _logger.LogInformation("Trakt.tv watched movies history for user {User}: {Count}", user.Username, traktWatchedMoviesHistory.Count);
         _logger.LogInformation("Trakt.tv paused movies for user {User}: {Count}", user.Username, traktPausedMovies.Count);
         _logger.LogInformation("Trakt.tv watched shows for user {User}: {Count}", user.Username, traktWatchedShows.Count);
+        _logger.LogInformation("Trakt.tv watched episodes history for user {User}: {Count}", user.Username, traktWatchedEpisodesHistory.Count);
         _logger.LogInformation("Trakt.tv paused episodes for user {User}: {Count}", user.Username, traktPausedEpisodes.Count);
 
         var baseQuery = new InternalItemsQuery(user)
@@ -312,6 +319,7 @@ public class SyncFromTraktTask : IScheduledTask
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var matchedWatchedShow = Extensions.FindMatch(episode.Series, traktWatchedShows);
+                var matchedWatchedEpisodeHistory = Extensions.FindMatch(episode, traktWatchedEpisodesHistory);
                 var matchedPausedEpisode = Extensions.FindMatch(episode, traktPausedEpisodes);
                 var userData = _userDataManager.GetUserData(user.Id, episode);
                 bool changed = false;
@@ -328,11 +336,27 @@ public class SyncFromTraktTask : IScheduledTask
                         tLastReset = resetValue;
                     }
 
+                    // Fallback procedure to find match by using episode history
+                    if (matchedWatchedSeason == null && matchedWatchedEpisodeHistory != null)
+                    {
+                        // Find watched season via history match
+                        _logger.LogDebug("Using history to match season for user {User} for {Data}", user.Username, GetVerboseEpisodeData(episode));
+                        matchedWatchedSeason = matchedWatchedShow.Seasons.FirstOrDefault(tSeason => tSeason.Number == matchedWatchedEpisodeHistory.Episode.Season);
+                    }
+
                     // If it's not a match then it means trakt.tv doesn't know about the season, leave the watched state alone and move on
                     if (matchedWatchedSeason != null)
                     {
                         // Check for matching episodes including multi-episode entities
                         var matchedWatchedEpisode = matchedWatchedSeason.Episodes.FirstOrDefault(x => episode.ContainsEpisodeNumber(x.Number));
+
+                        // Fallback procedure to find match by using episode history
+                        if (matchedWatchedEpisode == null && matchedWatchedEpisodeHistory != null)
+                        {
+                            // Find watched season via history match
+                            _logger.LogDebug("Using history to match episode for user {User} for {Data}", user.Username, GetVerboseEpisodeData(episode));
+                            matchedWatchedEpisode = matchedWatchedSeason.Episodes.FirstOrDefault(tEpisode => tEpisode.Number == matchedWatchedEpisodeHistory.Episode.Number);
+                        }
 
                         // Prepend a check if the matched episode is on a rewatch cycle and
                         // discard it if the last play date was before the reset date
@@ -467,7 +491,15 @@ public class SyncFromTraktTask : IScheduledTask
                     ? episode.Series.Name
                     : "null property"
                 : "null class")
-            .Append('\'');
+            .Append("' ")
+            .Append("Tvdb id: ")
+            .Append(episode.GetProviderId(MetadataProvider.Tvdb) ?? "null").Append(' ')
+            .Append("Tmdb id: ")
+            .Append(episode.GetProviderId(MetadataProvider.Tmdb) ?? "null").Append(' ')
+            .Append("Imdb id: ")
+            .Append(episode.GetProviderId(MetadataProvider.Imdb) ?? "null").Append(' ')
+            .Append("TvRage id: ")
+            .Append(episode.GetProviderId(MetadataProvider.TvRage) ?? "null");
 
         return episodeString.ToString();
     }

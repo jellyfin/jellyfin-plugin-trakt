@@ -648,6 +648,26 @@ public class TraktApi
     }
 
     /// <summary>
+    /// Get watched movies history.
+    /// </summary>
+    /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+    /// <returns>Task{List{DataContracts.Sync.History.TraktMovieWatchedHistory}}.</returns>
+    public async Task<List<DataContracts.Sync.History.TraktMovieWatchedHistory>> SendGetWatchedMoviesHistoryRequest(TraktUser traktUser)
+    {
+        return await GetFromTraktWithPaging<DataContracts.Sync.History.TraktMovieWatchedHistory>(TraktUris.SyncWatchedMoviesHistory, traktUser).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Get watched episodes history.
+    /// </summary>
+    /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+    /// <returns>Task{List{DataContracts.Sync.History.TraktEpisodeWatchedHistory}}.</returns>
+    public async Task<List<DataContracts.Sync.History.TraktEpisodeWatchedHistory>> SendGetWatchedEpisodesHistoryRequest(TraktUser traktUser)
+    {
+        return await GetFromTraktWithPaging<DataContracts.Sync.History.TraktEpisodeWatchedHistory>(TraktUris.SyncWatchedEpisodesHistory, traktUser).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Get all paused movies.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
@@ -1073,6 +1093,60 @@ public class TraktApi
 
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<T>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            _traktResourcePool.Release();
+        }
+    }
+
+    private Task<List<T>> GetFromTraktWithPaging<T>(string url, TraktUser traktUser)
+    {
+        return GetFromTraktWithPaging<T>(url, traktUser, CancellationToken.None);
+    }
+
+    private async Task<List<T>> GetFromTraktWithPaging<T>(string url, TraktUser traktUser, CancellationToken cancellationToken)
+    {
+        var httpClient = GetHttpClient();
+        var page = 1;
+        var result = new List<T>();
+
+        if (traktUser != null)
+        {
+            await SetRequestHeaders(httpClient, traktUser).ConfigureAwait(false);
+        }
+
+        await _traktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            while (true)
+            {
+                var urlWithPage = url.Replace("{page}", page.ToString(CultureInfo.InvariantCulture), StringComparison.InvariantCulture);
+                var response = await RetryHttpRequest(async () => await httpClient.GetAsync(urlWithPage, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return result;
+                }
+
+                response.EnsureSuccessStatusCode();
+                var tmpResult = await response.Content.ReadFromJsonAsync<List<T>>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+                if (result.GetType().IsGenericType && result.GetType().GetGenericTypeDefinition() == typeof(List<>))
+                {
+                    result.AddRange(tmpResult);
+                }
+
+                if (int.Parse(response.Headers.GetValues("X-Pagination-Page-Count").FirstOrDefault(page.ToString(CultureInfo.InvariantCulture)), CultureInfo.InvariantCulture) != page)
+                {
+                    page++;
+                }
+                else
+                {
+                    break; // break loop when no more new pages are available
+                }
+            }
+
+            return result;
         }
         finally
         {
