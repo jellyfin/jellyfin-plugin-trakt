@@ -353,9 +353,24 @@ public class SyncFromTraktTask : IScheduledTask
                         // Fallback procedure to find match by using episode history
                         if (matchedWatchedEpisode == null && matchedWatchedEpisodeHistory != null)
                         {
-                            // Find watched season via history match
-                            _logger.LogDebug("Using history to match episode for user {User} for {Data}", user.Username, GetVerboseEpisodeData(episode));
+                            // Find watched season and episode via history match
+                            _logger.LogDebug("Using history to match season and episode for user {User} for {Data}", user.Username, GetVerboseEpisodeData(episode));
                             matchedWatchedEpisode = matchedWatchedSeason.Episodes.FirstOrDefault(tEpisode => tEpisode.Number == matchedWatchedEpisodeHistory.Episode.Number);
+                        }
+
+                        // Fallback procedure to find match by using episode history, without checking the season (episode can belong to different season)
+                        if (matchedWatchedEpisode == null && matchedWatchedEpisodeHistory != null)
+                        {
+                            // Find watched episode via history match
+                            _logger.LogDebug("Using history to match episode for user {User} for {Data}", user.Username, GetVerboseEpisodeData(episode));
+                            foreach (var season in matchedWatchedShow.Seasons)
+                            {
+                                matchedWatchedEpisode = season.Episodes.FirstOrDefault(tEpisode => tEpisode.Number == matchedWatchedEpisodeHistory.Episode.Number);
+                                if (matchedWatchedEpisode != null)
+                                {
+                                    break; // stop when found in a season
+                                }
+                            }
                         }
 
                         // Prepend a check if the matched episode is on a rewatch cycle and
