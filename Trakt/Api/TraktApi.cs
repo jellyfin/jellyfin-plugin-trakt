@@ -1131,7 +1131,7 @@ public class TraktApi
 
                 response.EnsureSuccessStatusCode();
                 var tmpResult = await response.Content.ReadFromJsonAsync<List<T>>(_jsonOptions, cancellationToken).ConfigureAwait(false);
-                if (result.GetType().IsGenericType && result.GetType().GetGenericTypeDefinition() == typeof(List<>))
+                if (tmpResult != null)
                 {
                     result.AddRange(tmpResult);
                 }
