@@ -7,6 +7,7 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Entities;
 using Trakt.Api.DataContracts.BaseModel;
+using Trakt.Api.DataContracts.Sync.History;
 using Trakt.Api.DataContracts.Users.Collection;
 using Trakt.Api.DataContracts.Users.Playback;
 using Trakt.Api.DataContracts.Users.Watched;
@@ -422,6 +423,28 @@ public static class Extensions
     public static TraktMoviePaused FindMatch(BaseItem item, IEnumerable<TraktMoviePaused> results)
     {
         return results.FirstOrDefault(i => IsMatch(item, i.Movie));
+    }
+
+    /// <summary>
+    /// Gets a watched history match for a movie.
+    /// </summary>
+    /// <param name="item">The <see cref="BaseItem"/>.</param>
+    /// <param name="results">>The <see cref="IEnumerable{TraktMovieWatchedHistory}"/>.</param>
+    /// <returns>TraktMovieWatchedHistory.</returns>
+    public static TraktMovieWatchedHistory FindMatch(Movie item, IEnumerable<TraktMovieWatchedHistory> results)
+    {
+        return results.FirstOrDefault(i => IsMatch(item, i.Movie));
+    }
+
+    /// <summary>
+    /// Gets a watched history match for an episode.
+    /// </summary>
+    /// <param name="item">The <see cref="BaseItem"/>.</param>
+    /// <param name="results">>The <see cref="IEnumerable{TraktEpisodeWatchedHistory}"/>.</param>
+    /// <returns>TraktMovieWatchedHistory.</returns>
+    public static TraktEpisodeWatchedHistory FindMatch(Episode item, IEnumerable<TraktEpisodeWatchedHistory> results)
+    {
+        return results.FirstOrDefault(i => IsMatch(item, i.Episode));
     }
 
     /// <summary>
