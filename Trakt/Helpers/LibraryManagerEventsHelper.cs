@@ -73,7 +73,7 @@ internal class LibraryManagerEventsHelper : IDisposable
             {
                 // Add to queue.
                 // Sync will be processed when the next timer elapsed event fires.
-                if (user.SynchronizeCollections)
+                if (user.SynchronizeCollections && (!user.DontRemoveItemFromTrakt || eventType != EventType.Remove))
                 {
                     _queuedEvents.Add(new LibraryEvent { Item = item, TraktUser = user, EventType = eventType });
                 }

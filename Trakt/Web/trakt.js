@@ -20,7 +20,8 @@ const TraktConfigurationPage = {
                     ExtraLogging: false,
                     ExportMediaInfo: false,
                     SynchronizeCollections: true,
-                    Scrobble: true
+                    Scrobble: true,
+                    DontRemoveItemFromTrakt: true
                 };
             }
             // Default this to an empty array so the rendering code doesn't have to worry about it
@@ -36,6 +37,7 @@ const TraktConfigurationPage = {
             page.querySelector('#chkExportMediaInfo').checked = currentUserConfig.ExportMediaInfo;
             page.querySelector('#chkSyncCollections').checked = currentUserConfig.SynchronizeCollections;
             page.querySelector('#chkScrobble').checked = currentUserConfig.Scrobble;
+            page.querySelector('#chkDontRemoveItemFromTrakt').checked = currentUserConfig.DontRemoveItemFromTrakt;
             // List the folders the user can access
             ApiClient.getVirtualFolders(userId).then(function (result) {
                 TraktConfigurationPage.loadFolders(currentUserConfig, result);
@@ -120,6 +122,7 @@ function save(page) {
             currentUserConfig.ExportMediaInfo = page.querySelector('#chkExportMediaInfo').checked;
             currentUserConfig.SynchronizeCollections = page.querySelector('#chkSyncCollections').checked;
             currentUserConfig.Scrobble = page.querySelector('#chkScrobble').checked;
+            currentUserConfig.DontRemoveItemFromTrakt = page.querySelector('#chkDontRemoveItemFromTrakt').checked;
             currentUserConfig.LinkedMbUserId = currentUserId;
             currentUserConfig.LocationsExcluded = Array.prototype.map.call(page.querySelectorAll('.chkTraktLocation:checked'), elem => {
                 return elem.getAttribute('data-location');
