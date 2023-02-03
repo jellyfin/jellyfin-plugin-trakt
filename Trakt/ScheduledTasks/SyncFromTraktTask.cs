@@ -236,7 +236,7 @@ public class SyncFromTraktTask : IScheduledTask
                                 && (tLastPlayed.Value - userData.LastPlayedDate.Value).Duration() > TimeSpan.FromMinutes(10)
                                 && userData.LastPlayedDate < tLastPlayed)
                             {
-                                _logger.LogDebug("Setting movie's last played date to remote which is more than 10 minutes more recent than local (remote:{Remote} | local:{Local}) for user {User} locally: {Name}", tLastPlayed, userData.LastPlayedDate, user.Username, movie.Name);
+                                _logger.LogDebug("Setting movie's last played date to remote which is more than 10 minutes more recent than local (remote: {Remote} | local: {Local}) for user {User} locally: {Name}", tLastPlayed, userData.LastPlayedDate, user.Username, movie.Name);
                                 userData.LastPlayedDate = tLastPlayed;
                             }
 
@@ -247,7 +247,7 @@ public class SyncFromTraktTask : IScheduledTask
                         // Keep the highest play count
                         if (userData.PlayCount < matchedWatchedMovie.Plays)
                         {
-                            _logger.LogDebug("Adjusting movie's play count to match a higher remote value (remote:{Remote} | local:{Local}) for user {User} locally: {Name}", matchedWatchedMovie.Plays, userData.PlayCount, user.Username, movie.Name);
+                            _logger.LogDebug("Adjusting movie's play count to match a higher remote value (remote: {Remote} | local: {Local}) for user {User} locally: {Name}", matchedWatchedMovie.Plays, userData.PlayCount, user.Username, movie.Name);
                             userData.PlayCount = matchedWatchedMovie.Plays;
                             changed = true;
                         }
@@ -255,7 +255,7 @@ public class SyncFromTraktTask : IScheduledTask
                         // Update last played if remote time is more recent
                         if (tLastPlayed != null && userData.LastPlayedDate < tLastPlayed)
                         {
-                            _logger.LogDebug("Adjusting movie's last played date to match a more recent remote last played date (remote:{Remote} | local:{Local}) for user {User} locally: {Name}", tLastPlayed, userData.LastPlayedDate, user.Username, movie.Name);
+                            _logger.LogDebug("Adjusting movie's last played date to match a more recent remote last played date (remote: {Remote} | local: {Local}) for user {User} locally: {Name}", tLastPlayed, userData.LastPlayedDate, user.Username, movie.Name);
                             userData.LastPlayedDate = tLastPlayed;
                             changed = true;
                         }
@@ -287,7 +287,7 @@ public class SyncFromTraktTask : IScheduledTask
 
                     if (lastPlayed == null || (paused != null && lastPlayed < paused))
                     {
-                        _logger.LogDebug("Local last played date is missing or remote has more recent paused at date (remote:{Remote} | local:{Local}). Setting playback progress of movie for user {User} locally to {Progress}%: {Data}", paused, lastPlayed, user.Username, matchedPausedMovie.Progress, movie.Name);
+                        _logger.LogDebug("Local last played date is missing or remote has more recent paused at date (remote: {Remote} | local: {Local}). Setting playback progress of movie for user {User} locally to {Progress}%: {Data}", paused, lastPlayed, user.Username, matchedPausedMovie.Progress, movie.Name);
 
                         var runtimeTicks = movie.GetRunTimeTicksForPlayState();
                         var traktPlaybackTicks = runtimeTicks != 0
@@ -410,7 +410,7 @@ public class SyncFromTraktTask : IScheduledTask
                                     && (tLastPlayed.Value - userData.LastPlayedDate.Value).Duration() > TimeSpan.FromMinutes(10)
                                     && userData.LastPlayedDate < tLastPlayed)
                                 {
-                                    _logger.LogDebug("Setting episode's last played date to remote which is more than 10 minutes more recent than local (remote:{Remote} | local:{Local}) for user {User} locally: {Data}", tLastPlayed, userData.LastPlayedDate, user.Username, GetVerboseEpisodeData(episode));
+                                    _logger.LogDebug("Setting episode's last played date to remote which is more than 10 minutes more recent than local (remote: {Remote} | local: {Local}) for user {User} locally: {Data}", tLastPlayed, userData.LastPlayedDate, user.Username, GetVerboseEpisodeData(episode));
                                     userData.LastPlayedDate = tLastPlayed;
                                 }
 
@@ -418,10 +418,18 @@ public class SyncFromTraktTask : IScheduledTask
                                 changed = true;
                             }
 
+                            // Update last played if remote time is more recent
+                            if (tLastPlayed != null && userData.LastPlayedDate < tLastPlayed)
+                            {
+                                _logger.LogDebug("Adjusting episode's last played date to match a more recent remote last played date (remote: {Remote} | local: {Local}) for user {User} locally: {Name}", tLastPlayed, userData.LastPlayedDate, user.Username, episode.Name);
+                                userData.LastPlayedDate = tLastPlayed;
+                                changed = true;
+                            }
+
                             // Keep the highest play count
                             if (userData.PlayCount < matchedWatchedEpisode.Plays)
                             {
-                                _logger.LogDebug("Adjusting episode's play count to match a higher remote value (remote:{Remote} | local:{Local}) for user {User} locally: {Data}", matchedWatchedEpisode.Plays, userData.PlayCount, user.Username, GetVerboseEpisodeData(episode));
+                                _logger.LogDebug("Adjusting episode's play count to match a higher remote value (remote: {Remote} | local: {Local}) for user {User} locally: {Data}", matchedWatchedEpisode.Plays, userData.PlayCount, user.Username, GetVerboseEpisodeData(episode));
                                 userData.PlayCount = matchedWatchedEpisode.Plays;
                                 changed = true;
                             }
@@ -461,7 +469,7 @@ public class SyncFromTraktTask : IScheduledTask
 
                     if (lastPlayed == null || (paused != null && lastPlayed < paused))
                     {
-                        _logger.LogDebug("Local last played date is missing or remote has more recent paused at date (remote:{Remote} | local:{Local}). Setting playback progress of episode for user {User} locally to {Progress}%: {Data}", paused, lastPlayed, user.Username, matchedPausedEpisode.Progress, GetVerboseEpisodeData(episode));
+                        _logger.LogDebug("Local last played date is missing or remote has more recent paused at date (remote: {Remote} | local: {Local}). Setting playback progress of episode for user {User} locally to {Progress}%: {Data}", paused, lastPlayed, user.Username, matchedPausedEpisode.Progress, GetVerboseEpisodeData(episode));
 
                         var runtimeTicks = episode.GetRunTimeTicksForPlayState();
                         var traktPlaybackTicks = runtimeTicks != 0
