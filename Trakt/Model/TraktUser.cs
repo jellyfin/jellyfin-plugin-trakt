@@ -30,6 +30,7 @@ public class TraktUser
         Scrobble = true;
         LocationsExcluded = null;
         AccessTokenExpiration = DateTime.MinValue;
+        DontRemoveItemFromTrakt = true;
     }
 
     /// <summary>
@@ -111,4 +112,9 @@ public class TraktUser
     /// Gets or sets the access token expiration.
     /// </summary>
     public DateTime AccessTokenExpiration { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether item should be removed from trakt.tv.
+    /// </summary>
+    public bool DontRemoveItemFromTrakt { get; set; }
 }
