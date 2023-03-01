@@ -319,7 +319,7 @@ public class SyncFromTraktTask : IScheduledTask
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var matchedWatchedShow = Extensions.FindMatch(episode.Series, traktWatchedShows);
-                var matchedWatchedEpisodeHistories = Extensions.FindAllMatches(episode, traktWatchedEpisodesHistory);
+                var matchedWatchedEpisodeHistory = Extensions.FindAllMatches(episode, traktWatchedEpisodesHistory);
                 var matchedPausedEpisode = Extensions.FindMatch(episode, traktPausedEpisodes);
                 var userData = _userDataManager.GetUserData(user.Id, episode);
                 bool changed = false;
@@ -337,10 +337,10 @@ public class SyncFromTraktTask : IScheduledTask
                     }
 
                     // Check is match is found via history, fallback to match by season and number
-                    if (matchedWatchedEpisodeHistories != null && matchedWatchedEpisodeHistories.Any())
+                    if (matchedWatchedEpisodeHistory != null && matchedWatchedEpisodeHistory.Any())
                     {
                         // History is ordered with last watched first, so take the first one
-                        var lastWatchedEpisodeHistory = matchedWatchedEpisodeHistories.FirstOrDefault();
+                        var lastWatchedEpisodeHistory = matchedWatchedEpisodeHistory.FirstOrDefault();
 
                         // Prepend a check if the matched episode is on a rewatch cycle and
                         // discard it if the last play date was before the reset date
@@ -364,7 +364,7 @@ public class SyncFromTraktTask : IScheduledTask
                             }
 
                             // Update episode data
-                            changed = UpdateEpisodeData(user, episode, userData, tLastPlayed, matchedWatchedEpisodeHistories.Count());
+                            changed = UpdateEpisodeData(user, episode, userData, tLastPlayed, matchedWatchedEpisodeHistory.Count());
                         }
                     }
                     else if (matchedWatchedSeason != null)
