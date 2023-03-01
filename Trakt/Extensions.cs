@@ -441,10 +441,21 @@ public static class Extensions
     /// </summary>
     /// <param name="item">The <see cref="BaseItem"/>.</param>
     /// <param name="results">>The <see cref="IEnumerable{TraktEpisodeWatchedHistory}"/>.</param>
-    /// <returns>TraktMovieWatchedHistory.</returns>
+    /// <returns>TraktEpisodeWatchedHistory.</returns>
     public static TraktEpisodeWatchedHistory FindMatch(Episode item, IEnumerable<TraktEpisodeWatchedHistory> results)
     {
         return results.FirstOrDefault(i => IsMatch(item, i.Episode));
+    }
+
+    /// <summary>
+    /// Gets all watched history matches for an episode.
+    /// </summary>
+    /// <param name="item">The <see cref="BaseItem"/>.</param>
+    /// <param name="results">>The <see cref="IEnumerable{TraktEpisodeWatchedHistory}"/>.</param>
+    /// <returns>IEnumerable{TraktEpisodeWatchedHistory}.</returns>
+    public static IEnumerable<TraktEpisodeWatchedHistory> FindAllMatches(Episode item, IEnumerable<TraktEpisodeWatchedHistory> results)
+    {
+        return results.Where(i => IsMatch(item, i.Episode)).AsEnumerable();
     }
 
     /// <summary>
