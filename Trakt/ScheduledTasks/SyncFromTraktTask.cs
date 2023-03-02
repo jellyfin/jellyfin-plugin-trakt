@@ -355,7 +355,7 @@ public class SyncFromTraktTask : IScheduledTask
 
                         if (lastWatchedEpisodeHistory != null)
                         {
-                            _logger.LogDebug("Episode is in watched list of user {User}: {Data}", user.Username, GetVerboseEpisodeData(episode));
+                            _logger.LogDebug("Episode is in watched history list of user {User}: {Data}", user.Username, GetVerboseEpisodeData(episode));
 
                             episodeWatched = true;
                             DateTime? tLastPlayed = null;
