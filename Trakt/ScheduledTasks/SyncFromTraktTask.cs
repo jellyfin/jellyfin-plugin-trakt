@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
@@ -109,7 +110,7 @@ public class SyncFromTraktTask : IScheduledTask
         }
     }
 
-    private async Task SyncTraktDataForUser(Jellyfin.Data.Entities.User user, double currentProgress, IProgress<double> progress, double percentPerUser, CancellationToken cancellationToken)
+    private async Task SyncTraktDataForUser(User user, double currentProgress, IProgress<double> progress, double percentPerUser, CancellationToken cancellationToken)
     {
         var traktUser = UserHelper.GetTraktUser(user, true);
 
@@ -336,7 +337,7 @@ public class SyncFromTraktTask : IScheduledTask
                         tLastReset = resetValue;
                     }
 
-                    // Check is match is found via history, fallback to match by season and number
+                    // Check if match is found in history, fallback to match by season and number if not
                     if (matchedWatchedEpisodeHistory != null && matchedWatchedEpisodeHistory.Any())
                     {
                         // History is ordered with last watched first, so take the first one
@@ -462,7 +463,7 @@ public class SyncFromTraktTask : IScheduledTask
         while (previousCount != 0);
     }
 
-    private bool UpdateEpisodeData(Jellyfin.Data.Entities.User user, Episode episode, UserItemData userData, DateTime? tLastPlayed, int plays)
+    private bool UpdateEpisodeData(User user, Episode episode, UserItemData userData, DateTime? tLastPlayed, int plays)
     {
         bool changed = false;
 
