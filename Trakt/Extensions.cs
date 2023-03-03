@@ -565,12 +565,20 @@ public static class Extensions
             return true;
         }
 
-        // Match by show, season and episode number
-        if (IsMatch(item.Series, episodeHistory.Show) && item.GetSeasonNumber() == episodeHistory.Episode.Season && item.ContainsEpisodeNumber(episodeHistory.Episode.Number))
+        // Match by show, season and episode number if no provider id's are available
+        if (!HasAnyProviderTvIds(item) && IsMatch(item.Series, episodeHistory.Show) && item.GetSeasonNumber() == episodeHistory.Episode.Season && item.ContainsEpisodeNumber(episodeHistory.Episode.Number))
         {
             return true;
         }
 
         return false;
+    }
+
+    private static bool HasAnyProviderTvIds(BaseItem item)
+    {
+        return item.HasProviderId(MetadataProvider.Imdb)
+               || item.HasProviderId(MetadataProvider.Tmdb)
+               || item.HasProviderId(MetadataProvider.Tvdb)
+               || item.HasProviderId(MetadataProvider.TvRage);
     }
 }
