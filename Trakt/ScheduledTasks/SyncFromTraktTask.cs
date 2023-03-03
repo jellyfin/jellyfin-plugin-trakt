@@ -328,8 +328,6 @@ public class SyncFromTraktTask : IScheduledTask
 
                 if (!traktUser.SkipWatchedImportFromTrakt && matchedWatchedShow != null)
                 {
-                    var matchedWatchedSeason = matchedWatchedShow.Seasons.FirstOrDefault(tSeason => tSeason.Number == episode.GetSeasonNumber());
-
                     // Keep track of the shows rewatch cycles
                     DateTime? tLastReset = null;
                     if (DateTime.TryParse(matchedWatchedShow.ResetAt, out var resetValue))
