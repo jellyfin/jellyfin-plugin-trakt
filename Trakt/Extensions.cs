@@ -455,7 +455,7 @@ public static class Extensions
     /// <returns>IEnumerable{TraktEpisodeWatchedHistory}.</returns>
     public static IEnumerable<TraktEpisodeWatchedHistory> FindAllMatches(Episode item, IEnumerable<TraktEpisodeWatchedHistory> results)
     {
-        return results.Where(i => IsMatch(item, i.Episode)).AsEnumerable();
+        return results.Where(i => IsMatch(item, i)).AsEnumerable();
     }
 
     /// <summary>
@@ -548,7 +548,42 @@ public static class Extensions
             return true;
         }
 
-        if (item.GetSeasonNumber() == episode.Season && item.ContainsEpisodeNumber(episode.Number))
+        return false;
+    }
+
+    /// <summary>
+    /// Checks if a <see cref="Episode"/> matches a <see cref="TraktEpisodeWatchedHistory"/>.
+    /// </summary>
+    /// <param name="item">The <see cref="Episode"/>.</param>
+    /// <param name="episodeHistory">The <see cref="TraktEpisodeWatchedHistory"/>.</param>
+    /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktEpisodeWatchedHistory"/>.</returns>
+    public static bool IsMatch(Episode item, TraktEpisodeWatchedHistory episodeHistory)
+    {
+        var tvdb = item.GetProviderId(MetadataProvider.Tvdb);
+        if (!string.IsNullOrEmpty(tvdb) && string.Equals(tvdb, episodeHistory.Episode.Ids.Tvdb, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
+        if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, episodeHistory.Episode.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var imdb = item.GetProviderId(MetadataProvider.Imdb);
+        if (!string.IsNullOrEmpty(imdb) && string.Equals(imdb, episodeHistory.Episode.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var tvrage = item.GetProviderId(MetadataProvider.TvRage);
+        if (!string.IsNullOrEmpty(tvrage) && string.Equals(tvrage, episodeHistory.Episode.Ids.Tvrage, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (IsMatch(item.Series, episodeHistory.Show) && item.GetSeasonNumber() == episodeHistory.Episode.Season && item.ContainsEpisodeNumber(episodeHistory.Episode.Number))
         {
             return true;
         }

@@ -320,7 +320,6 @@ public class SyncFromTraktTask : IScheduledTask
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var matchedWatchedShow = Extensions.FindMatch(episode.Series, traktWatchedShows);
-                var matchedWatchedEpisodeHistory = Extensions.FindAllMatches(episode, traktWatchedEpisodesHistory);
                 var matchedPausedEpisode = Extensions.FindMatch(episode, traktPausedEpisodes);
                 var userData = _userDataManager.GetUserData(user.Id, episode);
                 bool changed = false;
@@ -335,7 +334,9 @@ public class SyncFromTraktTask : IScheduledTask
                         tLastReset = resetValue;
                     }
 
-                    // Check if match is found in history, fallback to match by season and number if not
+                    var matchedWatchedEpisodeHistory = Extensions.FindAllMatches(episode, traktWatchedEpisodesHistory);
+
+                    // Check if match is found in history
                     if (matchedWatchedEpisodeHistory != null && matchedWatchedEpisodeHistory.Any())
                     {
                         // History is ordered with last watched first, so take the first one
