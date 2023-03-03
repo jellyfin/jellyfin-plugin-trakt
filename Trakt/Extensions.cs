@@ -559,15 +559,19 @@ public static class Extensions
     /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktEpisodeWatchedHistory"/>.</returns>
     public static bool IsMatch(Episode item, TraktEpisodeWatchedHistory episodeHistory)
     {
+        bool match = false;
+
         // Match by provider id's if available, Match by show, season and episode number if not
-        if (HasAnyProviderTvIds(item))
+        if (HasAnyProviderTvIds(item) && HasAnyProviderTvIds(episodeHistory.Episode))
         {
-            return IsMatch(item, episodeHistory.Episode);
+            match = IsMatch(item, episodeHistory.Episode);
         }
         else
         {
-            return IsMatch(item.Series, episodeHistory.Show) && item.GetSeasonNumber() == episodeHistory.Episode.Season && item.ContainsEpisodeNumber(episodeHistory.Episode.Number);
+            match = IsMatch(item.Series, episodeHistory.Show) && item.GetSeasonNumber() == episodeHistory.Episode.Season && item.ContainsEpisodeNumber(episodeHistory.Episode.Number);
         }
+
+        return match;
     }
 
     private static bool HasAnyProviderTvIds(Episode item)
@@ -576,5 +580,13 @@ public static class Extensions
             || item.HasProviderId(MetadataProvider.Tmdb)
             || item.HasProviderId(MetadataProvider.Imdb)
             || item.HasProviderId(MetadataProvider.TvRage);
+    }
+
+    private static bool HasAnyProviderTvIds(TraktEpisode item)
+    {
+        return item.Ids.Tvdb != null
+            || item.Ids.Tmdb != null
+            || item.Ids.Imdb != null
+            || item.Ids.Tvrage != null;
     }
 }
