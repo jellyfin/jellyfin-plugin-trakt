@@ -548,6 +548,11 @@ public static class Extensions
             return true;
         }
 
+        if (item.GetSeasonNumber() == episode.Season && item.ContainsEpisodeNumber(episode.Number))
+        {
+            return true;
+        }
+
         return false;
     }
 }
