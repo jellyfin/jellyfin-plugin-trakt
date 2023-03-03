@@ -399,7 +399,7 @@ public class SyncFromTraktTask : IScheduledTask
                             var playCount = matchedWatchedEpisodeHistory.Count();
                             if (userData.PlayCount < playCount)
                             {
-                                _logger.LogDebug("Adjusting episode's play count to match a higher remote value (remote: {Remote} | local: {Local}) for user {User} locally: {Data}", plays, userData.PlayCount, user.Username, GetVerboseEpisodeData(episode));
+                                _logger.LogDebug("Adjusting episode's play count to match a higher remote value (remote: {Remote} | local: {Local}) for user {User} locally: {Data}", playCount, userData.PlayCount, user.Username, GetVerboseEpisodeData(episode));
                                 userData.PlayCount = playCount;
                                 changed = true;
                             }
