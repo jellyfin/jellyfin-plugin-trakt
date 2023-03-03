@@ -559,30 +559,13 @@ public static class Extensions
     /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktEpisodeWatchedHistory"/>.</returns>
     public static bool IsMatch(Episode item, TraktEpisodeWatchedHistory episodeHistory)
     {
-        var tvdb = item.GetProviderId(MetadataProvider.Tvdb);
-        if (!string.IsNullOrEmpty(tvdb) && string.Equals(tvdb, episodeHistory.Episode.Ids.Tvdb, StringComparison.OrdinalIgnoreCase))
+        // Match by provider id's
+        if (IsMatch(item, episodeHistory.Episode))
         {
             return true;
         }
 
-        var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
-        if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, episodeHistory.Episode.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        var imdb = item.GetProviderId(MetadataProvider.Imdb);
-        if (!string.IsNullOrEmpty(imdb) && string.Equals(imdb, episodeHistory.Episode.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        var tvrage = item.GetProviderId(MetadataProvider.TvRage);
-        if (!string.IsNullOrEmpty(tvrage) && string.Equals(tvrage, episodeHistory.Episode.Ids.Tvrage, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
+        // Match by show, season and episode number
         if (IsMatch(item.Series, episodeHistory.Show) && item.GetSeasonNumber() == episodeHistory.Episode.Season && item.ContainsEpisodeNumber(episodeHistory.Episode.Number))
         {
             return true;
