@@ -565,12 +565,24 @@ public static class Extensions
             return true;
         }
 
-        // Match by show, season and episode number
-        if (IsMatch(item.Series, episodeHistory.Show) && item.GetSeasonNumber() == episodeHistory.Episode.Season && item.ContainsEpisodeNumber(episodeHistory.Episode.Number))
+        // Match by show, season and episode number if there isn't any provider id in common
+        // If there was a common provider id between the item and the trakt episode (f.e. both have tvdb id), you shouldn't check anymore by season/number
+        if (HasAnyProviderTvIdInCommon(item, episodeHistory.Episode)
+            && IsMatch(item.Series, episodeHistory.Show)
+            && item.GetSeasonNumber() == episodeHistory.Episode.Season
+            && item.ContainsEpisodeNumber(episodeHistory.Episode.Number))
         {
             return true;
         }
 
         return false;
+    }
+
+    private static bool HasAnyProviderTvIdInCommon(Episode item, TraktEpisode traktEpisode)
+    {
+        return (item.HasProviderId(MetadataProvider.Tvdb) && traktEpisode.Ids.Tvdb != null)
+            || (item.HasProviderId(MetadataProvider.Imdb) && traktEpisode.Ids.Imdb != null)
+            || (item.HasProviderId(MetadataProvider.Tmdb) && traktEpisode.Ids.Tmdb != null)
+            || (item.HasProviderId(MetadataProvider.TvRage) && traktEpisode.Ids.Tvrage != null);
     }
 }
