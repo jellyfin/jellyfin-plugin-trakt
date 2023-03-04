@@ -567,7 +567,7 @@ public static class Extensions
 
         // Match by show, season and episode number if there isn't any provider id in common
         // If there was a common provider id between the item and the trakt episode (f.e. both have tvdb id), you shouldn't check anymore by season/number
-        if (HasAnyProviderTvIdInCommon(item, episodeHistory.Episode)
+        if (!HasAnyProviderTvIdInCommon(item, episodeHistory.Episode)
             && IsMatch(item.Series, episodeHistory.Show)
             && item.GetSeasonNumber() == episodeHistory.Episode.Season
             && item.ContainsEpisodeNumber(episodeHistory.Episode.Number))
