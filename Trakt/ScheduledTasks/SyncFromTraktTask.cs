@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Data.Entities;
 using Jellyfin.Data.Enums;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
@@ -109,7 +110,7 @@ public class SyncFromTraktTask : IScheduledTask
         }
     }
 
-    private async Task SyncTraktDataForUser(Jellyfin.Data.Entities.User user, double currentProgress, IProgress<double> progress, double percentPerUser, CancellationToken cancellationToken)
+    private async Task SyncTraktDataForUser(User user, double currentProgress, IProgress<double> progress, double percentPerUser, CancellationToken cancellationToken)
     {
         var traktUser = UserHelper.GetTraktUser(user, true);
 
@@ -319,7 +320,6 @@ public class SyncFromTraktTask : IScheduledTask
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var matchedWatchedShow = Extensions.FindMatch(episode.Series, traktWatchedShows);
-                var matchedWatchedEpisodeHistory = Extensions.FindMatch(episode, traktWatchedEpisodesHistory);
                 var matchedPausedEpisode = Extensions.FindMatch(episode, traktPausedEpisodes);
                 var userData = _userDataManager.GetUserData(user.Id, episode);
                 bool changed = false;
@@ -327,8 +327,6 @@ public class SyncFromTraktTask : IScheduledTask
 
                 if (!traktUser.SkipWatchedImportFromTrakt && matchedWatchedShow != null)
                 {
-                    var matchedWatchedSeason = matchedWatchedShow.Seasons.FirstOrDefault(tSeason => tSeason.Number == episode.GetSeasonNumber());
-
                     // Keep track of the shows rewatch cycles
                     DateTime? tLastReset = null;
                     if (DateTime.TryParse(matchedWatchedShow.ResetAt, out var resetValue))
@@ -336,60 +334,31 @@ public class SyncFromTraktTask : IScheduledTask
                         tLastReset = resetValue;
                     }
 
-                    // Fallback procedure to find match by using episode history
-                    if (matchedWatchedSeason == null && matchedWatchedEpisodeHistory != null)
+                    var matchedWatchedEpisodeHistory = Extensions.FindAllMatches(episode, traktWatchedEpisodesHistory);
+
+                    // Check if match is found in history
+                    if (matchedWatchedEpisodeHistory != null && matchedWatchedEpisodeHistory.Any())
                     {
-                        // Find watched season via history match
-                        _logger.LogDebug("Using history to match season for user {User} for {Data}", user.Username, GetVerboseEpisodeData(episode));
-                        matchedWatchedSeason = matchedWatchedShow.Seasons.FirstOrDefault(tSeason => tSeason.Number == matchedWatchedEpisodeHistory.Episode.Season);
-                    }
-
-                    // If it's not a match then it means trakt.tv doesn't know about the season, leave the watched state alone and move on
-                    if (matchedWatchedSeason != null)
-                    {
-                        // Check for matching episodes including multi-episode entities
-                        var matchedWatchedEpisode = matchedWatchedSeason.Episodes.FirstOrDefault(x => episode.ContainsEpisodeNumber(x.Number));
-
-                        // Fallback procedure to find match by using episode history
-                        if (matchedWatchedEpisode == null && matchedWatchedEpisodeHistory != null)
-                        {
-                            // Find watched season and episode via history match
-                            _logger.LogDebug("Using history to match season and episode for user {User} for {Data}", user.Username, GetVerboseEpisodeData(episode));
-                            matchedWatchedEpisode = matchedWatchedSeason.Episodes.FirstOrDefault(tEpisode => tEpisode.Number == matchedWatchedEpisodeHistory.Episode.Number);
-                        }
-
-                        // Fallback procedure to find match by using episode history, without checking the season (episode can belong to different season)
-                        if (matchedWatchedEpisode == null && matchedWatchedEpisodeHistory != null)
-                        {
-                            // Find watched episode via history match
-                            _logger.LogDebug("Using history to match episode for user {User} for {Data}", user.Username, GetVerboseEpisodeData(episode));
-                            foreach (var season in matchedWatchedShow.Seasons)
-                            {
-                                matchedWatchedEpisode = season.Episodes.FirstOrDefault(tEpisode => tEpisode.Number == matchedWatchedEpisodeHistory.Episode.Number);
-                                if (matchedWatchedEpisode != null)
-                                {
-                                    break; // stop when found in a season
-                                }
-                            }
-                        }
+                        // History is ordered with last watched first, so take the first one
+                        var lastWatchedEpisodeHistory = matchedWatchedEpisodeHistory.FirstOrDefault();
 
                         // Prepend a check if the matched episode is on a rewatch cycle and
                         // discard it if the last play date was before the reset date
-                        if (matchedWatchedEpisode != null
+                        if (lastWatchedEpisodeHistory != null
                             && tLastReset != null
-                            && DateTime.TryParse(matchedWatchedEpisode.LastWatchedAt, out var lastPlayedValue)
+                            && DateTime.TryParse(lastWatchedEpisodeHistory.WatchedAt, out var lastPlayedValue)
                             && lastPlayedValue < tLastReset)
                         {
-                            matchedWatchedEpisode = null;
+                            lastWatchedEpisodeHistory = null;
                         }
 
-                        if (matchedWatchedEpisode != null)
+                        if (lastWatchedEpisodeHistory != null)
                         {
-                            _logger.LogDebug("Episode is in watched list of user {User}: {Data}", user.Username, GetVerboseEpisodeData(episode));
+                            _logger.LogDebug("Episode is in watched history list of user {User}: {Data}", user.Username, GetVerboseEpisodeData(episode));
 
                             episodeWatched = true;
                             DateTime? tLastPlayed = null;
-                            if (DateTime.TryParse(matchedWatchedEpisode.LastWatchedAt, out var lastWatchedValue))
+                            if (DateTime.TryParse(lastWatchedEpisodeHistory.WatchedAt, out var lastWatchedValue))
                             {
                                 tLastPlayed = lastWatchedValue;
                             }
@@ -427,17 +396,18 @@ public class SyncFromTraktTask : IScheduledTask
                             }
 
                             // Keep the highest play count
-                            if (userData.PlayCount < matchedWatchedEpisode.Plays)
+                            var playCount = matchedWatchedEpisodeHistory.Count();
+                            if (userData.PlayCount < playCount)
                             {
-                                _logger.LogDebug("Adjusting episode's play count to match a higher remote value (remote: {Remote} | local: {Local}) for user {User} locally: {Data}", matchedWatchedEpisode.Plays, userData.PlayCount, user.Username, GetVerboseEpisodeData(episode));
-                                userData.PlayCount = matchedWatchedEpisode.Plays;
+                                _logger.LogDebug("Adjusting episode's play count to match a higher remote value (remote: {Remote} | local: {Local}) for user {User} locally: {Data}", playCount, userData.PlayCount, user.Username, GetVerboseEpisodeData(episode));
+                                userData.PlayCount = playCount;
                                 changed = true;
                             }
                         }
                     }
                     else
                     {
-                        _logger.LogDebug("No season data found for user {User} for {Data}", user.Username, GetVerboseEpisodeData(episode));
+                        _logger.LogDebug("No episode history data found for user {User} for {Data}", user.Username, GetVerboseEpisodeData(episode));
                     }
                 }
                 else

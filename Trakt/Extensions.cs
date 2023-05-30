@@ -441,10 +441,21 @@ public static class Extensions
     /// </summary>
     /// <param name="item">The <see cref="BaseItem"/>.</param>
     /// <param name="results">>The <see cref="IEnumerable{TraktEpisodeWatchedHistory}"/>.</param>
-    /// <returns>TraktMovieWatchedHistory.</returns>
+    /// <returns>TraktEpisodeWatchedHistory.</returns>
     public static TraktEpisodeWatchedHistory FindMatch(Episode item, IEnumerable<TraktEpisodeWatchedHistory> results)
     {
         return results.FirstOrDefault(i => IsMatch(item, i.Episode));
+    }
+
+    /// <summary>
+    /// Gets all watched history matches for an episode.
+    /// </summary>
+    /// <param name="item">The <see cref="BaseItem"/>.</param>
+    /// <param name="results">>The <see cref="IEnumerable{TraktEpisodeWatchedHistory}"/>.</param>
+    /// <returns>IEnumerable{TraktEpisodeWatchedHistory}.</returns>
+    public static IEnumerable<TraktEpisodeWatchedHistory> FindAllMatches(Episode item, IEnumerable<TraktEpisodeWatchedHistory> results)
+    {
+        return results.Where(i => IsMatch(item, i)).AsEnumerable();
     }
 
     /// <summary>
@@ -538,5 +549,40 @@ public static class Extensions
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Checks if a <see cref="Episode"/> matches a <see cref="TraktEpisodeWatchedHistory"/>.
+    /// </summary>
+    /// <param name="item">The <see cref="Episode"/>.</param>
+    /// <param name="episodeHistory">The <see cref="TraktEpisodeWatchedHistory"/>.</param>
+    /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktEpisodeWatchedHistory"/>.</returns>
+    public static bool IsMatch(Episode item, TraktEpisodeWatchedHistory episodeHistory)
+    {
+        // Match by provider id's
+        if (IsMatch(item, episodeHistory.Episode))
+        {
+            return true;
+        }
+
+        // Match by show, season and episode number if there isn't any provider id in common
+        // If there was a common provider id between the item and the trakt episode (f.e. both have tvdb id), you shouldn't check anymore by season/number
+        if (!HasAnyProviderTvIdInCommon(item, episodeHistory.Episode)
+            && IsMatch(item.Series, episodeHistory.Show)
+            && item.GetSeasonNumber() == episodeHistory.Episode.Season
+            && item.ContainsEpisodeNumber(episodeHistory.Episode.Number))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool HasAnyProviderTvIdInCommon(Episode item, TraktEpisode traktEpisode)
+    {
+        return (item.HasProviderId(MetadataProvider.Tvdb) && traktEpisode.Ids.Tvdb != null)
+            || (item.HasProviderId(MetadataProvider.Imdb) && traktEpisode.Ids.Imdb != null)
+            || (item.HasProviderId(MetadataProvider.Tmdb) && traktEpisode.Ids.Tmdb != null)
+            || (item.HasProviderId(MetadataProvider.TvRage) && traktEpisode.Ids.Tvrage != null);
     }
 }
