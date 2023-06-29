@@ -1136,7 +1136,7 @@ public class TraktApi
                     result.AddRange(tmpResult);
                 }
 
-                if (int.Parse(response.Headers.GetValues("X-Pagination-Page-Count").FirstOrDefault(page.ToString(CultureInfo.InvariantCulture)), CultureInfo.InvariantCulture) != page)
+                if (page < int.Parse(response.Headers.GetValues("X-Pagination-Page-Count").FirstOrDefault(page.ToString(CultureInfo.InvariantCulture)), CultureInfo.InvariantCulture))
                 {
                     page++;
                 }
