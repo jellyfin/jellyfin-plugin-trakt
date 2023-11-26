@@ -902,10 +902,10 @@ public class TraktApi
         foreach (TraktEpisode traktEpisode in traktSyncResponse.NotFound.Episodes.Where(episode => HasAnyProviderTvIds(episode.Ids)))
         {
             // Find matching episode in Jellyfin based on provider ids
-            var notFoundEpisode = episodeChunk.FirstOrDefault(episode => episode.GetProviderId(MetadataProvider.Imdb) == traktEpisode.Ids.Imdb
-                                                                         || episode.GetProviderId(MetadataProvider.Tmdb) == traktEpisode.Ids.Tmdb?.ToString(CultureInfo.InvariantCulture)
-                                                                         || episode.GetProviderId(MetadataProvider.Tvdb) == traktEpisode.Ids.Tvdb?.ToString(CultureInfo.InvariantCulture)
-                                                                         || episode.GetProviderId(MetadataProvider.TvRage) == traktEpisode.Ids.Tvrage?.ToString(CultureInfo.InvariantCulture));
+            var notFoundEpisode = episodeChunk.FirstOrDefault(episode => (!string.IsNullOrEmpty(episode.GetProviderId(MetadataProvider.Imdb)) && episode.GetProviderId(MetadataProvider.Imdb) == traktEpisode.Ids.Imdb)
+                                                                         || (!string.IsNullOrEmpty(episode.GetProviderId(MetadataProvider.Tmdb)) && episode.GetProviderId(MetadataProvider.Tmdb) == traktEpisode.Ids.Tmdb?.ToString(CultureInfo.InvariantCulture))
+                                                                         || (!string.IsNullOrEmpty(episode.GetProviderId(MetadataProvider.Tvdb)) && episode.GetProviderId(MetadataProvider.Tvdb) == traktEpisode.Ids.Tvdb?.ToString(CultureInfo.InvariantCulture))
+                                                                         || (!string.IsNullOrEmpty(episode.GetProviderId(MetadataProvider.TvRage)) && episode.GetProviderId(MetadataProvider.TvRage) == traktEpisode.Ids.Tvrage?.ToString(CultureInfo.InvariantCulture)));
 
             if (notFoundEpisode != null)
             {
