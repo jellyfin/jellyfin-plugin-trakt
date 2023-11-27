@@ -290,7 +290,7 @@ public class TraktApi
 
         var url = (eventType == EventType.Add || eventType == EventType.Update) ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
         var responses = new List<TraktSyncResponse>();
-        var chunks = moviesPayload.ToChunks(100);
+        var chunks = moviesPayload.Chunk(100);
         foreach (var chunk in chunks)
         {
             var data = new TraktSyncCollected
@@ -330,7 +330,7 @@ public class TraktApi
         }
 
         var responses = new List<TraktSyncResponse>();
-        var chunks = episodes.ToChunks(100);
+        var chunks = episodes.Chunk(100);
         foreach (var chunk in chunks)
         {
             responses.Add(await SendLibraryUpdateInternalAsync(chunk, traktUser, eventType, cancellationToken).ConfigureAwait(false));
@@ -340,7 +340,7 @@ public class TraktApi
     }
 
     private async Task<TraktSyncResponse> SendLibraryUpdateInternalAsync(
-        IEnumerable<Episode> episodes,
+        IReadOnlyList<Episode> episodes,
         TraktUser traktUser,
         EventType eventType,
         CancellationToken cancellationToken,
@@ -747,7 +747,7 @@ public class TraktApi
             };
         });
 
-        var chunks = moviesPayload.ToChunks(100).ToList();
+        var chunks = moviesPayload.Chunk(100).ToList();
         var traktResponses = new List<TraktSyncResponse>();
 
         foreach (var chunk in chunks)
@@ -792,7 +792,7 @@ public class TraktApi
             throw new ArgumentNullException(nameof(traktUser));
         }
 
-        var chunks = episodes.ToChunks(100);
+        var chunks = episodes.Chunk(100);
         var traktResponses = new List<TraktSyncResponse>();
 
         foreach (var chunk in chunks)
@@ -809,7 +809,7 @@ public class TraktApi
     }
 
     private async Task<TraktSyncResponse> SendEpisodePlaystateUpdatesInternalAsync(
-        IEnumerable<Episode> episodeChunk,
+        IReadOnlyList<Episode> episodeChunk,
         TraktUser traktUser,
         bool seen,
         CancellationToken cancellationToken,
@@ -894,7 +894,7 @@ public class TraktApi
         return response;
     }
 
-    private List<Episode> FindNotFoundEpisodes(IEnumerable<Episode> episodeChunk, TraktSyncResponse traktSyncResponse)
+    private List<Episode> FindNotFoundEpisodes(IReadOnlyList<Episode> episodeChunk, TraktSyncResponse traktSyncResponse)
     {
         // Episodes not found. If using ids, try again without them
         List<Episode> episodes = new List<Episode>();
