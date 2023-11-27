@@ -2,8 +2,8 @@
 name: "Trakt"
 guid: "4fe3201e-d6ae-4f2e-8917-e12bda571281"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-trakt.png"
-version: 23
-targetAbi: "10.8.9.0"
+version: 24
+targetAbi: "10.8.12.0"
 framework: "net6.0"
 owner: "jellyfin"
 overview: "Record your watched media with Trakt"
@@ -15,8 +15,15 @@ artifacts:
   - "Trakt.dll"
 changelog: |2-
   ### New features and improvements ###
-  - Added config parameter Don't remove items from trakt (#196) @addamanth
+  - Use history api for importing episodes from trakt (#205) @h3llrais3r
 
   ### Bug Fixes ###
-  - Sync  if not set locally (#201) @blackwind
-  - Fix episode last played date syncing (#199) @Shadowghost
+  - Fix duplicate watched entries (#224) @buthed010203
+  - Fix pagination when no items are present (#215) @kade-robertson
+
+  ### Code or Repo Maintenance ###
+  - Code cleanup (#225) @crobibero
+
+  ### Documentation updates ###
+  - Typo - Update trakt.html (#206) @Awolize
+  - small correction to trakt.html (#202) @veloute
