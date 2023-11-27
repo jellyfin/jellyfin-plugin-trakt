@@ -337,29 +337,6 @@ public static class Extensions
     }
 
     /// <summary>
-    /// Transforms an enumerable into a list with a speciifc amount of chunks.
-    /// </summary>
-    /// <param name="enumerable">The IEnumberable{T}.</param>
-    /// <param name="chunkSize">Size of the Chunks.</param>
-    /// <returns>IList{IEnumerable{T}}.</returns>
-    /// <typeparam name="T">The type of IEnumerable.</typeparam>
-    public static IList<IEnumerable<T>> ToChunks<T>(this IEnumerable<T> enumerable, int chunkSize)
-    {
-        var itemsReturned = 0;
-        var list = enumerable.ToList(); // Prevent multiple execution of IEnumerable.
-        var count = list.Count;
-        var chunks = new List<IEnumerable<T>>();
-        while (itemsReturned < count)
-        {
-            chunks.Add(list.Take(chunkSize).ToList());
-            list = list.Skip(chunkSize).ToList();
-            itemsReturned += chunkSize;
-        }
-
-        return chunks;
-    }
-
-    /// <summary>
     /// Gets a watched match for a series.
     /// </summary>
     /// <param name="item">The <see cref="Series"/>.</param>
@@ -464,16 +441,16 @@ public static class Extensions
     /// <param name="item">The <see cref="BaseItem"/>.</param>
     /// <param name="movie">The IEnumerable of <see cref="TraktMovie"/>.</param>
     /// <returns><see cref="bool"/> indicating if the <see cref="BaseItem"/> matches a <see cref="TraktMovie"/>.</returns>
-    public static bool IsMatch(BaseItem item, TraktMovie movie)
+    private static bool IsMatch(BaseItem item, TraktMovie movie)
     {
-        var imdb = item.GetProviderId(MetadataProvider.Imdb);
-        if (!string.IsNullOrEmpty(imdb) && string.Equals(imdb, movie.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
+        if (item.TryGetProviderId(MetadataProvider.Imdb, out var imdbId)
+            && string.Equals(imdbId, movie.Ids.Imdb, StringComparison.Ordinal))
         {
             return true;
         }
 
-        var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
-        if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, movie.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
+        if (item.TryGetProviderId(MetadataProvider.Tmdb, out var tmdbId)
+            && string.Equals(tmdbId, movie.Ids.Tmdb?.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal))
         {
             return true;
         }
@@ -487,28 +464,28 @@ public static class Extensions
     /// <param name="item">The <see cref="Series"/>.</param>
     /// <param name="show">The <see cref="TraktShow"/>.</param>
     /// <returns><see cref="bool"/> indicating if the <see cref="Series"/> matches a <see cref="TraktShow"/>.</returns>
-    public static bool IsMatch(Series item, TraktShow show)
+    private static bool IsMatch(Series item, TraktShow show)
     {
-        var tvdb = item.GetProviderId(MetadataProvider.Tvdb);
-        if (!string.IsNullOrEmpty(tvdb) && string.Equals(tvdb, show.Ids.Tvdb, StringComparison.OrdinalIgnoreCase))
+        if (item.TryGetProviderId(MetadataProvider.Tvdb, out var tvdbId)
+            && string.Equals(tvdbId, show.Ids.Tvdb, StringComparison.Ordinal))
         {
             return true;
         }
 
-        var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
-        if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, show.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
+        if (item.TryGetProviderId(MetadataProvider.Tmdb, out var tmdbId)
+            && string.Equals(tmdbId, show.Ids.Tmdb?.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal))
         {
             return true;
         }
 
-        var imdb = item.GetProviderId(MetadataProvider.Imdb);
-        if (!string.IsNullOrEmpty(imdb) && string.Equals(imdb, show.Ids.Imdb, StringComparison.OrdinalIgnoreCase))
+        if (item.TryGetProviderId(MetadataProvider.Imdb, out var imdbId)
+            && string.Equals(imdbId, show.Ids.Imdb, StringComparison.Ordinal))
         {
             return true;
         }
 
-        var tvrage = item.GetProviderId(MetadataProvider.TvRage);
-        if (!string.IsNullOrEmpty(tvrage) && string.Equals(tvrage, show.Ids.Tvrage, StringComparison.OrdinalIgnoreCase))
+        if (item.TryGetProviderId(MetadataProvider.TvRage, out var tvRageId)
+            && string.Equals(tvRageId, show.Ids.Tvrage, StringComparison.Ordinal))
         {
             return true;
         }
@@ -531,7 +508,7 @@ public static class Extensions
         }
 
         var tmdb = item.GetProviderId(MetadataProvider.Tmdb);
-        if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, episode.Ids.Tmdb.ToString(), StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrEmpty(tmdb) && string.Equals(tmdb, episode.Ids.Tmdb?.ToString(CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
