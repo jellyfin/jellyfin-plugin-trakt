@@ -233,3 +233,5 @@ pip-log.txt
 ## Rider
 #############
 .idea
+artifacts
+.idea
