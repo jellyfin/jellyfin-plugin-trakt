@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
@@ -250,17 +251,13 @@ public static class Extensions
         }
 
         var rageType = videoStream.VideoRangeType;
-        switch (rageType)
+        return rageType switch
         {
-            case "DOVI":
-                return TraktHdr.dolby_vision;
-            case "HDR10":
-                return TraktHdr.hdr10;
-            case "HLG":
-                return TraktHdr.hlg;
-            default:
-                return null;
-        }
+            VideoRangeType.DOVI => TraktHdr.dolby_vision,
+            VideoRangeType.HDR10 => TraktHdr.hdr10,
+            VideoRangeType.HLG => TraktHdr.hlg,
+            _ => null
+        };
     }
 
     /// <summary>
@@ -430,9 +427,9 @@ public static class Extensions
     /// <param name="item">The <see cref="BaseItem"/>.</param>
     /// <param name="results">>The <see cref="IEnumerable{TraktEpisodeWatchedHistory}"/>.</param>
     /// <returns>IEnumerable{TraktEpisodeWatchedHistory}.</returns>
-    public static IEnumerable<TraktEpisodeWatchedHistory> FindAllMatches(Episode item, IEnumerable<TraktEpisodeWatchedHistory> results)
+    public static IReadOnlyList<TraktEpisodeWatchedHistory> FindAllMatches(Episode item, IEnumerable<TraktEpisodeWatchedHistory> results)
     {
-        return results.Where(i => IsMatch(item, i)).AsEnumerable();
+        return results.Where(i => IsMatch(item, i)).ToList();
     }
 
     /// <summary>

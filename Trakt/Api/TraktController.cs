@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Mime;
 using System.Threading.Tasks;
+using MediaBrowser.Common.Api;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Library;
 using Microsoft.AspNetCore.Authorization;
@@ -19,7 +20,7 @@ namespace Trakt.Api;
 /// The trakt.tv controller class.
 /// </summary>
 [ApiController]
-[Authorize(Policy = "DefaultAuthorization")]
+[Authorize]
 [Route("[controller]")]
 [Produces(MediaTypeNames.Application.Json)]
 public class TraktController : ControllerBase
@@ -55,7 +56,7 @@ public class TraktController : ControllerBase
     /// <response code="200">Authorization code requested successfully.</response>
     /// <returns>The trakt.tv authorization code.</returns>
     [HttpPost("Users/{userGuid}/Authorize")]
-    [Authorize(Policy = "RequiresElevation")]
+    [Authorize(Policy = Policies.RequiresElevation)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult<object>> TraktDeviceAuthorization([FromRoute] Guid userGuid)
     {
@@ -86,7 +87,7 @@ public class TraktController : ControllerBase
     /// <response code="200">Deauthorization successful.</response>
     /// <returns>Empty string.</returns>
     [HttpPost("Users/{userGuid}/Deauthorize")]
-    [Authorize(Policy = "RequiresElevation")]
+    [Authorize(Policy = Policies.RequiresElevation)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public string TraktDeviceDeAuthorization([FromRoute] Guid userGuid)
     {
@@ -115,7 +116,7 @@ public class TraktController : ControllerBase
     /// <response code="200">Polling successful.</response>
     /// <returns>A value indicating whether the authorization code was connected to a trakt.tv account.</returns>
     [HttpGet("Users/{userGuid}/PollAuthorizationStatus")]
-    [Authorize(Policy = "RequiresElevation")]
+    [Authorize(Policy = Policies.RequiresElevation)]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<object> TraktPollAuthorizationStatus([FromRoute] Guid userGuid)
     {

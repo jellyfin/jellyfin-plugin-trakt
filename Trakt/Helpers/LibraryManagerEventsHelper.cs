@@ -14,7 +14,7 @@ using Trakt.Model.Enums;
 
 namespace Trakt.Helpers;
 
-internal class LibraryManagerEventsHelper : IDisposable
+internal sealed class LibraryManagerEventsHelper : IDisposable
 {
     private readonly List<LibraryEvent> _queuedEvents;
     private readonly ILogger<LibraryManagerEventsHelper> _logger;
@@ -40,13 +40,9 @@ internal class LibraryManagerEventsHelper : IDisposable
     /// <param name="eventType">The <see cref="EventType"/>.</param>
     public void QueueItem(BaseItem item, EventType eventType)
     {
+        ArgumentNullException.ThrowIfNull(item);
         lock (_queuedEvents)
         {
-            if (item == null)
-            {
-                throw new ArgumentNullException(nameof(item));
-            }
-
             if (_queueTimer == null)
             {
                 _queueTimer = new Timer(
@@ -106,7 +102,7 @@ internal class LibraryManagerEventsHelper : IDisposable
 
         lock (_queuedEvents)
         {
-            if (!_queuedEvents.Any())
+            if (_queuedEvents.Count == 0)
             {
                 _logger.LogInformation("No events... stopping queue timer");
                 return;
@@ -287,7 +283,7 @@ internal class LibraryManagerEventsHelper : IDisposable
                 .ToList();
 
             // Can't progress further without episodes
-            if (!episodes.Any())
+            if (episodes.Count == 0)
             {
                 _logger.LogDebug("Episodes count is 0");
 
@@ -311,7 +307,7 @@ internal class LibraryManagerEventsHelper : IDisposable
                 payload.Add(ep);
             }
 
-            if (payload.Any())
+            if (payload.Count != 0)
             {
                 await _traktApi.SendLibraryUpdateAsync(payload, traktUser, eventType, CancellationToken.None).ConfigureAwait(false);
             }
@@ -324,15 +320,6 @@ internal class LibraryManagerEventsHelper : IDisposable
 
     public void Dispose()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            _queueTimer?.Dispose();
-        }
+        _queueTimer?.Dispose();
     }
 }
