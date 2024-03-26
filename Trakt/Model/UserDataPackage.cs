@@ -8,7 +8,7 @@ namespace Trakt.Helpers;
 /// <summary>
 /// Class that contains all the items to be reported to trakt.tv and supporting properties.
 /// </summary>
-internal class UserDataPackage
+internal sealed class UserDataPackage
 {
     public UserDataPackage()
     {

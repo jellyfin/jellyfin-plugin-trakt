@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
@@ -11,6 +12,7 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Session;
 using MediaBrowser.Model.Entities;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Helpers;
@@ -22,7 +24,7 @@ namespace Trakt;
 /// <summary>
 /// All communication between the server and the plugins server instance should occur in this class.
 /// </summary>
-public class ServerMediator : IServerEntryPoint, IDisposable
+public class ServerMediator : IHostedService, IDisposable
 {
     private readonly ILibraryManager _libraryManager;
     private readonly ILogger<ServerMediator> _logger;
@@ -95,23 +97,6 @@ public class ServerMediator : IServerEntryPoint, IDisposable
             // We have a user who wants to post updates and the item is in a trakt.tv monitored location
             _userDataManagerEventsHelper.ProcessUserDataSaveEventArgs(userDataSaveEventArgs, traktUser);
         }
-    }
-
-    /// <summary>
-    /// Run observer tasks for observed events.
-    /// </summary>
-    /// <returns>Task.</returns>
-    public Task RunAsync()
-    {
-        _userDataManager.UserDataSaved += OnUserDataSaved;
-        _sessionManager.PlaybackStart += KernelPlaybackStart;
-        _sessionManager.PlaybackProgress += KernelPlaybackProgress;
-        _sessionManager.PlaybackStopped += KernelPlaybackStopped;
-        _libraryManager.ItemAdded += LibraryManagerItemAdded;
-        _libraryManager.ItemUpdated += LibraryManagerItemUpdated;
-        _libraryManager.ItemRemoved += LibraryManagerItemRemoved;
-
-        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -189,7 +174,7 @@ public class ServerMediator : IServerEntryPoint, IDisposable
     {
         _logger.LogDebug("Playback started");
 
-        if (playbackProgressEventArgs.Users == null || !playbackProgressEventArgs.Users.Any() || playbackProgressEventArgs.Item == null)
+        if (playbackProgressEventArgs.Users == null || playbackProgressEventArgs.Users.Count == 0 || playbackProgressEventArgs.Item == null)
         {
             _logger.LogError("Event details incomplete. Cannot process current media");
             return;
@@ -277,7 +262,7 @@ public class ServerMediator : IServerEntryPoint, IDisposable
     {
         _logger.LogDebug("Playback progressed");
 
-        if (playbackProgressEventArgs.Users == null || !playbackProgressEventArgs.Users.Any() || playbackProgressEventArgs.Item == null)
+        if (playbackProgressEventArgs.Users == null || playbackProgressEventArgs.Users.Count == 0 || playbackProgressEventArgs.Item == null)
         {
             _logger.LogError("Event details incomplete. Cannot process current media");
             return;
@@ -392,7 +377,7 @@ public class ServerMediator : IServerEntryPoint, IDisposable
     /// <param name="playbackStoppedEventArgs">The <see cref="PlaybackStopEventArgs"/>.</param>
     private async void KernelPlaybackStopped(object sender, PlaybackStopEventArgs playbackStoppedEventArgs)
     {
-        if (playbackStoppedEventArgs.Users == null || !playbackStoppedEventArgs.Users.Any() || playbackStoppedEventArgs.Item == null)
+        if (playbackStoppedEventArgs.Users == null || playbackStoppedEventArgs.Users.Count == 0 || playbackStoppedEventArgs.Item == null)
         {
             _logger.LogError("Event details incomplete. Cannot process current media");
             return;
@@ -491,6 +476,33 @@ public class ServerMediator : IServerEntryPoint, IDisposable
     }
 
     /// <inheritdoc />
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        _userDataManager.UserDataSaved += OnUserDataSaved;
+        _sessionManager.PlaybackStart += KernelPlaybackStart;
+        _sessionManager.PlaybackProgress += KernelPlaybackProgress;
+        _sessionManager.PlaybackStopped += KernelPlaybackStopped;
+        _libraryManager.ItemAdded += LibraryManagerItemAdded;
+        _libraryManager.ItemUpdated += LibraryManagerItemUpdated;
+        _libraryManager.ItemRemoved += LibraryManagerItemRemoved;
+
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public Task StopAsync(CancellationToken cancellationToken)
+    {
+        _userDataManager.UserDataSaved -= OnUserDataSaved;
+        _sessionManager.PlaybackStart -= KernelPlaybackStart;
+        _sessionManager.PlaybackStopped -= KernelPlaybackStopped;
+        _sessionManager.PlaybackProgress -= KernelPlaybackProgress;
+        _libraryManager.ItemAdded -= LibraryManagerItemAdded;
+        _libraryManager.ItemUpdated -= LibraryManagerItemUpdated;
+        _libraryManager.ItemRemoved -= LibraryManagerItemRemoved;
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
     public void Dispose()
     {
         Dispose(true);
@@ -498,22 +510,15 @@ public class ServerMediator : IServerEntryPoint, IDisposable
     }
 
     /// <summary>
-    /// Removes event subscriptions on dispose.
+    /// Dispose.
     /// </summary>
-    /// <param name="disposing"><see cref="bool"/> indicating if object is currently disposed.</param>
+    /// <param name="disposing">Whether to dispose.</param>
     protected virtual void Dispose(bool disposing)
     {
         if (disposing)
         {
-            _userDataManager.UserDataSaved -= OnUserDataSaved;
-            _sessionManager.PlaybackStart -= KernelPlaybackStart;
-            _sessionManager.PlaybackStopped -= KernelPlaybackStopped;
-            _sessionManager.PlaybackProgress -= KernelPlaybackProgress;
-            _libraryManager.ItemAdded -= LibraryManagerItemAdded;
-            _libraryManager.ItemUpdated -= LibraryManagerItemUpdated;
-            _libraryManager.ItemRemoved -= LibraryManagerItemRemoved;
-            _libraryManagerEventsHelper.Dispose();
-            _userDataManagerEventsHelper.Dispose();
+            _userDataManagerEventsHelper?.Dispose();
+            _libraryManagerEventsHelper?.Dispose();
         }
     }
 }

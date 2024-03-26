@@ -15,7 +15,7 @@ namespace Trakt.Helpers;
 /// Helper class used to update the watched status of movies/episodes.
 /// Attempts to organise requests to lower API calls.
 /// </summary>
-internal class UserDataManagerEventsHelper : IDisposable
+internal sealed class UserDataManagerEventsHelper : IDisposable
 {
     private readonly ILogger<UserDataManagerEventsHelper> _logger;
     private readonly TraktApi _traktApi;
@@ -103,7 +103,7 @@ internal class UserDataManagerEventsHelper : IDisposable
                 {
                     if (!userPackage.CurrentSeriesId.Equals(episode.Series.Id))
                     {
-                        if (userPackage.SeenEpisodes.Any())
+                        if (userPackage.SeenEpisodes.Count != 0)
                         {
                             _traktApi.SendEpisodePlaystateUpdates(
                                 userPackage.SeenEpisodes.ToList(),
@@ -113,7 +113,7 @@ internal class UserDataManagerEventsHelper : IDisposable
                             userPackage.SeenEpisodes.Clear();
                         }
 
-                        if (userPackage.UnSeenEpisodes.Any())
+                        if (userPackage.UnSeenEpisodes.Count != 0)
                         {
                             _traktApi.SendEpisodePlaystateUpdates(
                                 userPackage.UnSeenEpisodes.ToList(),
@@ -170,7 +170,7 @@ internal class UserDataManagerEventsHelper : IDisposable
         Dictionary<Guid, UserDataPackage> userDataQueue;
         lock (_userDataPackages)
         {
-            if (!_userDataPackages.Any())
+            if (_userDataPackages.Count == 0)
             {
                 _logger.LogInformation("No events... stopping queue timer");
                 return;
@@ -182,7 +182,7 @@ internal class UserDataManagerEventsHelper : IDisposable
 
         foreach (var package in userDataQueue)
         {
-            if (package.Value.UnSeenMovies.Any())
+            if (package.Value.UnSeenMovies.Count != 0)
             {
                 _traktApi.SendMoviePlaystateUpdates(
                     package.Value.UnSeenMovies.ToList(),
@@ -192,7 +192,7 @@ internal class UserDataManagerEventsHelper : IDisposable
                 package.Value.UnSeenMovies.Clear();
             }
 
-            if (package.Value.SeenMovies.Any())
+            if (package.Value.SeenMovies.Count != 0)
             {
                 _traktApi.SendMoviePlaystateUpdates(
                     package.Value.SeenMovies.ToList(),
@@ -202,7 +202,7 @@ internal class UserDataManagerEventsHelper : IDisposable
                 package.Value.SeenMovies.Clear();
             }
 
-            if (package.Value.UnSeenEpisodes.Any())
+            if (package.Value.UnSeenEpisodes.Count != 0)
             {
                 _traktApi.SendEpisodePlaystateUpdates(
                     package.Value.UnSeenEpisodes.ToList(),
@@ -212,7 +212,7 @@ internal class UserDataManagerEventsHelper : IDisposable
                 package.Value.UnSeenEpisodes.Clear();
             }
 
-            if (package.Value.SeenEpisodes.Any())
+            if (package.Value.SeenEpisodes.Count != 0)
             {
                 _traktApi.SendEpisodePlaystateUpdates(
                     package.Value.SeenEpisodes.ToList(),
@@ -226,15 +226,6 @@ internal class UserDataManagerEventsHelper : IDisposable
 
     public void Dispose()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            _queueTimer?.Dispose();
-        }
+        _queueTimer?.Dispose();
     }
 }

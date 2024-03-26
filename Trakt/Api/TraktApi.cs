@@ -253,15 +253,9 @@ public class TraktApi
         EventType eventType,
         CancellationToken cancellationToken)
     {
-        if (movies is null || movies.Count == 0)
-        {
-            throw new ArgumentNullException(nameof(movies));
-        }
-
-        if (traktUser == null)
-        {
-            throw new ArgumentNullException(nameof(traktUser));
-        }
+        ArgumentNullException.ThrowIfNull(movies);
+        ArgumentOutOfRangeException.ThrowIfZero(movies.Count);
+        ArgumentNullException.ThrowIfNull(traktUser);
 
         var moviesPayload = movies.Select(m =>
         {
@@ -319,15 +313,9 @@ public class TraktApi
         EventType eventType,
         CancellationToken cancellationToken)
     {
-        if (episodes is null || episodes.Count == 0)
-        {
-            throw new ArgumentNullException(nameof(episodes));
-        }
-
-        if (traktUser == null)
-        {
-            throw new ArgumentNullException(nameof(traktUser));
-        }
+        ArgumentNullException.ThrowIfNull(episodes);
+        ArgumentOutOfRangeException.ThrowIfZero(episodes.Count);
+        ArgumentNullException.ThrowIfNull(traktUser);
 
         var responses = new List<TraktSyncResponse>();
         var chunks = episodes.Chunk(100);
@@ -468,15 +456,8 @@ public class TraktApi
         EventType eventType,
         CancellationToken cancellationToken)
     {
-        if (show == null)
-        {
-            throw new ArgumentNullException(nameof(show));
-        }
-
-        if (traktUser == null)
-        {
-            throw new ArgumentNullException(nameof(traktUser));
-        }
+        ArgumentNullException.ThrowIfNull(show);
+        ArgumentNullException.ThrowIfNull(traktUser);
 
         var showPayload = new List<TraktShowCollected>
         {
@@ -722,15 +703,9 @@ public class TraktApi
         bool seen,
         CancellationToken cancellationToken)
     {
-        if (movies == null)
-        {
-            throw new ArgumentNullException(nameof(movies));
-        }
-
-        if (traktUser == null)
-        {
-            throw new ArgumentNullException(nameof(traktUser));
-        }
+        ArgumentNullException.ThrowIfNull(movies);
+        ArgumentOutOfRangeException.ThrowIfZero(movies.Count);
+        ArgumentNullException.ThrowIfNull(traktUser);
 
         var moviesPayload = movies.Select(m =>
         {
@@ -782,15 +757,9 @@ public class TraktApi
         bool seen,
         CancellationToken cancellationToken)
     {
-        if (episodes == null)
-        {
-            throw new ArgumentNullException(nameof(episodes));
-        }
-
-        if (traktUser == null)
-        {
-            throw new ArgumentNullException(nameof(traktUser));
-        }
+        ArgumentNullException.ThrowIfNull(episodes);
+        ArgumentOutOfRangeException.ThrowIfZero(episodes.Count);
+        ArgumentNullException.ThrowIfNull(traktUser);
 
         var chunks = episodes.Chunk(100);
         var traktResponses = new List<TraktSyncResponse>();

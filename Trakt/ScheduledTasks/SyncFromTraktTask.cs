@@ -340,7 +340,7 @@ public class SyncFromTraktTask : IScheduledTask
                     if (matchedWatchedEpisodeHistory != null && matchedWatchedEpisodeHistory.Any())
                     {
                         // History is ordered with last watched first, so take the first one
-                        var lastWatchedEpisodeHistory = matchedWatchedEpisodeHistory.FirstOrDefault();
+                        var lastWatchedEpisodeHistory = matchedWatchedEpisodeHistory[0];
 
                         // Prepend a check if the matched episode is on a rewatch cycle and
                         // discard it if the last play date was before the reset date
@@ -396,7 +396,7 @@ public class SyncFromTraktTask : IScheduledTask
                             }
 
                             // Keep the highest play count
-                            var playCount = matchedWatchedEpisodeHistory.Count();
+                            var playCount = matchedWatchedEpisodeHistory.Count;
                             if (userData.PlayCount < playCount)
                             {
                                 _logger.LogDebug("Adjusting episode's play count to match a higher remote value (remote: {Remote} | local: {Local}) for user {User} locally: {Data}", playCount, userData.PlayCount, user.Username, GetVerboseEpisodeData(episode));

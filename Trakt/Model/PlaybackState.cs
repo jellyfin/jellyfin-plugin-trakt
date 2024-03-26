@@ -2,7 +2,7 @@ using System;
 
 namespace Trakt.Model;
 
-internal class PlaybackState
+internal sealed class PlaybackState
 {
     public bool IsPaused { get; set; } = false;
 

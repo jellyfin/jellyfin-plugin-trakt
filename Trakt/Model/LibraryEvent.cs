@@ -3,7 +3,7 @@ using Trakt.Model.Enums;
 
 namespace Trakt.Model;
 
-internal class LibraryEvent
+internal sealed class LibraryEvent
 {
     public BaseItem Item { get; set; }
 
