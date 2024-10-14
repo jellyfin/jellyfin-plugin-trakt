@@ -47,6 +47,7 @@ public class TraktApi
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IServerApplicationHost _appHost;
     private readonly IUserDataManager _userDataManager;
+    private readonly IUserManager _userManager;
     private readonly JsonSerializerOptions _jsonOptions = JsonDefaults.Options;
 
     /// <summary>
@@ -56,15 +57,18 @@ public class TraktApi
     /// <param name="httpClientFactory">The <see cref="IHttpClientFactory"/>.</param>
     /// <param name="appHost">The <see cref="IServerApplicationHost"/>.</param>
     /// <param name="userDataManager">The <see cref="IUserDataManager"/>.</param>
+    /// <param name="userManager">The <see cref="IUserManager"/>.</param>
     public TraktApi(
         ILogger<TraktApi> logger,
         IHttpClientFactory httpClientFactory,
         IServerApplicationHost appHost,
-        IUserDataManager userDataManager)
+        IUserDataManager userDataManager,
+        IUserManager userManager)
     {
         _httpClientFactory = httpClientFactory;
         _appHost = appHost;
         _userDataManager = userDataManager;
+        _userManager = userManager;
         _logger = logger;
     }
 
@@ -707,10 +711,17 @@ public class TraktApi
         ArgumentOutOfRangeException.ThrowIfZero(movies.Count);
         ArgumentNullException.ThrowIfNull(traktUser);
 
+        var user = _userManager.GetUserById(traktUser.LinkedMbUserId);
+        if (user is null)
+        {
+            _logger.LogWarning("User id ({UserId}) linked to Trakt does not exist", traktUser.LinkedMbUserId);
+            return null;
+        }
+
         var moviesPayload = movies.Select(m =>
         {
             var lastPlayedDate = seen
-                ? _userDataManager.GetUserData(traktUser.LinkedMbUserId, m).LastPlayedDate
+                ? _userDataManager.GetUserData(user, m).LastPlayedDate
                 : null;
 
             return new TraktMovieWatched
@@ -784,6 +795,13 @@ public class TraktApi
         CancellationToken cancellationToken,
         bool useProviderIds = true)
     {
+        var user = _userManager.GetUserById(traktUser.LinkedMbUserId);
+        if (user is null)
+        {
+            _logger.LogWarning("User id ({UserId}) linked to Trakt does not exist", traktUser.LinkedMbUserId);
+            return null;
+        }
+
         var data = new TraktSyncWatched
         {
             Episodes = new List<TraktEpisodeWatched>(),
@@ -793,7 +811,7 @@ public class TraktApi
         foreach (var episode in episodeChunk)
         {
             var lastPlayedDate = seen
-                ? _userDataManager.GetUserData(traktUser.LinkedMbUserId, episode)
+                ? _userDataManager.GetUserData(user, episode)
                     .LastPlayedDate
                 : null;
 
