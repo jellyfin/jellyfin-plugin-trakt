@@ -58,7 +58,7 @@ public class SyncFromTraktTask : IScheduledTask
         _userDataManager = userDataManager;
         _libraryManager = libraryManager;
         _logger = loggerFactory.CreateLogger<SyncFromTraktTask>();
-        _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager);
+        _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, userManager);
     }
 
     /// <inheritdoc />
@@ -206,7 +206,7 @@ public class SyncFromTraktTask : IScheduledTask
                 cancellationToken.ThrowIfCancellationRequested();
                 var matchedWatchedMovie = Extensions.FindMatch(movie, traktWatchedMovies);
                 var matchedPausedMovie = Extensions.FindMatch(movie, traktPausedMovies);
-                var userData = _userDataManager.GetUserData(user.Id, movie);
+                var userData = _userDataManager.GetUserData(user, movie);
                 bool changed = false;
 
                 if (matchedWatchedMovie != null)
@@ -304,7 +304,7 @@ public class SyncFromTraktTask : IScheduledTask
                 if (changed)
                 {
                     _userDataManager.SaveUserData(
-                        user.Id,
+                        user,
                         movie,
                         userData,
                         UserDataSaveReason.Import,
@@ -321,7 +321,7 @@ public class SyncFromTraktTask : IScheduledTask
                 cancellationToken.ThrowIfCancellationRequested();
                 var matchedWatchedShow = Extensions.FindMatch(episode.Series, traktWatchedShows);
                 var matchedPausedEpisode = Extensions.FindMatch(episode, traktPausedEpisodes);
-                var userData = _userDataManager.GetUserData(user.Id, episode);
+                var userData = _userDataManager.GetUserData(user, episode);
                 bool changed = false;
                 bool episodeWatched = false;
 
@@ -455,7 +455,7 @@ public class SyncFromTraktTask : IScheduledTask
                 if (changed)
                 {
                     _userDataManager.SaveUserData(
-                        user.Id,
+                        user,
                         episode,
                         userData,
                         UserDataSaveReason.Import,

@@ -60,7 +60,7 @@ public class SyncLibraryTask : IScheduledTask
         _userDataManager = userDataManager;
         _libraryManager = libraryManager;
         _logger = loggerFactory.CreateLogger<SyncLibraryTask>();
-        _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager);
+        _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, userManager);
     }
 
     /// <inheritdoc />
@@ -199,7 +199,7 @@ public class SyncLibraryTask : IScheduledTask
                 foreach (var libraryMovie in movieItems)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    var userData = _userDataManager.GetUserData(user.Id, libraryMovie);
+                    var userData = _userDataManager.GetUserData(user, libraryMovie);
 
                     if (traktUser.SynchronizeCollections)
                     {
@@ -438,7 +438,7 @@ public class SyncLibraryTask : IScheduledTask
                 foreach (var episode in episodeItems)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    var userData = _userDataManager.GetUserData(user.Id, episode);
+                    var userData = _userDataManager.GetUserData(user, episode);
                     var isPlayedTraktTv = false;
                     var traktWatchedShow = Extensions.FindMatch(episode.Series, traktWatchedShows);
 

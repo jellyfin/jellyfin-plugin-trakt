@@ -37,15 +37,17 @@ public class TraktController : ControllerBase
     /// <param name="libraryManager">Instance of the <see cref="ILibraryManager"/> interface.</param>
     /// <param name="httpClientFactory">Instance of the <see cref="IHttpClientFactory"/> interface.</param>
     /// <param name="appHost">Instance of the <see cref="IServerApplicationHost"/> interface.</param>
+    /// <param name="userManager">Instance of the <see cref="IUserManager"/> interface.</param>
     public TraktController(
         IUserDataManager userDataManager,
         ILoggerFactory loggerFactory,
         IHttpClientFactory httpClientFactory,
         IServerApplicationHost appHost,
-        ILibraryManager libraryManager)
+        ILibraryManager libraryManager,
+        IUserManager userManager)
     {
         _logger = loggerFactory.CreateLogger<TraktController>();
-        _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager);
+        _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, userManager);
         _libraryManager = libraryManager;
     }
 
