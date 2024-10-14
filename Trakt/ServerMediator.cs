@@ -44,13 +44,15 @@ public class ServerMediator : IHostedService, IDisposable
     /// <param name="loggerFactory">The <see cref="ILoggerFactory"/>.</param>
     /// <param name="httpClientFactory">The <see cref="IHttpClientFactory"/>.</param>
     /// <param name="appHost">The <see cref="IServerApplicationHost"/>.</param>
+    /// <param name="userManager">The <see cref="IUserManager"/>.</param>
     public ServerMediator(
         ISessionManager sessionManager,
         IUserDataManager userDataManager,
         ILibraryManager libraryManager,
         ILoggerFactory loggerFactory,
         IHttpClientFactory httpClientFactory,
-        IServerApplicationHost appHost)
+        IServerApplicationHost appHost,
+        IUserManager userManager)
     {
         _sessionManager = sessionManager;
         _libraryManager = libraryManager;
@@ -59,7 +61,7 @@ public class ServerMediator : IHostedService, IDisposable
         _logger = loggerFactory.CreateLogger<ServerMediator>();
         _playbackState = new Dictionary<Guid, PlaybackState>();
 
-        _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager);
+        _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, userManager);
         _libraryManagerEventsHelper = new LibraryManagerEventsHelper(loggerFactory.CreateLogger<LibraryManagerEventsHelper>(), _traktApi);
         _userDataManagerEventsHelper = new UserDataManagerEventsHelper(loggerFactory.CreateLogger<UserDataManagerEventsHelper>(), _traktApi);
     }
