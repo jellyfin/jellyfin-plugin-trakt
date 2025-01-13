@@ -237,11 +237,11 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
 
         _logger.LogInformation("Processing {Count} movies with event type {EventType}", events.Count, eventType);
 
-        var movies = events.Select(lev => (Movie)lev.Item)
-            .Where(lev => !string.IsNullOrEmpty(lev.Name)
-                          && (!string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Tmdb))
-                              || !string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Imdb)))
-                          && !traktUser.LocationsExcluded.Any(directory => lev.Path.Contains(directory, StringComparison.OrdinalIgnoreCase)))
+        var movies = events.Select(e => (Movie)e.Item)
+            .Where(movie => !string.IsNullOrEmpty(movie.Name)
+                          && (!string.IsNullOrEmpty(movie.GetProviderId(MetadataProvider.Tmdb))
+                              || !string.IsNullOrEmpty(movie.GetProviderId(MetadataProvider.Imdb)))
+                          && !traktUser.LocationsExcluded.Any(directory => movie.Path is not null && movie.Path.Contains(directory, StringComparison.OrdinalIgnoreCase)))
             .ToHashSet();
 
         try
