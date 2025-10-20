@@ -5,6 +5,8 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Data.Enums;
+using Jellyfin.Database.Implementations.Entities;
+using Jellyfin.Database.Implementations.Enums;
 using MediaBrowser.Controller;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
@@ -114,7 +116,7 @@ public class SyncLibraryTask : IScheduledTask
     /// <summary>
     /// Calls <see cref="SyncMovies"/> and <see cref="SyncShows"/>.
     /// </summary>
-    /// <param name="user">The <see cref="Jellyfin.Data.Entities.User"/>.</param>
+    /// <param name="user">The <see cref="User"/>.</param>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
     /// <param name="progress">The progress.</param>
     /// <param name="currentProgress">The current progress.</param>
@@ -122,7 +124,7 @@ public class SyncLibraryTask : IScheduledTask
     /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns>Task.</returns>
     private async Task SyncUserLibrary(
-        Jellyfin.Data.Entities.User user,
+        User user,
         TraktUser traktUser,
         IProgress<double> progress,
         double currentProgress,
@@ -135,7 +137,7 @@ public class SyncLibraryTask : IScheduledTask
     }
 
     private async Task SyncMovies(
-        Jellyfin.Data.Entities.User user,
+        User user,
         TraktUser traktUser,
         IProgress<double> progress,
         double currentProgress,
@@ -374,7 +376,7 @@ public class SyncLibraryTask : IScheduledTask
     }
 
     private async Task SyncShows(
-        Jellyfin.Data.Entities.User user,
+        User user,
         TraktUser traktUser,
         IProgress<double> progress,
         double currentProgress,
