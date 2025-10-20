@@ -21,7 +21,7 @@
                         buttons below.
                     </div>
                     <button is="emby-button" type="button" id="authorizeDevice" class="raised block">Authorize
-                        device</button>
+                        Device</button>
                     <div id="activateWithCode" class="hide">
                         Please visit <a href="https://trakt.tv/activate" class="button-link emby-button"
                             target="_blank">https://trakt.tv/activate</a> and authorize Jellyfin to access your
@@ -29,7 +29,7 @@
                         Your device code is <span id="userCode"></span>.
                     </div>
                     <button is="emby-button" type="button" id="deauthorizeDevice" class="raised block">De-authorize
-                        device</button>
+                        Device</button>
                 </div>
                 <div>
                     <h3 class="checkboxListLabel">Exclude library folders:</h3>
@@ -37,112 +37,130 @@
                     </div>
                 </div>
                 <br />
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label>
-                        <input is="emby-checkbox" type="checkbox" id="chkSkipUnwatchedImportFromTrakt"
-                            name="chkSkipUnwatchedImportFromTrakt" />
-                        <span>Skip unwatched import from trakt.tv</span>
-                    </label>
-                    <div class="fieldDescription checkboxFieldDescription">
-                        The import from trakt.tv scheduled task will set local items unwatched if item is marked as
-                        unwatched on trakt.tv. If checked, do not import unwatched status.
-                    </div>
-                </div>
+
+                <h2 style="margin-top: 2em;">Import from Trakt.tv to Jellyfin</h2>
+                <p class="fieldDescription">Control how watch history from Trakt.tv is brought into Jellyfin.</p>
+
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
                         <input is="emby-checkbox" type="checkbox" id="chkSkipWatchedImportFromTrakt"
                             name="chkSkipWatchedImportFromTrakt" />
-                        <span>Skip watched import from trakt.tv</span>
+                        <span>Keep Jellyfin's 'watched' status (don't import from Trakt)</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        The import from trakt.tv scheduled task will set local items as watched if item is marked as
-                        watched on trakt.tv. If checked, do not import watched status.
+                        Check this to prevent Jellyfin from marking an item as 'watched', even if it is marked watched on Trakt. This protects your local watch history.
+                    </div>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="chkSkipUnwatchedImportFromTrakt"
+                            name="chkSkipUnwatchedImportFromTrakt" />
+                        <span>Keep Jellyfin's 'unwatched' status (don't import from Trakt)</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        Check this to prevent Jellyfin from marking an item as 'unwatched', even if it is marked unwatched on Trakt.
                     </div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
                         <input is="emby-checkbox" type="checkbox" id="chkSkipPlaybackProgressImportFromTrakt"
                             name="chkSkipPlaybackProgressImportFromTrakt" />
-                        <span>Skip playback progress import from trakt.tv</span>
+                        <span>Don't import playback progress</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        The import from trakt.tv scheduled task will set local items playback progress to what it is on
-                        trakt.tv if the item wasn't last watched afterwards locally. If checked, do not import playback
-                        progress.
+                        Check this to prevent Jellyfin from syncing in-progress playback status from Trakt (e.g., "50% watched").
+                    </div>
+                </div>
+
+                <br />
+
+                <h2 style="margin-top: 2em;">Sync from Jellyfin to Trakt.tv</h2>
+                <p class="fieldDescription">Control how your Jellyfin viewing activity is sent to your Trakt.tv account.</p>
+
+                <h3 class="checkboxListLabel">Instant Sync (As it happens)</h3>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="chkScrobble" name="chkScrobble" />
+                        <span>Enable Scrobbling (Live Watching Status)</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        Tells Trakt what you're watching in real-time. Recommended to be enabled for most users.
                     </div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
-                        <input is="emby-checkbox" type="checkbox" id="chkPostWatchedHistory"
-                            name="chkPostWatchedHistory" />
-                        <span>During Scheduled Task, set trakt.tv items to watched if local item is watched</span>
+                        <input is="emby-checkbox" type="checkbox" id="chkPostSetWatched" name="chkPostSetWatched" />
+                        <span>Instantly mark as 'watched' on Trakt</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        Controls what is synced to trakt.tv when scheduled task is run.
+                        When you watch something on Jellyfin, immediately update it on Trakt.
+                    </div>
+                </div>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="chkPostSetUnwatched" name="chkPostSetUnwatched" />
+                        <span>Instantly mark as 'unwatched' on Trakt</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        When you manually mark something as unwatched in Jellyfin, immediately update it on Trakt.
+                    </div>
+                </div>
+
+                <h3 class="checkboxListLabel" style="margin-top: 1.5em;">Scheduled Sync (During background task)</h3>
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="chkPostWatchedHistory"
+                            name="chkPostWatchedHistory" />
+                        <span>Sync 'watched' items during scheduled task</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        During the periodic sync, tell Trakt what has been watched on Jellyfin.
                     </div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
                         <input is="emby-checkbox" type="checkbox" id="chkPostUnwatchedHistory"
                             name="chkPostUnwatchedHistory" />
-                        <span>During Scheduled Task, set trakt.tv items to unwatched if local item is unwatched</span>
+                        <span>Sync 'unwatched' items during scheduled task</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        Controls what is synced to trakt.tv when scheduled task is run.
+                        During the periodic sync, tell Trakt what has been marked unwatched on Jellyfin.
                     </div>
                 </div>
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label>
-                        <input is="emby-checkbox" type="checkbox" id="chkPostSetWatched" name="chkPostSetWatched" />
-                        <span>Set trakt.tv item to watched when local item is changed to watched.</span>
-                    </label>
-                    <div class="fieldDescription checkboxFieldDescription">
-                        Controls what is synced to trakt.tv when item statuses are changed during normal use.
-                    </div>
-                </div>
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label>
-                        <input is="emby-checkbox" type="checkbox" id="chkPostSetUnwatched" name="chkPostSetUnwatched" />
-                        <span>Set trakt.tv item to unwatched when local item is changed to unwatched.</span>
-                    </label>
-                    <div class="fieldDescription checkboxFieldDescription">
-                        Controls what is synced to trakt.tv when item statuses are changed during normal use.
-                    </div>
-                </div>
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label>
-                        <input is="emby-checkbox" type="checkbox" id="chkExportMediaInfo" name="chkExportMediaInfo" />
-                        <span>Export media info</span>
-                    </label>
-                    <div class="fieldDescription checkboxFieldDescription">
-                        Send audio and video metadata to trakt.tv.
-                    </div>
-                </div>
+
+                <br />
+
+                <h2 style="margin-top: 2em;">Collection and Library Sync Settings</h2>
+
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
                         <input is="emby-checkbox" type="checkbox" id="chkSyncCollections" name="chkSyncCollections" />
-                        <span>Synchronize collection</span>
+                        <span>Sync Jellyfin library to Trakt Collection</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        Synchronize the collected movies and shows to trakt.tv.
-                    </div>
-                </div>
-                <div class="checkboxContainer checkboxContainer-withDescription">
-                    <label>
-                        <input is="emby-checkbox" type="checkbox" id="chkScrobble" name="chkScrobble" />
-                        <span>Scrobble</span>
-                    </label>
-                    <div class="fieldDescription checkboxFieldDescription">
-                        Scrobble to trakt.tv.
+                        Adds media from your Jellyfin library to your 'Collection' on Trakt. This shows what you *have*, not what you've *watched*.
                     </div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
                     <label>
                         <input is="emby-checkbox" type="checkbox" id="chkDontRemoveItemFromTrakt" name="chkDontRemoveItemFromTrakt" />
-                        <span>Don't remove item from trakt.tv collection</span>
+                        <span>Don't remove from Trakt when deleted from Jellyfin</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        When checked, the item removed from local collection will NOT be removed from trakt.tv collection.
+                        Check this to *keep* items in your Trakt collection, even after you delete the files from your Jellyfin server.
+                    </div>
+                </div>
+                <br />
+
+                <h2 style="margin-top: 2em;">Advanced</h2>
+
+                <div class="checkboxContainer checkboxContainer-withDescription">
+                    <label>
+                        <input is="emby-checkbox" type="checkbox" id="chkExportMediaInfo" name="chkExportMediaInfo" />
+                        <span>Send media technical info to Trakt (3D, HDR, etc.)</span>
+                    </label>
+                    <div class="fieldDescription checkboxFieldDescription">
+                        Sends extra technical data about the file (audio/video codecs, resolution) to Trakt when scrobbling.
                     </div>
                 </div>
                 <div class="checkboxContainer checkboxContainer-withDescription">
@@ -151,12 +169,13 @@
                         <span>Enable debug logging</span>
                     </label>
                     <div class="fieldDescription checkboxFieldDescription">
-                        When enabled, all data sent to trakt.tv is logged.
+                        For troubleshooting only. This will write detailed logs about all communication with Trakt.
                     </div>
                 </div>
+
                 <div>
                     <button is="emby-button" type="submit" class="raised button-submit block emby-button">
-                        <span>${Save}</span>
+                        <span>Save</span>
                     </button>
                 </div>
             </form>
