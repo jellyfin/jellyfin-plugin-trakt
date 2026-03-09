@@ -43,7 +43,7 @@ public class TraktMovieCollected : TraktMovie
     /// Gets or sets a value indicating whether the movie is 3D.
     /// </summary>
     [JsonPropertyName("3d")]
-    public bool Is3D { get; set; } = false;
+    public bool? Is3D { get; set; } = false;
 
     /// <summary>
     /// Gets or sets the HDR type.
