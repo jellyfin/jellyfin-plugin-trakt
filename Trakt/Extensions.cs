@@ -291,6 +291,16 @@ public static class Extensions
         var channels = audioStream.ChannelLayout;
         switch (channels)
         {
+            case "22.2":
+            case "hexadecagonal":
+                return "10.1";
+            case "9.1.4":
+                return "9.1";
+            case "7.2.3":
+            case "7.1.4":
+                return "7.1.4";
+            case "7.1.2":
+                return "7.1.2";
             case "octagonal":
             case "7.1(wide-side)":
             case "7.1(wide)":
@@ -298,13 +308,18 @@ public static class Extensions
                 return "7.1";
             case "7.0(front)":
             case "7.0":
-            case "6.1(back)":
             case "6.1(front)":
+            case "6.1(back)":
             case "6.1":
                 return "6.1";
+            case "cube":
+            case "5.1.4":
+                return "5.1.4";
+            case "5.1.2":
+                return "5.1.2";
             case "hexagonal":
-            case "6.0":
             case "6.0(front)":
+            case "6.0":
             case "5.1(side)":
             case "5.1":
                 return "5.1";
@@ -317,6 +332,7 @@ public static class Extensions
             case "quad":
             case "4.0":
                 return "4.0";
+            case "3.1.2":
             case "3.1":
                 return "3.1";
             case "3.0(back)":
@@ -324,6 +340,7 @@ public static class Extensions
                 return "3.0";
             case "2.1":
                 return "2.1";
+            case "downmix":
             case "stereo":
                 return "2.0";
             case "mono":
