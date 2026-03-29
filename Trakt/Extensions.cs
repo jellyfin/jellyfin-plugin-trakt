@@ -121,7 +121,7 @@ public static class Extensions
                 return TraktAudio.ogg;
             case "opus":
                 return TraktAudio.ogg_opus;
-            case "pcm":
+            case not null when audio.StartsWith("pcm_", StringComparison.Ordinal):
                 return TraktAudio.lpcm;
             case "truehd":
                 return TraktAudio.dolby_truehd;
