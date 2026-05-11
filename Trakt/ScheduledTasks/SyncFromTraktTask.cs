@@ -79,7 +79,7 @@ public class SyncFromTraktTask : IScheduledTask
     /// <inheritdoc />
     public async Task ExecuteAsync(IProgress<double> progress, CancellationToken cancellationToken)
     {
-        var users = _userManager.Users.Where(user => UserHelper.GetTraktUser(user, true) != null).ToList();
+        var users = _userManager.GetUsers().Where(user => UserHelper.GetTraktUser(user, true) != null).ToList();
 
         // No point going further if we don't have users.
         if (users.Count == 0)
