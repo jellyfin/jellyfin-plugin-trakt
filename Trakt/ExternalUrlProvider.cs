@@ -30,8 +30,8 @@ public class ExternalUrlProvider : IExternalUrlProvider
             case Movie or Trailer or LiveTvProgram { IsMovie: true }:
                 yield return $"https://trakt.tv/movies/{imdbId}";
                 break;
-            case Episode:
-                yield return $"https://trakt.tv/episodes/{imdbId}";
+            case Episode episode:
+                yield return $"https://trakt.tv/shows/{episode.SeriesName}/seasons/{episode.ParentIndexNumber}/episodes/{episode.IndexNumber}";
                 break;
             case Series:
                 yield return $"https://trakt.tv/shows/{imdbId}";
