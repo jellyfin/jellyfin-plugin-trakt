@@ -932,7 +932,8 @@ public class TraktApi
     /// Deauthorizes a device for a <see cref="TraktUser"/>.
     /// </summary>
     /// <param name="traktUser">The authorizing <see cref="TraktUser"/>.</param>
-    public async void DeauthorizeDevice(TraktUser traktUser)
+    /// <returns>Task.</returns>
+    public async Task DeauthorizeDevice(TraktUser traktUser)
     {
         var deviceRevokeRequest = new
         {
@@ -941,7 +942,15 @@ public class TraktApi
             client_secret = TraktUris.ClientSecret
         };
 
-        await PostToTrakt<object>(TraktUris.RevokeToken, deviceRevokeRequest, traktUser).ConfigureAwait(false);
+        try
+        {
+            await PostToTrakt<object>(TraktUris.RevokeToken, deviceRevokeRequest, traktUser).ConfigureAwait(false);
+        }
+        catch (Exception)
+        {
+            // Revoking on trakt.tv is best-effort; the caller removes the local user
+            // regardless, and PostToTrakt already logged the underlying failure.
+        }
     }
 
     /// <summary>
@@ -1227,6 +1236,7 @@ public class TraktApi
     private async Task<HttpResponseMessage> RetryHttpRequest(Func<Task<HttpResponseMessage>> function)
     {
         HttpResponseMessage response = null;
+        Exception lastException = null;
         for (int i = 0; i < 3; i++)
         {
             try
@@ -1252,9 +1262,17 @@ public class TraktApi
                     break;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                lastException = ex;
+                response = null;
+                _logger.LogDebug(ex, "Trakt request attempt {Attempt} of 3 failed", i + 1);
             }
+        }
+
+        if (response == null && lastException != null)
+        {
+            throw lastException;
         }
 
         return response;
