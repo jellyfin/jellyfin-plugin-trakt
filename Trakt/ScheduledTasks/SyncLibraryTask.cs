@@ -447,7 +447,7 @@ public class SyncLibraryTask : IScheduledTask
                     var isPlayedTraktTv = false;
                     var traktWatchedShow = Extensions.FindMatch(episode.Series, traktWatchedShows);
 
-                    if (traktUser.PostSetUnwatched || traktUser.PostSetWatched)
+                    if (traktUser.PostWatchedHistory || traktUser.PostUnwatchedHistory)
                     {
                         if (traktWatchedShow?.Seasons != null && traktWatchedShow.Seasons.Count > 0)
                         {
