@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trakt</title>
+  <style>
+    :root {
+      --bg: #101010;
+      --card: #202020;
+      --text: #eee;
+      --muted: #aaa;
+      --accent: #00a4dc;
+      --danger: #e24040;
+      --ok: #4caf50;
+      --border: #333;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; padding: 1.5rem; }
+    h1 { margin: 0 0 0.25rem; font-size: 1.6rem; }
+    h2 { margin: 1.75rem 0 0.75rem; font-size: 1.15rem; }
+    .muted { color: var(--muted); font-size: 0.95rem; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.1rem;
+      margin: 1rem 0;
+    }
+    .row { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+    button, .btn {
+      appearance: none;
+      border: 0;
+      border-radius: 6px;
+      padding: 0.65rem 1rem;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.secondary { background: #444; }
+    button.danger { background: var(--danger); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    label.chk {
+      display: flex;
+      gap: 0.6rem;
+      align-items: flex-start;
+      margin: 0.65rem 0;
+    }
+    label.chk input { margin-top: 0.25rem; }
+    code { background: #111; padding: 0.1rem 0.35rem; border-radius: 4px; }
+    .status-ok { color: var(--ok); }
+    .status-bad { color: var(--danger); }
+    .hide { display: none !important; }
+    a { color: var(--accent); }
+    #msg { min-height: 1.25rem; margin: 0.5rem 0; }
+    #userCode { font-weight: 700; letter-spacing: 0.04em; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Trakt</h1>
+    <p class="muted">Link your trakt.tv account and manage sync preferences for your Jellyfin user.</p>
+    <p class="muted"><a id="backLink" href="/web/">← Back to Jellyfin</a></p>
+
+    <div id="authMissing" class="card hide">
+      <p>You need to be logged into Jellyfin in this browser first.</p>
+      <p><a class="btn" id="loginLink" href="/web/#/login">Go to login</a></p>
+    </div>
+
+    <div id="app" class="hide">
+      <div class="card">
+        <div id="linkStatus" class="muted">Loading…</div>
+        <div id="msg" class="muted"></div>
+        <div class="row" style="margin-top: 0.75rem;">
+          <button type="button" id="btnAuthorize">Authorize device</button>
+          <button type="button" id="btnUnlink" class="danger hide">Unlink Trakt</button>
+        </div>
+        <div id="activateBox" class="hide" style="margin-top: 1rem;">
+          Visit <a href="https://trakt.tv/activate" target="_blank" rel="noopener noreferrer">https://trakt.tv/activate</a>
+          and enter code <span id="userCode"></span>.
+        </div>
+      </div>
+
+      <h2>Preferences</h2>
+      <div class="card" id="prefs">
+        <label class="chk"><input type="checkbox" id="chkScrobble" /><span>Enable scrobbling</span></label>
+        <label class="chk"><input type="checkbox" id="chkPostSetWatched" /><span>Instantly mark watched on Trakt</span></label>
+        <label class="chk"><input type="checkbox" id="chkPostSetUnwatched" /><span>Instantly mark unwatched on Trakt</span></label>
+        <label class="chk"><input type="checkbox" id="chkPostWatchedHistory" /><span>Sync watched during scheduled task</span></label>
+        <label class="chk"><input type="checkbox" id="chkPostUnwatchedHistory" /><span>Sync unwatched during scheduled task</span></label>
+        <label class="chk"><input type="checkbox" id="chkSyncCollections" /><span>Sync library to Trakt collection</span></label>
+        <label class="chk"><input type="checkbox" id="chkDontRemoveItemFromTrakt" /><span>Don't remove from Trakt when deleted locally</span></label>
+        <label class="chk"><input type="checkbox" id="chkSkipWatchedImportFromTrakt" /><span>Keep Jellyfin watched (don't import)</span></label>
+        <label class="chk"><input type="checkbox" id="chkSkipUnwatchedImportFromTrakt" /><span>Keep Jellyfin unwatched (don't import)</span></label>
+        <label class="chk"><input type="checkbox" id="chkSkipPlaybackProgressImportFromTrakt" /><span>Don't import playback progress</span></label>
+        <label class="chk"><input type="checkbox" id="chkExportMediaInfo" /><span>Send media technical info</span></label>
+        <div class="row" style="margin-top: 1rem;">
+          <button type="button" id="btnSave">Save</button>
+        </div>
+      </div>
+
+      <h2>External apps</h2>
+      <div class="card">
+        <p id="tokenExportStatus" class="muted"></p>
+        <button type="button" id="btnCopyToken" class="secondary hide">Copy access token</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+(function () {
+  function flag(obj, name) {
+    if (Object.prototype.hasOwnProperty.call(obj, name)) return obj[name];
+    var camel = name.charAt(0).toLowerCase() + name.slice(1);
+    return obj[camel];
+  }
+
+  function getSession() {
+    try {
+      var raw = localStorage.getItem('jellyfin_credentials');
+      if (!raw) return null;
+      var creds = JSON.parse(raw);
+      var server = (creds.Servers || []).find(function (s) { return s.AccessToken && s.UserId; })
+        || (creds.Servers || [])[0];
+      if (!server || !server.AccessToken || !server.UserId) return null;
+      var base = server.ManualAddress || server.LocalAddress || server.RemoteAddress || window.location.origin;
+      return {
+        base: String(base).replace(/\/+$/, ''),
+        token: server.AccessToken,
+        userId: server.UserId,
+        deviceId: server.DeviceId || 'trakt-selfservice'
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function authHeader(session) {
+    return 'MediaBrowser Client="TraktSelfService", Device="Browser", DeviceId="' +
+      session.deviceId + '", Version="1.0.0", Token="' + session.token + '"';
+  }
+
+  function api(session, method, path, body) {
+    var opts = {
+      method: method,
+      headers: {
+        accept: 'application/json',
+        Authorization: authHeader(session)
+      }
+    };
+    if (body !== undefined) {
+      opts.headers['Content-Type'] = 'application/json';
+      opts.body = JSON.stringify(body);
+    }
+    return fetch(session.base + path, opts).then(function (res) {
+      if (!res.ok) {
+        return res.text().then(function (t) {
+          throw new Error(res.status + ' ' + res.statusText + (t ? ' — ' + t : ''));
+        });
+      }
+      if (res.status === 204) return null;
+      var ct = res.headers.get('content-type') || '';
+      if (ct.indexOf('application/json') !== -1) return res.json();
+      return res.text();
+    });
+  }
+
+  var session = getSession();
+  var authMissing = document.getElementById('authMissing');
+  var app = document.getElementById('app');
+  var msg = document.getElementById('msg');
+  var state = null;
+  var webBase = (session && session.base ? session.base : window.location.origin) + '/web/';
+  document.getElementById('backLink').href = webBase;
+  document.getElementById('loginLink').href = webBase + '#/login';
+
+  function setMsg(text, isError) {
+    msg.textContent = text || '';
+    msg.className = isError ? 'status-bad' : 'muted';
+  }
+
+  function applyStatus(status) {
+    state = status;
+    var linked = !!flag(status, 'IsLinked');
+    var userName = flag(status, 'UserName');
+    document.getElementById('linkStatus').innerHTML = linked
+      ? '<span class="status-ok">Trakt account linked' +
+        (userName ? ' as <strong>' + String(userName).replace(/[<>&]/g, function (c) {
+          return ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' })[c];
+        }) + '</strong>' : '') + '</span>'
+      : '<span class="status-bad">Trakt account not linked</span>';
+    document.getElementById('btnUnlink').classList.toggle('hide', !linked);
+    document.getElementById('btnAuthorize').textContent = linked ? 'Force re-authorization' : 'Authorize device';
+
+    [
+      'Scrobble', 'PostSetWatched', 'PostSetUnwatched', 'PostWatchedHistory', 'PostUnwatchedHistory',
+      'SynchronizeCollections', 'DontRemoveItemFromTrakt', 'SkipWatchedImportFromTrakt',
+      'SkipUnwatchedImportFromTrakt', 'SkipPlaybackProgressImportFromTrakt', 'ExportMediaInfo'
+    ].forEach(function (name) {
+      var el = document.getElementById('chk' + name);
+      if (el) el.checked = !!flag(status, name);
+    });
+
+    var allow = !!flag(status, 'AllowExternalTokenAccess');
+    var tokenStatus = document.getElementById('tokenExportStatus');
+    var copyBtn = document.getElementById('btnCopyToken');
+    if (allow) {
+      tokenStatus.textContent = 'Token export is enabled by an administrator. Apps may call GET /Trakt/me/Token.';
+      copyBtn.classList.toggle('hide', !linked);
+    } else {
+      tokenStatus.textContent = 'Token export is disabled. Ask an administrator to enable it for your account.';
+      copyBtn.classList.add('hide');
+    }
+  }
+
+  function collectSettings() {
+    return {
+      scrobble: document.getElementById('chkScrobble').checked,
+      postSetWatched: document.getElementById('chkPostSetWatched').checked,
+      postSetUnwatched: document.getElementById('chkPostSetUnwatched').checked,
+      postWatchedHistory: document.getElementById('chkPostWatchedHistory').checked,
+      postUnwatchedHistory: document.getElementById('chkPostUnwatchedHistory').checked,
+      synchronizeCollections: document.getElementById('chkSyncCollections').checked,
+      dontRemoveItemFromTrakt: document.getElementById('chkDontRemoveItemFromTrakt').checked,
+      skipWatchedImportFromTrakt: document.getElementById('chkSkipWatchedImportFromTrakt').checked,
+      skipUnwatchedImportFromTrakt: document.getElementById('chkSkipUnwatchedImportFromTrakt').checked,
+      skipPlaybackProgressImportFromTrakt: document.getElementById('chkSkipPlaybackProgressImportFromTrakt').checked,
+      exportMediaInfo: document.getElementById('chkExportMediaInfo').checked
+    };
+  }
+
+  function load() {
+    setMsg('Loading…');
+    return api(session, 'GET', '/Trakt/me').then(function (status) {
+      applyStatus(status);
+      setMsg('');
+    }).catch(function (err) {
+      setMsg(String(err.message || err), true);
+    });
+  }
+
+  if (!session) {
+    authMissing.classList.remove('hide');
+    return;
+  }
+
+  app.classList.remove('hide');
+
+  document.getElementById('btnSave').addEventListener('click', function () {
+    setMsg('Saving…');
+    api(session, 'PUT', '/Trakt/me/Settings', collectSettings()).then(function (status) {
+      applyStatus(status);
+      setMsg('Settings saved.');
+    }).catch(function (err) {
+      setMsg(String(err.message || err), true);
+    });
+  });
+
+  document.getElementById('btnAuthorize').addEventListener('click', function () {
+    setMsg('Starting device authorization…');
+    document.getElementById('activateBox').classList.add('hide');
+    api(session, 'POST', '/Trakt/me/Authorize').then(function (result) {
+      var code = result.userCode || result.UserCode;
+      document.getElementById('userCode').textContent = code;
+      document.getElementById('activateBox').classList.remove('hide');
+      setMsg('Waiting for activation on trakt.tv…');
+      return api(session, 'GET', '/Trakt/me/PollAuthorizationStatus');
+    }).then(function () {
+      document.getElementById('activateBox').classList.add('hide');
+      return load();
+    }).then(function () {
+      setMsg('Authorization finished.');
+    }).catch(function (err) {
+      setMsg(String(err.message || err), true);
+    });
+  });
+
+  document.getElementById('btnUnlink').addEventListener('click', function () {
+    setMsg('Unlinking…');
+    api(session, 'POST', '/Trakt/me/Deauthorize').then(function () {
+      return load();
+    }).then(function () {
+      setMsg('Unlinked.');
+    }).catch(function (err) {
+      setMsg(String(err.message || err), true);
+    });
+  });
+
+  document.getElementById('btnCopyToken').addEventListener('click', function () {
+    api(session, 'GET', '/Trakt/me/Token').then(function (token) {
+      var value = token.accessToken || token.AccessToken;
+      return navigator.clipboard.writeText(value).then(function () {
+        setMsg('Access token copied.');
+      });
+    }).catch(function (err) {
+      setMsg(String(err.message || err), true);
+    });
+  });
+
+  load();
+})();
+  </script>
+</body>
+</html>

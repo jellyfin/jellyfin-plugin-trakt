@@ -9,7 +9,7 @@ using Trakt.Model;
 namespace Trakt.Configuration;
 
 /// <summary>
-/// Plugin configuration class for trackt.tv plugin.
+/// Plugin configuration class for trakt.tv plugin.
 /// </summary>
 public class PluginConfiguration : BasePluginConfiguration
 {
@@ -19,12 +19,19 @@ public class PluginConfiguration : BasePluginConfiguration
     public PluginConfiguration()
     {
         TraktUsers = Array.Empty<TraktUser>();
+        DefaultAllowExternalTokenAccess = false;
     }
 
     /// <summary>
     /// Gets or sets the trakt users.
     /// </summary>
     public TraktUser[] TraktUsers { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether newly created Trakt users allow token export by default.
+    /// Administrators can still override this per user.
+    /// </summary>
+    public bool DefaultAllowExternalTokenAccess { get; set; }
 
     /// <summary>
     /// Adds a user to the trakt.tv users.
@@ -35,7 +42,8 @@ public class PluginConfiguration : BasePluginConfiguration
         var traktUsers = TraktUsers.ToList();
         var traktUser = new TraktUser
         {
-            LinkedMbUserId = userGuid
+            LinkedMbUserId = userGuid,
+            AllowExternalTokenAccess = DefaultAllowExternalTokenAccess
         };
         traktUsers.Add(traktUser);
         TraktUsers = traktUsers.ToArray();

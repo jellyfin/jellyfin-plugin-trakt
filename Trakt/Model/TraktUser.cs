@@ -16,6 +16,7 @@ public class TraktUser
     {
         AccessToken = null;
         RefreshToken = null;
+        UserName = null;
         LinkedMbUserId = Guid.Empty;
         SkipUnwatchedImportFromTrakt = true;
         SkipWatchedImportFromTrakt = false;
@@ -31,6 +32,7 @@ public class TraktUser
         LocationsExcluded = null;
         AccessTokenExpiration = DateTime.MinValue;
         DontRemoveItemFromTrakt = true;
+        AllowExternalTokenAccess = false;
     }
 
     /// <summary>
@@ -42,6 +44,11 @@ public class TraktUser
     /// Gets or sets the refresh token.
     /// </summary>
     public string RefreshToken { get; set; }
+
+    /// <summary>
+    /// Gets or sets the trakt.tv username for the linked account.
+    /// </summary>
+    public string UserName { get; set; }
 
     /// <summary>
     /// Gets or sets the linked Mb user id.
@@ -117,4 +124,10 @@ public class TraktUser
     /// Gets or sets a value indicating whether item should be removed from trakt.tv.
     /// </summary>
     public bool DontRemoveItemFromTrakt { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether other apps may read the access token via the token API.
+    /// Only administrators can change this (via the plugin configuration page).
+    /// </summary>
+    public bool AllowExternalTokenAccess { get; set; }
 }
