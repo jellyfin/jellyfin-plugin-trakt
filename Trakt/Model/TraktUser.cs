@@ -16,7 +16,6 @@ public class TraktUser
     {
         AccessToken = null;
         RefreshToken = null;
-        UserName = null;
         LinkedMbUserId = Guid.Empty;
         SkipUnwatchedImportFromTrakt = true;
         SkipWatchedImportFromTrakt = false;
@@ -44,11 +43,6 @@ public class TraktUser
     /// Gets or sets the refresh token.
     /// </summary>
     public string RefreshToken { get; set; }
-
-    /// <summary>
-    /// Gets or sets the trakt.tv username for the linked account.
-    /// </summary>
-    public string UserName { get; set; }
 
     /// <summary>
     /// Gets or sets the linked Mb user id.

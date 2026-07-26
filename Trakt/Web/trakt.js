@@ -45,21 +45,7 @@ const TraktConfigurationPage = {
                 TraktConfigurationPage.loadFolders(currentUserConfig, result);
             });
 
-            const isAuthorized = currentUserConfig.AccessToken != null;
-            setAuthorizationElements(page, isAuthorized, currentUserConfig.UserName);
-            if (isAuthorized && !currentUserConfig.UserName) {
-                ApiClient.fetch({
-                    url: ApiClient.getUrl('Trakt/Users/' + userId + '/RefreshProfile'),
-                    type: 'POST',
-                    dataType: 'json'
-                }).then(function (result) {
-                    if (result && result.userName) {
-                        setAuthorizationElements(page, true, result.userName);
-                    }
-                }).catch(function () {
-                    // Username is optional display metadata.
-                });
-            }
+            setAuthorizationElements(page, currentUserConfig.AccessToken != null);
             Dashboard.hideLoadingMsg();
         });
     },
@@ -98,23 +84,16 @@ const TraktConfigurationPage = {
     }
 };
 
-function setAuthorizationElements(page, isAuthorized, userName) {
+function setAuthorizationElements(page, isAuthorized) {
     let buttonText;
-    const userNameEl = page.querySelector('#authorizedUserName');
     if (isAuthorized) {
         page.querySelector('#activateWithCode').classList.add('hide');
         page.querySelector('#deauthorizeDevice').classList.remove('hide');
         page.querySelector('#authorizedDescription').classList.remove('hide');
-        if (userNameEl) {
-            userNameEl.textContent = userName ? (' as ' + userName) : '';
-        }
         buttonText = 'Force re-authorization';
     } else {
         page.querySelector('#deauthorizeDevice').classList.add('hide');
         page.querySelector('#authorizedDescription').classList.add('hide');
-        if (userNameEl) {
-            userNameEl.textContent = '';
-        }
         buttonText = 'Authorize device';
     }
     // Set the auth button

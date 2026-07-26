@@ -19,11 +19,6 @@ public class TraktUserStatusDto
     public bool IsLinked { get; set; }
 
     /// <summary>
-    /// Gets or sets the trakt.tv username when linked; otherwise null.
-    /// </summary>
-    public string UserName { get; set; }
-
-    /// <summary>
     /// Gets or sets the access token expiration when linked; otherwise null.
     /// </summary>
     public DateTime? AccessTokenExpiration { get; set; }

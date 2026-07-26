@@ -190,12 +190,8 @@
   function applyStatus(status) {
     state = status;
     var linked = !!flag(status, 'IsLinked');
-    var userName = flag(status, 'UserName');
     document.getElementById('linkStatus').innerHTML = linked
-      ? '<span class="status-ok">Trakt account linked' +
-        (userName ? ' as <strong>' + String(userName).replace(/[<>&]/g, function (c) {
-          return ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' })[c];
-        }) + '</strong>' : '') + '</span>'
+      ? '<span class="status-ok">Trakt account linked</span>'
       : '<span class="status-bad">Trakt account not linked</span>';
     document.getElementById('btnUnlink').classList.toggle('hide', !linked);
     document.getElementById('btnAuthorize').textContent = linked ? 'Force re-authorization' : 'Authorize device';

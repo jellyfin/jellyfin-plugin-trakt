@@ -62,7 +62,7 @@ Authenticated as a Jellyfin user (except the HTML page, which is anonymous so th
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | `/Trakt/SelfService` | Standalone self-service HTML |
-| `GET` | `/Trakt/me` | Link status, trakt.tv username (when linked), and editable preferences (no tokens) |
+| `GET` | `/Trakt/me` | Link status and editable preferences (no tokens) |
 | `POST` | `/Trakt/me/Authorize` | Start device auth for the caller |
 | `GET` | `/Trakt/me/PollAuthorizationStatus` | Wait for device auth completion |
 | `POST` | `/Trakt/me/Deauthorize` | Unlink Trakt (keeps preferences) |

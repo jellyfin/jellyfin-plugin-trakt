@@ -129,9 +129,4 @@ public static class TraktUris
     /// The shows recommendations URI.
     /// </summary>
     public const string RecommendationsShows = BaseUrl + "/recommendations/shows";
-
-    /// <summary>
-    /// The authenticated user settings URI.
-    /// </summary>
-    public const string UserSettings = BaseUrl + "/users/settings";
 }

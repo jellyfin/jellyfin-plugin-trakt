@@ -92,7 +92,7 @@ public class TraktController : ControllerBase
     [HttpGet("me")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<TraktUserStatusDto>> GetCurrentUserStatus()
+    public ActionResult<TraktUserStatusDto> GetCurrentUserStatus()
     {
         if (!TryGetCallerUserId(out var userGuid))
         {
@@ -106,7 +106,6 @@ public class TraktController : ControllerBase
             return UnlinkedStatusDto(userGuid);
         }
 
-        await EnsureTraktUserName(traktUser).ConfigureAwait(false);
         return ToStatusDto(traktUser);
     }
 
@@ -307,38 +306,6 @@ public class TraktController : ControllerBase
     }
 
     /// <summary>
-    /// Refresh the stored trakt.tv username for a user.
-    /// </summary>
-    /// <param name="userGuid">The user's GUID.</param>
-    /// <response code="200">Profile refreshed (or already present).</response>
-    /// <response code="403">Caller is not allowed to manage the specified user.</response>
-    /// <response code="404">No linked Trakt user found.</response>
-    /// <returns>The trakt.tv username when available.</returns>
-    [HttpPost("Users/{userGuid}/RefreshProfile")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<object>> TraktRefreshProfile([FromRoute] Guid userGuid)
-    {
-        if (!AuthorizationHelper.CanAccessUser(User, userGuid))
-        {
-            return Forbid();
-        }
-
-        var traktUser = UserHelper.GetTraktUser(userGuid);
-        if (traktUser == null || string.IsNullOrWhiteSpace(traktUser.AccessToken))
-        {
-            return NotFound();
-        }
-
-        await _traktApi.RefreshUserProfile(traktUser).ConfigureAwait(false);
-        return new
-        {
-            userName = traktUser.UserName
-        };
-    }
-
-    /// <summary>
     /// Rate an item.
     /// </summary>
     /// <param name="userGuid">The user's GUID.</param>
@@ -472,22 +439,8 @@ public class TraktController : ControllerBase
         _traktApi.DeauthorizeDevice(traktUser);
         traktUser.AccessToken = null;
         traktUser.RefreshToken = null;
-        traktUser.UserName = null;
         traktUser.AccessTokenExpiration = DateTime.MinValue;
         Plugin.Instance.SaveConfiguration();
-    }
-
-    private async Task EnsureTraktUserName(TraktUser traktUser)
-    {
-        if (traktUser == null
-            || string.IsNullOrWhiteSpace(traktUser.AccessToken)
-            || string.IsNullOrWhiteSpace(traktUser.RefreshToken)
-            || !string.IsNullOrWhiteSpace(traktUser.UserName))
-        {
-            return;
-        }
-
-        await _traktApi.RefreshUserProfile(traktUser).ConfigureAwait(false);
     }
 
     private static void ApplySettings(TraktUser traktUser, TraktUserSettingsUpdateDto settings)
@@ -514,7 +467,6 @@ public class TraktController : ControllerBase
         {
             LinkedMbUserId = userGuid,
             IsLinked = false,
-            UserName = null,
             AccessTokenExpiration = null,
             SkipUnwatchedImportFromTrakt = true,
             SkipPlaybackProgressImportFromTrakt = false,
@@ -540,7 +492,6 @@ public class TraktController : ControllerBase
         {
             LinkedMbUserId = traktUser.LinkedMbUserId,
             IsLinked = isLinked,
-            UserName = isLinked ? traktUser.UserName : null,
             AccessTokenExpiration = isLinked ? traktUser.AccessTokenExpiration : null,
             SkipUnwatchedImportFromTrakt = traktUser.SkipUnwatchedImportFromTrakt,
             SkipPlaybackProgressImportFromTrakt = traktUser.SkipPlaybackProgressImportFromTrakt,

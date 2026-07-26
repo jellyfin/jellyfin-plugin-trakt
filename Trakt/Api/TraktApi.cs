@@ -998,7 +998,6 @@ public class TraktApi
                             traktUser.RefreshToken = userAccessToken.RefreshToken;
                             traktUser.AccessTokenExpiration = DateTime.Now.AddSeconds(userAccessToken.ExpirationWithBuffer);
                             Plugin.Instance.SaveConfiguration();
-                            await RefreshUserProfile(traktUser).ConfigureAwait(false);
                             return true;
                         }
 
@@ -1057,39 +1056,6 @@ public class TraktApi
             traktUser.AccessTokenExpiration = DateTime.Now.AddSeconds(userAccessToken.ExpirationWithBuffer);
             Plugin.Instance.SaveConfiguration();
             _logger.LogInformation("Successfully refreshed the access token for user {UserId}", traktUser.LinkedMbUserId);
-            await RefreshUserProfile(traktUser).ConfigureAwait(false);
-        }
-    }
-
-    /// <summary>
-    /// Fetches and stores the trakt.tv username for a linked user.
-    /// </summary>
-    /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
-    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    public async Task RefreshUserProfile(TraktUser traktUser)
-    {
-        if (traktUser == null || string.IsNullOrWhiteSpace(traktUser.AccessToken))
-        {
-            return;
-        }
-
-        try
-        {
-            var settings = await GetFromTrakt<DataContracts.Users.TraktAccountSettings>(TraktUris.UserSettings, traktUser)
-                .ConfigureAwait(false);
-            var userName = settings?.User?.UserName;
-            if (string.IsNullOrWhiteSpace(userName) || string.Equals(traktUser.UserName, userName, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            traktUser.UserName = userName;
-            Plugin.Instance.SaveConfiguration();
-            _logger.LogInformation("Stored trakt.tv username {UserName} for user {UserId}", userName, traktUser.LinkedMbUserId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to fetch trakt.tv username for user {UserId}", traktUser.LinkedMbUserId);
         }
     }
 
