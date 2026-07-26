@@ -230,12 +230,6 @@ pip-log.txt
 .mr.developer.cfg
 
 #############
-## Local Docker / publish (not for upstream)
-#############
-.docker-build/
-docker/
-
-#############
 ## Rider
 #############
 .idea
