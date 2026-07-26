@@ -241,8 +241,3 @@ docker/
 .idea
 artifacts
 .idea
-
-#############
-## Local PR screenshots (attach in GitHub UI)
-#############
-docs/screenshots/
