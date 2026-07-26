@@ -6,13 +6,13 @@ const TraktConfigurationPage = {
             let currentUserConfig = config.TraktUsers.filter(function (curr) {
                 return curr.LinkedMbUserId == userId;
             })[0];
-            // User doesn't have a config, so create a default one (match TraktUser ctor).
+            // User doesn't have a config, so create a default one.
             if (!currentUserConfig) {
+                // You don't have to put every property in here, just the ones the UI is expecting (below)
                 currentUserConfig = {
                     AccessToken: null,
                     SkipUnwatchedImportFromTrakt: true,
                     SkipWatchedImportFromTrakt: false,
-                    SkipPlaybackProgressImportFromTrakt: false,
                     PostWatchedHistory: true,
                     PostUnwatchedHistory: true,
                     PostSetWatched: true,
@@ -133,6 +133,9 @@ function save(page) {
             currentUserConfig.LocationsExcluded = Array.prototype.map.call(page.querySelectorAll('.chkTraktLocation:checked'), elem => {
                 return elem.getAttribute('data-location');
             });
+            if (currentUserConfig.UserName == '') {
+                config.TraktUsers.remove(config.TraktUsers.indexOf(currentUserConfig));
+            }
             ApiClient.updatePluginConfiguration(TraktConfigurationPage.pluginUniqueId, config).then(function (result) {
                 Dashboard.processPluginConfigurationUpdateResult(result);
                 ApiClient.getUsers().then(function (users) {
