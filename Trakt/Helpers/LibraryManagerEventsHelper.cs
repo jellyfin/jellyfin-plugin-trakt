@@ -203,7 +203,7 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
                               || !string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Tvdb))
                               || !string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Imdb))
                               || !string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.TvRage)))
-                          && !traktUser.LocationsExcluded.Any(directory => lev.Path.Contains(directory, StringComparison.OrdinalIgnoreCase)))
+                          && (traktUser.LocationsExcluded == null || !traktUser.LocationsExcluded.Any(directory => lev.Path.Contains(directory, StringComparison.OrdinalIgnoreCase))))
             .ToHashSet();
 
         try
@@ -241,7 +241,7 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
             .Where(movie => !string.IsNullOrEmpty(movie.Name)
                           && (!string.IsNullOrEmpty(movie.GetProviderId(MetadataProvider.Tmdb))
                               || !string.IsNullOrEmpty(movie.GetProviderId(MetadataProvider.Imdb)))
-                          && !traktUser.LocationsExcluded.Any(directory => movie.Path is not null && movie.Path.Contains(directory, StringComparison.OrdinalIgnoreCase)))
+                          && (traktUser.LocationsExcluded == null || !traktUser.LocationsExcluded.Any(directory => movie.Path is not null && movie.Path.Contains(directory, StringComparison.OrdinalIgnoreCase))))
             .ToHashSet();
 
         try
@@ -278,7 +278,7 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
                             && !string.IsNullOrEmpty(lev.Series.Name)
                             && (!string.IsNullOrEmpty(lev.Series.GetProviderId(MetadataProvider.Tmdb))
                                 || !string.IsNullOrEmpty(lev.GetProviderId(MetadataProvider.Tvdb)))
-                            && !traktUser.LocationsExcluded.Any(directory => lev.Path.Contains(directory, StringComparison.OrdinalIgnoreCase)))
+                            && (traktUser.LocationsExcluded == null || !traktUser.LocationsExcluded.Any(directory => lev.Path.Contains(directory, StringComparison.OrdinalIgnoreCase))))
                 .OrderBy(i => i.Series.Id)
                 .ToList();
 
