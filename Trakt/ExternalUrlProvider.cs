@@ -31,7 +31,13 @@ public class ExternalUrlProvider : IExternalUrlProvider
                 yield return $"https://trakt.tv/movies/{imdbId}";
                 break;
             case Episode episode:
-                yield return $"https://trakt.tv/shows/{episode.SeriesName}/seasons/{episode.ParentIndexNumber}/episodes/{episode.IndexNumber}";
+                var showimbdId = episode.Series.GetProviderId(MetadataProvider.Imdb);
+                if (string.IsNullOrEmpty(showimbdId))
+                {
+                    yield break;
+                }
+
+                yield return $"https://trakt.tv/shows/{showimbdId}/seasons/{episode.ParentIndexNumber}/episodes/{episode.IndexNumber}";
                 break;
             case Series:
                 yield return $"https://trakt.tv/shows/{imdbId}";
