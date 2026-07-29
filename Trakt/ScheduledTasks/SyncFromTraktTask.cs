@@ -216,9 +216,9 @@ public class SyncFromTraktTask : IScheduledTask
                     if (!traktUser.SkipWatchedImportFromTrakt)
                     {
                         DateTime? tLastPlayed = null;
-                        if (DateTime.TryParse(matchedWatchedMovie.LastWatchedAt, out var value))
+                        if (DateTimeOffset.TryParse(matchedWatchedMovie.LastWatchedAt, out var value))
                         {
-                            tLastPlayed = value;
+                            tLastPlayed = value.UtcDateTime;
                         }
 
                         // Set movie as watched
@@ -229,7 +229,7 @@ public class SyncFromTraktTask : IScheduledTask
                             if (tLastPlayed == null && userData.LastPlayedDate == null)
                             {
                                 _logger.LogDebug("Movie's local and remote last played date are missing, falling back to the current time for user {User} locally: {Name}", user.Username, movie.Name);
-                                userData.LastPlayedDate = DateTime.Now;
+                                userData.LastPlayedDate = DateTime.UtcNow;
                             }
 
                             if (tLastPlayed != null
@@ -281,9 +281,9 @@ public class SyncFromTraktTask : IScheduledTask
 
                     var lastPlayed = userData.LastPlayedDate;
                     DateTime? paused = null;
-                    if (DateTime.TryParse(matchedPausedMovie.PausedAt, out var value))
+                    if (DateTimeOffset.TryParse(matchedPausedMovie.PausedAt, out var value))
                     {
-                        paused = value;
+                        paused = value.UtcDateTime;
                     }
 
                     if (lastPlayed == null || (paused != null && lastPlayed < paused))
@@ -329,9 +329,9 @@ public class SyncFromTraktTask : IScheduledTask
                 {
                     // Keep track of the shows rewatch cycles
                     DateTime? tLastReset = null;
-                    if (DateTime.TryParse(matchedWatchedShow.ResetAt, out var resetValue))
+                    if (DateTimeOffset.TryParse(matchedWatchedShow.ResetAt, out var resetValue))
                     {
-                        tLastReset = resetValue;
+                        tLastReset = resetValue.UtcDateTime;
                     }
 
                     var matchedWatchedEpisodeHistory = Extensions.FindAllMatches(episode, traktWatchedEpisodesHistory);
@@ -346,8 +346,8 @@ public class SyncFromTraktTask : IScheduledTask
                         // discard it if the last play date was before the reset date
                         if (lastWatchedEpisodeHistory != null
                             && tLastReset != null
-                            && DateTime.TryParse(lastWatchedEpisodeHistory.WatchedAt, out var lastPlayedValue)
-                            && lastPlayedValue < tLastReset)
+                            && DateTimeOffset.TryParse(lastWatchedEpisodeHistory.WatchedAt, out var lastPlayedValue)
+                            && lastPlayedValue.UtcDateTime < tLastReset)
                         {
                             lastWatchedEpisodeHistory = null;
                         }
@@ -358,9 +358,9 @@ public class SyncFromTraktTask : IScheduledTask
 
                             episodeWatched = true;
                             DateTime? tLastPlayed = null;
-                            if (DateTime.TryParse(lastWatchedEpisodeHistory.WatchedAt, out var lastWatchedValue))
+                            if (DateTimeOffset.TryParse(lastWatchedEpisodeHistory.WatchedAt, out var lastWatchedValue))
                             {
-                                tLastPlayed = lastWatchedValue;
+                                tLastPlayed = lastWatchedValue.UtcDateTime;
                             }
 
                             // Set episode as watched
@@ -371,7 +371,7 @@ public class SyncFromTraktTask : IScheduledTask
                                 if (tLastPlayed == null && userData.LastPlayedDate == null)
                                 {
                                     _logger.LogDebug("Episode's local and remote last played date are missing, falling back to the current time for user {User} locally: {Data}", user.Username, GetVerboseEpisodeData(episode));
-                                    userData.LastPlayedDate = DateTime.Now;
+                                    userData.LastPlayedDate = DateTime.UtcNow;
                                 }
 
                                 if (tLastPlayed != null
@@ -432,9 +432,9 @@ public class SyncFromTraktTask : IScheduledTask
 
                     var lastPlayed = userData.LastPlayedDate;
                     DateTime? paused = null;
-                    if (DateTime.TryParse(matchedPausedEpisode.PausedAt, out var value))
+                    if (DateTimeOffset.TryParse(matchedPausedEpisode.PausedAt, out var value))
                     {
-                        paused = value;
+                        paused = value.UtcDateTime;
                     }
 
                     if (lastPlayed == null || (paused != null && lastPlayed < paused))
