@@ -123,19 +123,38 @@
     return obj[camel];
   }
 
+  function normalizedAddress(value) {
+    if (!value) return null;
+    try {
+      return new URL(value, window.location.origin).href.replace(/\/+$/, '');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function currentServerBase() {
+    var basePath = window.location.pathname.replace(/\/Trakt\/SelfService\/?$/i, '');
+    return window.location.origin + basePath.replace(/\/+$/, '');
+  }
+
   function getSession() {
     try {
       var raw = localStorage.getItem('jellyfin_credentials');
       if (!raw) return null;
       var creds = JSON.parse(raw);
-      var server = (creds.Servers || []).find(function (s) { return s.AccessToken && s.UserId; })
-        || (creds.Servers || [])[0];
-      if (!server || !server.AccessToken || !server.UserId) return null;
-      var base = server.ManualAddress || server.LocalAddress || server.RemoteAddress || window.location.origin;
+      var base = currentServerBase();
+      var eligibleServers = (creds.Servers || []).filter(function (server) {
+        return server.AccessToken && server.UserId;
+      });
+      var server = eligibleServers.find(function (candidate) {
+        return [candidate.ManualAddress, candidate.LocalAddress, candidate.RemoteAddress].some(function (address) {
+          return normalizedAddress(address) === normalizedAddress(base);
+        });
+      });
+      if (!server) return null;
       return {
-        base: String(base).replace(/\/+$/, ''),
+        base: base,
         token: server.AccessToken,
-        userId: server.UserId,
         deviceId: server.DeviceId || 'trakt-selfservice'
       };
     } catch (e) {
@@ -177,8 +196,7 @@
   var authMissing = document.getElementById('authMissing');
   var app = document.getElementById('app');
   var msg = document.getElementById('msg');
-  var state = null;
-  var webBase = (session && session.base ? session.base : window.location.origin) + '/web/';
+  var webBase = (session && session.base ? session.base : currentServerBase()) + '/web/';
   document.getElementById('backLink').href = webBase;
   document.getElementById('loginLink').href = webBase + '#/login';
 
@@ -188,7 +206,6 @@
   }
 
   function applyStatus(status) {
-    state = status;
     var linked = !!flag(status, 'IsLinked');
     document.getElementById('linkStatus').innerHTML = linked
       ? '<span class="status-ok">Trakt account linked</span>'

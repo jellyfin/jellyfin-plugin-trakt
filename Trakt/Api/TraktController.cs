@@ -156,14 +156,14 @@ public class TraktController : ControllerBase
     [HttpPost("me/Deauthorize")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public ActionResult DeauthorizeCurrentUser()
+    public async Task<ActionResult> DeauthorizeCurrentUser()
     {
         if (!TryGetCallerUserId(out var userGuid))
         {
             return Unauthorized();
         }
 
-        UnlinkTraktUser(userGuid);
+        await UnlinkTraktUser(userGuid).ConfigureAwait(false);
         return Ok();
     }
 
@@ -229,7 +229,8 @@ public class TraktController : ControllerBase
             await _traktApi.RefreshUserAccessToken(traktUser).ConfigureAwait(false);
         }
 
-        if (string.IsNullOrWhiteSpace(traktUser.AccessToken))
+        if (string.IsNullOrWhiteSpace(traktUser.AccessToken)
+            || DateTimeOffset.Now > traktUser.AccessTokenExpiration)
         {
             return Forbid();
         }
@@ -272,7 +273,7 @@ public class TraktController : ControllerBase
     [HttpPost("Users/{userGuid}/Deauthorize")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public ActionResult TraktDeviceDeAuthorization([FromRoute] Guid userGuid)
+    public async Task<ActionResult> TraktDeviceDeAuthorization([FromRoute] Guid userGuid)
     {
         if (!AuthorizationHelper.CanAccessUser(User, userGuid))
         {
@@ -280,7 +281,7 @@ public class TraktController : ControllerBase
         }
 
         _logger.LogInformation("TraktDeviceDeauthorization request received");
-        UnlinkTraktUser(userGuid);
+        await UnlinkTraktUser(userGuid).ConfigureAwait(false);
         return Ok(string.Empty);
     }
 
@@ -427,7 +428,7 @@ public class TraktController : ControllerBase
         return UserHelper.GetTraktUser(userGuid);
     }
 
-    private void UnlinkTraktUser(Guid userGuid)
+    private async Task UnlinkTraktUser(Guid userGuid)
     {
         var traktUser = UserHelper.GetTraktUser(userGuid);
         if (traktUser == null)
@@ -436,7 +437,11 @@ public class TraktController : ControllerBase
             return;
         }
 
-        _traktApi.DeauthorizeDevice(traktUser);
+        if (!string.IsNullOrWhiteSpace(traktUser.AccessToken))
+        {
+            await _traktApi.DeauthorizeDevice(traktUser).ConfigureAwait(false);
+        }
+
         traktUser.AccessToken = null;
         traktUser.RefreshToken = null;
         traktUser.AccessTokenExpiration = DateTime.MinValue;

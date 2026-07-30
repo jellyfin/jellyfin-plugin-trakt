@@ -44,7 +44,7 @@ internal static class AuthorizationHelper
     public static bool CanAccessUser(ClaimsPrincipal user, Guid userGuid)
     {
         var authenticatedUserId = GetAuthenticatedUserId(user);
-        return !authenticatedUserId.Equals(Guid.Empty)
-               && (authenticatedUserId.Equals(userGuid) || IsAdministrator(user));
+        return IsAdministrator(user)
+               || (!authenticatedUserId.Equals(Guid.Empty) && authenticatedUserId.Equals(userGuid));
     }
 }
