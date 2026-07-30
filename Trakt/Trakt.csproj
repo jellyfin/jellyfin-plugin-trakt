@@ -11,8 +11,10 @@
   <ItemGroup>
     <None Remove="Web\trakt.html" />
     <None Remove="Web\trakt.js" />
+    <None Remove="Web\selfservice.html" />
     <EmbeddedResource Include="Web\trakt.html" />
     <EmbeddedResource Include="Web\trakt.js" />
+    <EmbeddedResource Include="Web\selfservice.html" />
   </ItemGroup>
 
   <ItemGroup>

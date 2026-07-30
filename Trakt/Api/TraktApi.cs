@@ -932,7 +932,8 @@ public class TraktApi
     /// Deauthorizes a device for a <see cref="TraktUser"/>.
     /// </summary>
     /// <param name="traktUser">The authorizing <see cref="TraktUser"/>.</param>
-    public async void DeauthorizeDevice(TraktUser traktUser)
+    /// <returns>A <see cref="Task"/> representing the revoke request.</returns>
+    public async Task DeauthorizeDevice(TraktUser traktUser)
     {
         var deviceRevokeRequest = new
         {

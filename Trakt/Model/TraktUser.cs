@@ -31,6 +31,7 @@ public class TraktUser
         LocationsExcluded = null;
         AccessTokenExpiration = DateTime.MinValue;
         DontRemoveItemFromTrakt = true;
+        AllowExternalTokenAccess = false;
     }
 
     /// <summary>
@@ -117,4 +118,10 @@ public class TraktUser
     /// Gets or sets a value indicating whether item should be removed from trakt.tv.
     /// </summary>
     public bool DontRemoveItemFromTrakt { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether other apps may read the access token via the token API.
+    /// Only administrators can change this (via the plugin configuration page).
+    /// </summary>
+    public bool AllowExternalTokenAccess { get; set; }
 }

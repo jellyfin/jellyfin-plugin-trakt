@@ -2,9 +2,9 @@ const TraktConfigurationPage = {
     pluginUniqueId: '4fe3201e-d6ae-4f2e-8917-e12bda571281',
     loadConfiguration: function (userId, page) {
         ApiClient.getPluginConfiguration(TraktConfigurationPage.pluginUniqueId).then(function (config) {
+            page.querySelector('#chkDefaultAllowExternalTokenAccess').checked = !!config.DefaultAllowExternalTokenAccess;
             let currentUserConfig = config.TraktUsers.filter(function (curr) {
                 return curr.LinkedMbUserId == userId;
-                //return true;
             })[0];
             // User doesn't have a config, so create a default one.
             if (!currentUserConfig) {
@@ -21,7 +21,8 @@ const TraktConfigurationPage = {
                     ExportMediaInfo: false,
                     SynchronizeCollections: true,
                     Scrobble: true,
-                    DontRemoveItemFromTrakt: true
+                    DontRemoveItemFromTrakt: true,
+                    AllowExternalTokenAccess: !!config.DefaultAllowExternalTokenAccess
                 };
             }
             // Default this to an empty array so the rendering code doesn't have to worry about it
@@ -38,6 +39,7 @@ const TraktConfigurationPage = {
             page.querySelector('#chkSyncCollections').checked = currentUserConfig.SynchronizeCollections;
             page.querySelector('#chkScrobble').checked = currentUserConfig.Scrobble;
             page.querySelector('#chkDontRemoveItemFromTrakt').checked = currentUserConfig.DontRemoveItemFromTrakt;
+            page.querySelector('#chkAllowExternalTokenAccess').checked = !!currentUserConfig.AllowExternalTokenAccess;
             // List the folders the user can access
             ApiClient.getVirtualFolders(userId).then(function (result) {
                 TraktConfigurationPage.loadFolders(currentUserConfig, result);
@@ -103,12 +105,15 @@ function save(page) {
     return new Promise((resolve) => {
         const currentUserId = page.querySelector('#selectUser').value;
         ApiClient.getPluginConfiguration(TraktConfigurationPage.pluginUniqueId).then(function (config) {
+            config.DefaultAllowExternalTokenAccess = page.querySelector('#chkDefaultAllowExternalTokenAccess').checked;
             let currentUserConfig = config.TraktUsers.filter(function (curr) {
                 return curr.LinkedMbUserId == currentUserId;
             })[0];
             // User doesn't have a config, so create a default one.
             if (!currentUserConfig) {
-                currentUserConfig = {};
+                currentUserConfig = {
+                    AllowExternalTokenAccess: config.DefaultAllowExternalTokenAccess
+                };
                 config.TraktUsers.push(currentUserConfig);
             }
             currentUserConfig.SkipUnwatchedImportFromTrakt = page.querySelector('#chkSkipUnwatchedImportFromTrakt').checked;
@@ -123,6 +128,7 @@ function save(page) {
             currentUserConfig.SynchronizeCollections = page.querySelector('#chkSyncCollections').checked;
             currentUserConfig.Scrobble = page.querySelector('#chkScrobble').checked;
             currentUserConfig.DontRemoveItemFromTrakt = page.querySelector('#chkDontRemoveItemFromTrakt').checked;
+            currentUserConfig.AllowExternalTokenAccess = page.querySelector('#chkAllowExternalTokenAccess').checked;
             currentUserConfig.LinkedMbUserId = currentUserId;
             currentUserConfig.LocationsExcluded = Array.prototype.map.call(page.querySelectorAll('.chkTraktLocation:checked'), elem => {
                 return elem.getAttribute('data-location');
@@ -145,6 +151,26 @@ function save(page) {
 }
 
 export default function (view) {
+    const selfServiceUrlInput = view.querySelector('#txtSelfServiceUrl');
+    if (selfServiceUrlInput) {
+        selfServiceUrlInput.value = ApiClient.getUrl('Trakt/SelfService');
+    }
+    const copySelfServiceUrlButton = view.querySelector('#btnCopySelfServiceUrl');
+    if (copySelfServiceUrlButton) {
+        copySelfServiceUrlButton.addEventListener('click', function () {
+            const value = ApiClient.getUrl('Trakt/SelfService');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(value).then(function () {
+                    Dashboard.alert('Link copied.');
+                }).catch(function () {
+                    Dashboard.alert({ message: 'Could not copy to clipboard.' });
+                });
+            } else {
+                Dashboard.alert({ message: value });
+            }
+        });
+    }
+
     view.querySelector('#selectUser').addEventListener('change', function () {
         TraktConfigurationPage.loadConfiguration(this.value, view);
     });
@@ -216,6 +242,10 @@ export default function (view) {
 
     view.addEventListener('viewshow', function () {
         const page = this;
+        const urlInput = page.querySelector('#txtSelfServiceUrl');
+        if (urlInput) {
+            urlInput.value = ApiClient.getUrl('Trakt/SelfService');
+        }
         ApiClient.getUsers().then(function (users) {
             TraktConfigurationPage.populateUsers(users);
             const currentUserId = page.querySelector('#selectUser').value;
