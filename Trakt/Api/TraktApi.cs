@@ -39,9 +39,13 @@ namespace Trakt.Api;
 /// </summary>
 public class TraktApi
 {
+    private const int _accountLimitMaxRetries = 13;
+    private const HttpStatusCode _accountLimitStatusCode = (HttpStatusCode)420;
     private static readonly SemaphoreSlim _traktResourcePool = new SemaphoreSlim(1, 1);
     private static readonly TimeSpan _tooManyRequestDelay = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan _gatewayDelay = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan _accountLimitBaseDelay = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan _accountLimitMaxDelay = TimeSpan.FromHours(24);
 
     private readonly ILogger<TraktApi> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -1073,23 +1077,49 @@ public class TraktApi
             await SetRequestHeaders(httpClient, traktUser).ConfigureAwait(false);
         }
 
-        await _traktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
-
-        try
+        for (int attempt = 0; attempt < _accountLimitMaxRetries; attempt++)
         {
-            var response = await RetryHttpRequest(async () => await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
-            if (response.StatusCode == HttpStatusCode.NotFound)
+            await _traktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+            try
             {
-                return default(T);
-            }
+                var response = await RetryHttpRequest(async () => await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return default(T);
+                }
 
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<T>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+                if (response.StatusCode == _accountLimitStatusCode)
+                {
+                    var delay = TimeSpan.FromTicks(_accountLimitBaseDelay.Ticks * (1L << attempt));
+                    if (delay > _accountLimitMaxDelay)
+                    {
+                        delay = _accountLimitMaxDelay;
+                    }
+
+                    _logger.LogWarning(
+                        "Trakt account limit exceeded (HTTP 420) for URL {Url}. Attempt {Attempt}/{Max}. Retrying in {Delay}.",
+                        url,
+                        attempt + 1,
+                        _accountLimitMaxRetries,
+                        delay);
+
+                    response.Dispose();
+                    await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+                    continue;
+                }
+
+                response.EnsureSuccessStatusCode();
+                return await response.Content.ReadFromJsonAsync<T>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+            }
+            finally
+            {
+                _traktResourcePool.Release();
+            }
         }
-        finally
-        {
-            _traktResourcePool.Release();
-        }
+
+        _logger.LogWarning("Trakt account limit (HTTP 420) persisting after {Attempts} retries. Giving up.", _accountLimitMaxRetries);
+        return default(T);
     }
 
     private Task<List<T>> GetFromTraktWithPaging<T>(string url, TraktUser traktUser)
@@ -1118,6 +1148,13 @@ public class TraktApi
                 var response = await RetryHttpRequest(async () => await httpClient.GetAsync(urlWithPage, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
+                    return result;
+                }
+
+                if (response.StatusCode == _accountLimitStatusCode)
+                {
+                    _logger.LogWarning("Trakt account limit exceeded (HTTP 420) while paging {Url}. Returning partial results.", url);
+                    response.Dispose();
                     return result;
                 }
 
@@ -1200,28 +1237,54 @@ public class TraktApi
         using var content = new ByteArrayContent(bytes);
         content.Headers.Add(HeaderNames.ContentType, MediaTypeNames.Application.Json);
 
-        await _traktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
-
-        try
+        for (int attempt = 0; attempt < _accountLimitMaxRetries; attempt++)
         {
-            var response = await RetryHttpRequest(async () => await httpClient.PostAsync(url, content, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
-            if (response.StatusCode == HttpStatusCode.NotFound)
+            await _traktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+            try
             {
-                return default(T);
-            }
+                var response = await RetryHttpRequest(async () => await httpClient.PostAsync(url, content, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return default(T);
+                }
 
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<T>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+                if (response.StatusCode == _accountLimitStatusCode)
+                {
+                    var delay = TimeSpan.FromTicks(_accountLimitBaseDelay.Ticks * (1L << attempt));
+                    if (delay > _accountLimitMaxDelay)
+                    {
+                        delay = _accountLimitMaxDelay;
+                    }
+
+                    _logger.LogWarning(
+                        "Trakt account limit exceeded (HTTP 420) for URL {Url}. Attempt {Attempt}/{Max}. Retrying in {Delay}. Consider upgrading to Trakt VIP for higher limits.",
+                        url,
+                        attempt + 1,
+                        _accountLimitMaxRetries,
+                        delay);
+
+                    response.Dispose();
+                    await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
+                    continue;
+                }
+
+                response.EnsureSuccessStatusCode();
+                return await response.Content.ReadFromJsonAsync<T>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception handled in PostToTrakt");
+                throw;
+            }
+            finally
+            {
+                _traktResourcePool.Release();
+            }
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception handled in PostToTrakt");
-            throw;
-        }
-        finally
-        {
-            _traktResourcePool.Release();
-        }
+
+        _logger.LogWarning("Trakt account limit (HTTP 420) persisting after {Attempts} retries. Giving up for now.", _accountLimitMaxRetries);
+        return default(T);
     }
 
     private async Task<HttpResponseMessage> RetryHttpRequest(Func<Task<HttpResponseMessage>> function)
