@@ -91,7 +91,7 @@ public class TraktController : ControllerBase
     [HttpPost("Users/{userGuid}/Deauthorize")]
     [Authorize(Policy = Policies.RequiresElevation)]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public string TraktDeviceDeAuthorization([FromRoute] Guid userGuid)
+    public async Task<string> TraktDeviceDeAuthorization([FromRoute] Guid userGuid)
     {
         _logger.LogInformation("TraktDeviceDeauthorization request received");
 
@@ -103,7 +103,7 @@ public class TraktController : ControllerBase
         }
         else
         {
-            _traktApi.DeauthorizeDevice(traktUser);
+            await _traktApi.DeauthorizeDevice(traktUser).ConfigureAwait(false);
             Plugin.Instance.PluginConfiguration.RemoveUser(userGuid);
             Plugin.Instance.SaveConfiguration();
         }
