@@ -619,7 +619,7 @@ public class TraktApi
     /// <returns>Task{List{DataContracts.Users.Watched.TraktMovieWatched}}.</returns>
     public async Task<List<DataContracts.Users.Watched.TraktMovieWatched>> SendGetAllWatchedMoviesRequest(TraktUser traktUser)
     {
-        return await GetFromTrakt<List<DataContracts.Users.Watched.TraktMovieWatched>>(TraktUris.WatchedMovies, traktUser).ConfigureAwait(false);
+        return await GetFromTraktWithPaging<DataContracts.Users.Watched.TraktMovieWatched>(TraktUris.WatchedMovies, traktUser).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -629,7 +629,7 @@ public class TraktApi
     /// <returns>Task{List{DataContracts.Users.Watched.TraktShowWatched}}.</returns>
     public async Task<List<DataContracts.Users.Watched.TraktShowWatched>> SendGetWatchedShowsRequest(TraktUser traktUser)
     {
-        return await GetFromTrakt<List<DataContracts.Users.Watched.TraktShowWatched>>(TraktUris.WatchedShows, traktUser).ConfigureAwait(false);
+        return await GetFromTraktWithPaging<DataContracts.Users.Watched.TraktShowWatched>(TraktUris.WatchedShows, traktUser).ConfigureAwait(false);
     }
 
     /// <summary>
