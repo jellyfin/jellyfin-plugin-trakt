@@ -2,8 +2,8 @@
 name: "Trakt"
 guid: "4fe3201e-d6ae-4f2e-8917-e12bda571281"
 imageUrl: "https://repo.jellyfin.org/releases/plugin/images/jellyfin-plugin-trakt.png"
-version: 30
-targetAbi: "10.11.9.0"
+version: 31
+targetAbi: "12.0.0.0"
 framework: "net9.0"
 owner: "jellyfin"
 overview: "Record your watched media with Trakt"
@@ -14,4 +14,14 @@ category: "General"
 artifacts:
   - "Trakt.dll"
 changelog: |-
-  -  Fix MissingMethodException on Jellyfin 10.11 (use GetUsers() instead Users) (#292) @lowbit
+  - Fix watched movies/shows import only fetching the first page (#298) @rbcetin, @claude, @Shadowghost
+  - Fix duplicate watched-history plays for shows with local/trakt numbering mismatches (#303) @InoriHimea, @Shadowghost
+  - Fix episode external URL generation (#301) @vicente-higino, @Shadowghost
+  - Fix a null-check gap and two exception-swallowing bugs in the sync/API layer (#304) @InoriHimea, @Shadowghost
+  - Fix timezone bug in Trakt LastPlayedDate comparison (#308) @jvandenbroek
+
+  ### Dependency updates ###
+  - Update jellyfin/jellyfin-meta-plugins digest to bd147a5 (#284) [@renovate[bot]](https://github.com/apps/renovate)
+
+  ### CI & build changes ###
+  - Update jellyfin/jellyfin-meta-plugins digest to bd147a5 (#284) [@renovate[bot]](https://github.com/apps/renovate)
