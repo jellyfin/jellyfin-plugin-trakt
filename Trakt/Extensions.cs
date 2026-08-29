@@ -435,7 +435,7 @@ public static class Extensions
     /// <returns>TraktEpisodeWatchedHistory.</returns>
     public static TraktEpisodeWatchedHistory FindMatch(Episode item, IEnumerable<TraktEpisodeWatchedHistory> results)
     {
-        return results.FirstOrDefault(i => IsMatch(item, i.Episode));
+        return results.FirstOrDefault(i => IsMatch(item, i));
     }
 
     /// <summary>

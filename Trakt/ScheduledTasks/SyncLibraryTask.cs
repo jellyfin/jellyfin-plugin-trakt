@@ -18,6 +18,7 @@ using MediaBrowser.Model.Tasks;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Api.DataContracts.Sync;
+using Trakt.Api.DataContracts.Sync.History;
 using Trakt.Api.Enums;
 using Trakt.Helpers;
 using Trakt.Model;
@@ -384,6 +385,7 @@ public class SyncLibraryTask : IScheduledTask
         CancellationToken cancellationToken)
     {
         List<Api.DataContracts.Users.Watched.TraktShowWatched> traktWatchedShows = new List<Api.DataContracts.Users.Watched.TraktShowWatched>();
+        List<TraktEpisodeWatchedHistory> traktWatchedEpisodesHistory = new List<TraktEpisodeWatchedHistory>();
         List<Api.DataContracts.Users.Collection.TraktShowCollected> traktCollectedShows = new List<Api.DataContracts.Users.Collection.TraktShowCollected>();
 
         try
@@ -395,6 +397,7 @@ public class SyncLibraryTask : IScheduledTask
             if (traktUser.PostWatchedHistory || traktUser.PostUnwatchedHistory)
             {
                 traktWatchedShows.AddRange(await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false));
+                traktWatchedEpisodesHistory.AddRange(await _traktApi.SendGetWatchedEpisodesHistoryRequest(traktUser).ConfigureAwait(false));
             }
 
             if (traktUser.SynchronizeCollections)
@@ -444,7 +447,7 @@ public class SyncLibraryTask : IScheduledTask
                     var isPlayedTraktTv = false;
                     var traktWatchedShow = Extensions.FindMatch(episode.Series, traktWatchedShows);
 
-                    if (traktUser.PostSetUnwatched || traktUser.PostSetWatched)
+                    if (traktUser.PostWatchedHistory || traktUser.PostUnwatchedHistory)
                     {
                         if (traktWatchedShow?.Seasons != null && traktWatchedShow.Seasons.Count > 0)
                         {
@@ -453,6 +456,14 @@ public class SyncLibraryTask : IScheduledTask
                                     && season.Episodes != null
                                     && season.Episodes.Any(e => episode.ContainsEpisodeNumber(e.Number)
                                         && e.Plays > 0));
+                        }
+
+                        // Local season/episode numbering can differ from trakt.tv's structure
+                        // (e.g. absolute-numbered anime), so also match by provider ids against
+                        // the watched history before treating the episode as unplayed.
+                        if (!isPlayedTraktTv && Extensions.FindMatch(episode, traktWatchedEpisodesHistory) != null)
+                        {
+                            isPlayedTraktTv = true;
                         }
 
                         // If the show has been played locally and is unplayed on trakt.tv then add it to the list
