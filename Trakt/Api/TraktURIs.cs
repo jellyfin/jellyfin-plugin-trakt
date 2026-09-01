@@ -113,12 +113,12 @@ public static class TraktUris
     /// <summary>
     /// The collected movies URI.
     /// </summary>
-    public const string CollectedMovies = BaseUrl + "/sync/collection/movies?extended=metadata";
+    public const string CollectedMovies = BaseUrl + "/sync/collection/movies?extended=metadata&page={page}&limit={limit}";
 
     /// <summary>
     /// The collected series URI.
     /// </summary>
-    public const string CollectedShows = BaseUrl + "/sync/collection/shows?extended=metadata";
+    public const string CollectedShows = BaseUrl + "/sync/collection/shows?extended=metadata&page={page}&limit={limit}";
 
     /// <summary>
     /// The movies recommendations URI.
