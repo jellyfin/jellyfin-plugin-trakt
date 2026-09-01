@@ -621,6 +621,16 @@ public class TraktApi
     }
 
     /// <summary>
+    /// Get the dates the user's sync data was last changed on trakt.tv.
+    /// </summary>
+    /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+    /// <returns>Task{DataContracts.Sync.LastActivities.TraktSyncLastActivities}.</returns>
+    public async Task<DataContracts.Sync.LastActivities.TraktSyncLastActivities> SendGetLastActivitiesRequest(TraktUser traktUser)
+    {
+        return await GetFromTrakt<DataContracts.Sync.LastActivities.TraktSyncLastActivities>(TraktUris.SyncLastActivities, traktUser).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Get all watched movies.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>

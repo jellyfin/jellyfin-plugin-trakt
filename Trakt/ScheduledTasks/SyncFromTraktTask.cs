@@ -18,6 +18,7 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Tasks;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
+using Trakt.Api.DataContracts.Sync.LastActivities;
 using Trakt.Api.DataContracts.Users.Playback;
 using Trakt.Api.DataContracts.Users.Watched;
 using Trakt.Helpers;
@@ -123,6 +124,67 @@ public class SyncFromTraktTask : IScheduledTask
             return;
         }
 
+        var syncStartedAt = DateTime.UtcNow;
+        TraktSyncLastActivities activities = null;
+
+        try
+        {
+            activities = await _traktApi.SendGetLastActivitiesRequest(traktUser).ConfigureAwait(false);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Locked)
+        {
+            _logger.LogError(ex, "Skipping sync for user {User} because their trakt.tv account is locked", user.Username);
+            return;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Couldn't fetch last activities for user {User}, falling back to full sync", user.Username);
+        }
+
+        var watchedRelevant = !(traktUser.SkipWatchedImportFromTrakt && traktUser.SkipUnwatchedImportFromTrakt);
+        var pausedRelevant = !traktUser.SkipPlaybackProgressImportFromTrakt;
+
+        // Activity dates are server mutation times that can move backwards, so compare them for
+        // inequality only. LastSyncFromTraktAt marks that a snapshot exists, so a stored null is
+        // not read as changed forever.
+        bool Changed(bool relevant, string stored, string current)
+            => relevant && (activities == null
+                || traktUser.LastSyncFromTraktAt == DateTime.MinValue
+                || !string.Equals(stored ?? string.Empty, current ?? string.Empty, StringComparison.Ordinal));
+
+        // DateLastSaved, not DateCreated: DateCreated can be backdated to the file creation time
+        bool newMovies = true, newEpisodes = true;
+        if (traktUser.LastSyncFromTraktAt != DateTime.MinValue)
+        {
+            newMovies = _libraryManager.GetCount(new InternalItemsQuery(user)
+            {
+                IncludeItemTypes = new[] { BaseItemKind.Movie },
+                IsVirtualItem = false,
+                MinDateLastSaved = traktUser.LastSyncFromTraktAt
+            }) > 0;
+
+            newEpisodes = _libraryManager.GetCount(new InternalItemsQuery(user)
+            {
+                IncludeItemTypes = new[] { BaseItemKind.Episode },
+                IsVirtualItem = false,
+                MinDateLastSaved = traktUser.LastSyncFromTraktAt
+            }) > 0;
+        }
+
+        var movieSyncNeeded = Changed(watchedRelevant, traktUser.LastWatchedMoviesActivity, activities?.Movies?.WatchedAt)
+            || Changed(pausedRelevant, traktUser.LastPausedMoviesActivity, activities?.Movies?.PausedAt)
+            || newMovies;
+        var episodeSyncNeeded = Changed(watchedRelevant, traktUser.LastWatchedEpisodesActivity, activities?.Episodes?.WatchedAt)
+            || Changed(watchedRelevant, traktUser.LastHiddenShowsActivity, activities?.Shows?.HiddenAt)
+            || Changed(pausedRelevant, traktUser.LastPausedEpisodesActivity, activities?.Episodes?.PausedAt)
+            || newEpisodes;
+
+        if (!movieSyncNeeded && !episodeSyncNeeded)
+        {
+            _logger.LogInformation("No trakt.tv activity and no new library items for user {User} since last sync, skipping import", user.Username);
+            return;
+        }
+
         List<TraktMovieWatched> traktWatchedMovies = new List<TraktMovieWatched>();
         List<TraktShowWatched> traktWatchedShows = new List<TraktShowWatched>();
         List<TraktWatchedEpisode> traktWatchedEpisodes = new List<TraktWatchedEpisode>();
@@ -138,15 +200,31 @@ public class SyncFromTraktTask : IScheduledTask
              */
             if (!(traktUser.SkipUnwatchedImportFromTrakt && traktUser.SkipWatchedImportFromTrakt))
             {
-                traktWatchedMovies.AddRange(await _traktApi.SendGetAllWatchedMoviesRequest(traktUser).ConfigureAwait(false));
-                traktWatchedShows.AddRange(await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false));
-                traktWatchedEpisodes.AddRange(await _traktApi.SendGetWatchedEpisodesRequest(traktUser).ConfigureAwait(false));
+                // Removals bump the same dates as additions, so a synced domain fetches its full
+                // lists: the item loop unmarks anything missing from them.
+                if (movieSyncNeeded)
+                {
+                    traktWatchedMovies.AddRange(await _traktApi.SendGetAllWatchedMoviesRequest(traktUser).ConfigureAwait(false));
+                }
+
+                if (episodeSyncNeeded)
+                {
+                    traktWatchedShows.AddRange(await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false));
+                    traktWatchedEpisodes.AddRange(await _traktApi.SendGetWatchedEpisodesRequest(traktUser).ConfigureAwait(false));
+                }
             }
 
             if (!traktUser.SkipPlaybackProgressImportFromTrakt)
             {
-                traktPausedMovies.AddRange(await _traktApi.SendGetAllPausedMoviesRequest(traktUser).ConfigureAwait(false));
-                traktPausedEpisodes.AddRange(await _traktApi.SendGetPausedEpisodesRequest(traktUser).ConfigureAwait(false));
+                if (movieSyncNeeded)
+                {
+                    traktPausedMovies.AddRange(await _traktApi.SendGetAllPausedMoviesRequest(traktUser).ConfigureAwait(false));
+                }
+
+                if (episodeSyncNeeded)
+                {
+                    traktPausedEpisodes.AddRange(await _traktApi.SendGetPausedEpisodesRequest(traktUser).ConfigureAwait(false));
+                }
             }
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Locked)
@@ -168,13 +246,20 @@ public class SyncFromTraktTask : IScheduledTask
 
         var watchedShowsProgressFetched = false;
 
+        var includeItemTypes = new List<BaseItemKind>();
+        if (movieSyncNeeded)
+        {
+            includeItemTypes.Add(BaseItemKind.Movie);
+        }
+
+        if (episodeSyncNeeded)
+        {
+            includeItemTypes.Add(BaseItemKind.Episode);
+        }
+
         var baseQuery = new InternalItemsQuery(user)
         {
-            IncludeItemTypes = new[]
-            {
-                BaseItemKind.Movie,
-                BaseItemKind.Episode
-            },
+            IncludeItemTypes = includeItemTypes.ToArray(),
             IsVirtualItem = false,
             OrderBy = new[]
             {
@@ -189,7 +274,7 @@ public class SyncFromTraktTask : IScheduledTask
         int offset = 0, previousCount;
 
         // Purely for progress reporting
-        var percentPerIteration = percentPerUser / (totalCount / (double)Limit);
+        var percentPerIteration = totalCount > 0 ? percentPerUser / (totalCount / (double)Limit) : 0;
 
         do
         {
@@ -204,7 +289,7 @@ public class SyncFromTraktTask : IScheduledTask
             mediaItems = mediaItems.Where(i => _traktApi.CanSync(i, traktUser)).ToList();
 
             // Purely for progress reporting
-            var percentPerItem = percentPerIteration / mediaItems.Count;
+            var percentPerItem = mediaItems.Count > 0 ? percentPerIteration / mediaItems.Count : 0;
 
             foreach (var movie in mediaItems.OfType<Movie>())
             {
@@ -481,6 +566,25 @@ public class SyncFromTraktTask : IScheduledTask
             }
         }
         while (previousCount != 0);
+
+        if (activities != null)
+        {
+            if (watchedRelevant)
+            {
+                traktUser.LastWatchedMoviesActivity = activities.Movies?.WatchedAt;
+                traktUser.LastWatchedEpisodesActivity = activities.Episodes?.WatchedAt;
+                traktUser.LastHiddenShowsActivity = activities.Shows?.HiddenAt;
+            }
+
+            if (pausedRelevant)
+            {
+                traktUser.LastPausedMoviesActivity = activities.Movies?.PausedAt;
+                traktUser.LastPausedEpisodesActivity = activities.Episodes?.PausedAt;
+            }
+
+            traktUser.LastSyncFromTraktAt = syncStartedAt;
+            Plugin.Instance.SaveConfiguration();
+        }
     }
 
     private async Task FetchWatchedShowsProgress(List<TraktShowWatched> traktWatchedShows, TraktUser traktUser, User user, CancellationToken cancellationToken)

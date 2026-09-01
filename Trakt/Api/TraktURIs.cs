@@ -66,6 +66,11 @@ public static class TraktUris
     public const string SyncRatingsAdd = BaseUrl + "/sync/ratings";
 
     /// <summary>
+    /// The last activities URI.
+    /// </summary>
+    public const string SyncLastActivities = BaseUrl + "/sync/last_activities";
+
+    /// <summary>
     /// The scrobble start URI.
     /// </summary>
     public const string ScrobbleStart = BaseUrl + "/scrobble/start";
