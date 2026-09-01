@@ -8,7 +8,6 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Entities;
 using Trakt.Api.DataContracts.BaseModel;
-using Trakt.Api.DataContracts.Sync.History;
 using Trakt.Api.DataContracts.Users.Collection;
 using Trakt.Api.DataContracts.Users.Playback;
 using Trakt.Api.DataContracts.Users.Watched;
@@ -429,25 +428,14 @@ public static class Extensions
     }
 
     /// <summary>
-    /// Gets a watched history match for an episode.
+    /// Gets a watched match for an episode.
     /// </summary>
-    /// <param name="item">The <see cref="BaseItem"/>.</param>
-    /// <param name="results">>The <see cref="IEnumerable{TraktEpisodeWatchedHistory}"/>.</param>
-    /// <returns>TraktEpisodeWatchedHistory.</returns>
-    public static TraktEpisodeWatchedHistory FindMatch(Episode item, IEnumerable<TraktEpisodeWatchedHistory> results)
+    /// <param name="item">The <see cref="Episode"/>.</param>
+    /// <param name="results">>The <see cref="IEnumerable{TraktWatchedEpisode}"/>.</param>
+    /// <returns>TraktWatchedEpisode.</returns>
+    public static TraktWatchedEpisode FindMatch(Episode item, IEnumerable<TraktWatchedEpisode> results)
     {
         return results.FirstOrDefault(i => IsMatch(item, i));
-    }
-
-    /// <summary>
-    /// Gets all watched history matches for an episode.
-    /// </summary>
-    /// <param name="item">The <see cref="BaseItem"/>.</param>
-    /// <param name="results">>The <see cref="IEnumerable{TraktEpisodeWatchedHistory}"/>.</param>
-    /// <returns>IEnumerable{TraktEpisodeWatchedHistory}.</returns>
-    public static IReadOnlyList<TraktEpisodeWatchedHistory> FindAllMatches(Episode item, IEnumerable<TraktEpisodeWatchedHistory> results)
-    {
-        return results.Where(i => IsMatch(item, i)).ToList();
     }
 
     /// <summary>
@@ -544,25 +532,26 @@ public static class Extensions
     }
 
     /// <summary>
-    /// Checks if a <see cref="Episode"/> matches a <see cref="TraktEpisodeWatchedHistory"/>.
+    /// Checks if a <see cref="Episode"/> matches a <see cref="TraktWatchedEpisode"/>.
     /// </summary>
     /// <param name="item">The <see cref="Episode"/>.</param>
-    /// <param name="episodeHistory">The <see cref="TraktEpisodeWatchedHistory"/>.</param>
-    /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktEpisodeWatchedHistory"/>.</returns>
-    public static bool IsMatch(Episode item, TraktEpisodeWatchedHistory episodeHistory)
+    /// <param name="watchedEpisode">The <see cref="TraktWatchedEpisode"/>.</param>
+    /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktWatchedEpisode"/>.</returns>
+    public static bool IsMatch(Episode item, TraktWatchedEpisode watchedEpisode)
     {
         // Match by provider id's
-        if (IsMatch(item, episodeHistory.Episode))
+        if (IsMatch(item, watchedEpisode.Episode))
         {
             return true;
         }
 
         // Match by show, season and episode number if there isn't any provider id in common
         // If there was a common provider id between the item and the trakt episode (f.e. both have tvdb id), you shouldn't check anymore by season/number
-        if (!HasAnyProviderTvIdInCommon(item, episodeHistory.Episode)
-            && IsMatch(item.Series, episodeHistory.Show)
-            && item.GetSeasonNumber() == episodeHistory.Episode.Season
-            && item.ContainsEpisodeNumber(episodeHistory.Episode.Number))
+        if (!HasAnyProviderTvIdInCommon(item, watchedEpisode.Episode)
+            && watchedEpisode.Show != null
+            && IsMatch(item.Series, watchedEpisode.Show)
+            && item.GetSeasonNumber() == watchedEpisode.Episode.Season
+            && item.ContainsEpisodeNumber(watchedEpisode.Episode.Number))
         {
             return true;
         }

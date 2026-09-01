@@ -641,13 +641,13 @@ public class TraktApi
     }
 
     /// <summary>
-    /// Get watched episodes history.
+    /// Get watched episodes.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
-    /// <returns>Task{List{DataContracts.Sync.History.TraktEpisodeWatchedHistory}}.</returns>
-    public async Task<List<DataContracts.Sync.History.TraktEpisodeWatchedHistory>> SendGetWatchedEpisodesHistoryRequest(TraktUser traktUser)
+    /// <returns>Task{List{DataContracts.Users.Watched.TraktWatchedEpisode}}.</returns>
+    public async Task<List<DataContracts.Users.Watched.TraktWatchedEpisode>> SendGetWatchedEpisodesRequest(TraktUser traktUser)
     {
-        return await GetFromTraktWithPaging<DataContracts.Sync.History.TraktEpisodeWatchedHistory>(TraktUris.SyncWatchedEpisodesHistory, traktUser).ConfigureAwait(false);
+        return await GetFromTraktWithPaging<DataContracts.Users.Watched.TraktWatchedEpisode>(TraktUris.WatchedEpisodes, traktUser).ConfigureAwait(false);
     }
 
     /// <summary>
