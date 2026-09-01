@@ -39,9 +39,17 @@ namespace Trakt.Api;
 /// </summary>
 public class TraktApi
 {
+    // trakt.tv caps page size at 250
+    private const int PageLimit = 250;
+
+    private const int MaxPages = 500;
+
+    private const int MaxRetryAttempts = 3;
+
     private static readonly SemaphoreSlim _traktResourcePool = new SemaphoreSlim(1, 1);
     private static readonly TimeSpan _tooManyRequestDelay = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan _gatewayDelay = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan _maximumRetryDelay = TimeSpan.FromMinutes(2);
 
     private readonly ILogger<TraktApi> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -613,6 +621,16 @@ public class TraktApi
     }
 
     /// <summary>
+    /// Get the dates the user's sync data was last changed on trakt.tv.
+    /// </summary>
+    /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+    /// <returns>Task{DataContracts.Sync.LastActivities.TraktSyncLastActivities}.</returns>
+    public async Task<DataContracts.Sync.LastActivities.TraktSyncLastActivities> SendGetLastActivitiesRequest(TraktUser traktUser)
+    {
+        return await GetFromTrakt<DataContracts.Sync.LastActivities.TraktSyncLastActivities>(TraktUris.SyncLastActivities, traktUser).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Get all watched movies.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
@@ -633,23 +651,24 @@ public class TraktApi
     }
 
     /// <summary>
-    /// Get watched movies history.
+    /// Get watched shows including per-episode progress.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
-    /// <returns>Task{List{DataContracts.Sync.History.TraktMovieWatchedHistory}}.</returns>
-    public async Task<List<DataContracts.Sync.History.TraktMovieWatchedHistory>> SendGetWatchedMoviesHistoryRequest(TraktUser traktUser)
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <returns>Task{List{DataContracts.Users.Watched.TraktShowWatched}}.</returns>
+    public async Task<List<DataContracts.Users.Watched.TraktShowWatched>> SendGetWatchedShowsProgressRequest(TraktUser traktUser, CancellationToken cancellationToken)
     {
-        return await GetFromTraktWithPaging<DataContracts.Sync.History.TraktMovieWatchedHistory>(TraktUris.SyncWatchedMoviesHistory, traktUser).ConfigureAwait(false);
+        return await GetFromTraktWithPaging<DataContracts.Users.Watched.TraktShowWatched>(TraktUris.WatchedShowsProgress, traktUser, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// Get watched episodes history.
+    /// Get watched episodes.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
-    /// <returns>Task{List{DataContracts.Sync.History.TraktEpisodeWatchedHistory}}.</returns>
-    public async Task<List<DataContracts.Sync.History.TraktEpisodeWatchedHistory>> SendGetWatchedEpisodesHistoryRequest(TraktUser traktUser)
+    /// <returns>Task{List{DataContracts.Users.Watched.TraktWatchedEpisode}}.</returns>
+    public async Task<List<DataContracts.Users.Watched.TraktWatchedEpisode>> SendGetWatchedEpisodesRequest(TraktUser traktUser)
     {
-        return await GetFromTraktWithPaging<DataContracts.Sync.History.TraktEpisodeWatchedHistory>(TraktUris.SyncWatchedEpisodesHistory, traktUser).ConfigureAwait(false);
+        return await GetFromTraktWithPaging<DataContracts.Users.Watched.TraktWatchedEpisode>(TraktUris.WatchedEpisodes, traktUser).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -659,7 +678,7 @@ public class TraktApi
     /// <returns>Task{List{DataContracts.Users.Playback.TraktMoviePaused}}.</returns>
     public async Task<List<DataContracts.Users.Playback.TraktMoviePaused>> SendGetAllPausedMoviesRequest(TraktUser traktUser)
     {
-        return await GetFromTrakt<List<DataContracts.Users.Playback.TraktMoviePaused>>(TraktUris.PausedMovies, traktUser).ConfigureAwait(false);
+        return await GetFromTraktWithPaging<DataContracts.Users.Playback.TraktMoviePaused>(TraktUris.PausedMovies, traktUser).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -669,7 +688,7 @@ public class TraktApi
     /// <returns>Task{List{DataContracts.Users.Playback.TraktEpisodePaused}}.</returns>
     public async Task<List<DataContracts.Users.Playback.TraktEpisodePaused>> SendGetPausedEpisodesRequest(TraktUser traktUser)
     {
-        return await GetFromTrakt<List<DataContracts.Users.Playback.TraktEpisodePaused>>(TraktUris.PausedEpisodes, traktUser).ConfigureAwait(false);
+        return await GetFromTraktWithPaging<DataContracts.Users.Playback.TraktEpisodePaused>(TraktUris.PausedEpisodes, traktUser).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -679,7 +698,7 @@ public class TraktApi
     /// <returns>Task{List{DataContracts.Users.Collection.TraktMovieCollected}}.</returns>
     public async Task<List<DataContracts.Users.Collection.TraktMovieCollected>> SendGetAllCollectedMoviesRequest(TraktUser traktUser)
     {
-        return await GetFromTrakt<List<DataContracts.Users.Collection.TraktMovieCollected>>(TraktUris.CollectedMovies, traktUser).ConfigureAwait(false);
+        return await GetFromTraktWithPaging<DataContracts.Users.Collection.TraktMovieCollected>(TraktUris.CollectedMovies, traktUser).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -689,7 +708,7 @@ public class TraktApi
     /// <returns>Task{List{DataContracts.Users.Collection.TraktShowCollected}}.</returns>
     public async Task<List<DataContracts.Users.Collection.TraktShowCollected>> SendGetCollectedShowsRequest(TraktUser traktUser)
     {
-        return await GetFromTrakt<List<DataContracts.Users.Collection.TraktShowCollected>>(TraktUris.CollectedShows, traktUser).ConfigureAwait(false);
+        return await GetFromTraktWithPaging<DataContracts.Users.Collection.TraktShowCollected>(TraktUris.CollectedShows, traktUser).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -1086,7 +1105,7 @@ public class TraktApi
 
         try
         {
-            var response = await RetryHttpRequest(async () => await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+            var response = await RetryHttpRequest(async () => await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false), cancellationToken, retryServerError: true).ConfigureAwait(false);
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 return default(T);
@@ -1117,42 +1136,83 @@ public class TraktApi
             await SetRequestHeaders(httpClient, traktUser).ConfigureAwait(false);
         }
 
-        await _traktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
-
-        try
+        while (page <= MaxPages)
         {
-            while (true)
+            var urlWithPage = url
+                .Replace("{page}", page.ToString(CultureInfo.InvariantCulture), StringComparison.InvariantCulture)
+                .Replace("{limit}", PageLimit.ToString(CultureInfo.InvariantCulture), StringComparison.InvariantCulture);
+
+            List<T> pageResult;
+            int? pageCount;
+            int? serverLimit;
+
+            await _traktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+            try
             {
-                var urlWithPage = url.Replace("{page}", page.ToString(CultureInfo.InvariantCulture), StringComparison.InvariantCulture);
-                var response = await RetryHttpRequest(async () => await httpClient.GetAsync(urlWithPage, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+                var response = await RetryHttpRequest(async () => await httpClient.GetAsync(urlWithPage, cancellationToken).ConfigureAwait(false), cancellationToken, retryServerError: true).ConfigureAwait(false);
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
                     return result;
                 }
 
                 response.EnsureSuccessStatusCode();
-                var tmpResult = await response.Content.ReadFromJsonAsync<List<T>>(_jsonOptions, cancellationToken).ConfigureAwait(false);
-                if (tmpResult != null)
-                {
-                    result.AddRange(tmpResult);
-                }
-
-                if (page < int.Parse(response.Headers.GetValues("X-Pagination-Page-Count").FirstOrDefault(page.ToString(CultureInfo.InvariantCulture)), CultureInfo.InvariantCulture))
-                {
-                    page++;
-                }
-                else
-                {
-                    break; // break loop when no more new pages are available
-                }
+                pageResult = await response.Content.ReadFromJsonAsync<List<T>>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+                pageCount = GetIntHeader(response, "X-Pagination-Page-Count");
+                serverLimit = GetIntHeader(response, "X-Pagination-Limit");
+            }
+            finally
+            {
+                _traktResourcePool.Release();
             }
 
-            return result;
+            if (pageResult == null || pageResult.Count == 0)
+            {
+                break;
+            }
+
+            result.AddRange(pageResult);
+
+            // No page-count header means the endpoint isn't paginated
+            if (!pageCount.HasValue)
+            {
+                break;
+            }
+
+            // Page count can read 0 mid-pagination, and extended=progress clamps page size
+            // below the request, so require a short page against the served limit AND page >= count.
+            var effectiveLimit = serverLimit.HasValue && serverLimit.Value > 0 && serverLimit.Value < PageLimit
+                ? serverLimit.Value
+                : PageLimit;
+            if (pageResult.Count < effectiveLimit && page >= pageCount.Value)
+            {
+                break;
+            }
+
+            page++;
         }
-        finally
+
+        if (page > MaxPages)
         {
-            _traktResourcePool.Release();
+            _logger.LogWarning("Stopped requesting pages from trakt.tv after the maximum of {MaxPages} pages", MaxPages);
         }
+
+        return result;
+    }
+
+    private static int? GetIntHeader(HttpResponseMessage response, string name)
+    {
+        if (!response.Headers.TryGetValues(name, out var values))
+        {
+            return null;
+        }
+
+        if (int.TryParse(values.FirstOrDefault(), CultureInfo.InvariantCulture, out var parsedValue))
+        {
+            return parsedValue;
+        }
+
+        return null;
     }
 
     private async Task<HttpResponseMessage> PostToTrakt(string url, object data)
@@ -1213,7 +1273,7 @@ public class TraktApi
 
         try
         {
-            var response = await RetryHttpRequest(async () => await httpClient.PostAsync(url, content, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+            var response = await RetryHttpRequest(async () => await httpClient.PostAsync(url, content, cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 return default(T);
@@ -1233,49 +1293,101 @@ public class TraktApi
         }
     }
 
-    private async Task<HttpResponseMessage> RetryHttpRequest(Func<Task<HttpResponseMessage>> function)
+    private async Task<HttpResponseMessage> RetryHttpRequest(Func<Task<HttpResponseMessage>> function, CancellationToken cancellationToken, bool retryServerError = false)
     {
         HttpResponseMessage response = null;
         Exception lastException = null;
-        for (int i = 0; i < 3; i++)
+
+        for (int attempt = 0; attempt < MaxRetryAttempts; attempt++)
         {
+            TimeSpan delay;
+
             try
             {
                 response = await function().ConfigureAwait(false);
                 var statusCode = response.StatusCode;
 
-                if (statusCode.HasFlag(HttpStatusCode.TooManyRequests))
+                if (statusCode == HttpStatusCode.Locked)
                 {
-                    var delay = response.Headers.RetryAfter?.Delta ?? _tooManyRequestDelay;
-                    _logger.LogDebug("Too many requests while communicating with trakt.tv - waiting {Time}s", delay.TotalSeconds);
-                    await Task.Delay(delay).ConfigureAwait(false);
+                    _logger.LogError("The trakt.tv account is locked - the user needs to contact trakt.tv support before syncing can continue");
+                    return response;
                 }
-                else if (statusCode.HasFlag(HttpStatusCode.BadGateway)
-                    || statusCode.HasFlag(HttpStatusCode.GatewayTimeout)
-                    || statusCode.HasFlag(HttpStatusCode.ServiceUnavailable))
+
+                if (statusCode == HttpStatusCode.TooManyRequests)
                 {
-                    _logger.LogDebug("Connectivity error while communicating with trakt.tv - waiting {Time}s", _gatewayDelay.TotalSeconds);
-                    await Task.Delay(_gatewayDelay).ConfigureAwait(false);
+                    delay = GetRetryAfterDelay(response) ?? GetBackoffDelay(_tooManyRequestDelay, attempt);
+                    _logger.LogDebug("Too many requests while communicating with trakt.tv - waiting {Time}s", delay.TotalSeconds);
+                }
+                else if (statusCode == HttpStatusCode.BadGateway
+                    || statusCode == HttpStatusCode.GatewayTimeout
+                    || statusCode == HttpStatusCode.ServiceUnavailable)
+                {
+                    delay = GetRetryAfterDelay(response) ?? GetBackoffDelay(_gatewayDelay, attempt);
+                    _logger.LogDebug("Connectivity error while communicating with trakt.tv - waiting {Time}s", delay.TotalSeconds);
+                }
+                else if (retryServerError && statusCode == HttpStatusCode.InternalServerError)
+                {
+                    // Only GETs retry 500s: a POST may already have been applied
+                    delay = GetBackoffDelay(_gatewayDelay, attempt);
+                    _logger.LogDebug("Server error while communicating with trakt.tv - waiting {Time}s", delay.TotalSeconds);
                 }
                 else
                 {
-                    break;
+                    return response;
                 }
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                lastException = ex;
                 response = null;
-                _logger.LogDebug(ex, "Trakt request attempt {Attempt} of 3 failed", i + 1);
+                lastException = ex;
+                delay = GetBackoffDelay(_gatewayDelay, attempt);
+                _logger.LogWarning(ex, "Request to trakt.tv failed - waiting {Time}s", delay.TotalSeconds);
+            }
+            catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+            {
+                response = null;
+                lastException = ex;
+                delay = GetBackoffDelay(_gatewayDelay, attempt);
+                _logger.LogWarning(ex, "Request to trakt.tv timed out - waiting {Time}s", delay.TotalSeconds);
+            }
+
+            if (attempt < MaxRetryAttempts - 1)
+            {
+                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        if (response == null && lastException != null)
+        if (response == null)
         {
-            throw lastException;
+            throw new HttpRequestException($"Request to trakt.tv failed after {MaxRetryAttempts} attempts", lastException);
         }
 
         return response;
+    }
+
+    private static TimeSpan? GetRetryAfterDelay(HttpResponseMessage response)
+    {
+        var retryAfter = response.Headers.RetryAfter;
+        if (retryAfter == null)
+        {
+            return null;
+        }
+
+        var delay = retryAfter.Delta ?? (retryAfter.Date.HasValue ? retryAfter.Date.Value - DateTimeOffset.UtcNow : null);
+        if (!delay.HasValue)
+        {
+            return null;
+        }
+
+        return delay.Value > TimeSpan.Zero ? delay.Value : TimeSpan.Zero;
+    }
+
+    private static TimeSpan GetBackoffDelay(TimeSpan baseDelay, int attempt)
+    {
+        var backoff = baseDelay.TotalMilliseconds * Math.Pow(2, attempt);
+        var jittered = (backoff / 2) + (Random.Shared.NextDouble() * backoff / 2);
+
+        return TimeSpan.FromMilliseconds(Math.Min(jittered, _maximumRetryDelay.TotalMilliseconds));
     }
 
     private HttpClient GetHttpClient()

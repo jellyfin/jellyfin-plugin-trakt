@@ -18,7 +18,6 @@ using MediaBrowser.Model.Tasks;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
 using Trakt.Api.DataContracts.Sync;
-using Trakt.Api.DataContracts.Sync.History;
 using Trakt.Api.Enums;
 using Trakt.Helpers;
 using Trakt.Model;
@@ -385,8 +384,10 @@ public class SyncLibraryTask : IScheduledTask
         CancellationToken cancellationToken)
     {
         List<Api.DataContracts.Users.Watched.TraktShowWatched> traktWatchedShows = new List<Api.DataContracts.Users.Watched.TraktShowWatched>();
-        List<TraktEpisodeWatchedHistory> traktWatchedEpisodesHistory = new List<TraktEpisodeWatchedHistory>();
+        List<Api.DataContracts.Users.Watched.TraktWatchedEpisode> traktWatchedEpisodes = new List<Api.DataContracts.Users.Watched.TraktWatchedEpisode>();
         List<Api.DataContracts.Users.Collection.TraktShowCollected> traktCollectedShows = new List<Api.DataContracts.Users.Collection.TraktShowCollected>();
+
+        var watchedEpisodesFetched = false;
 
         try
         {
@@ -396,8 +397,9 @@ public class SyncLibraryTask : IScheduledTask
             */
             if (traktUser.PostWatchedHistory || traktUser.PostUnwatchedHistory)
             {
-                traktWatchedShows.AddRange(await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false));
-                traktWatchedEpisodesHistory.AddRange(await _traktApi.SendGetWatchedEpisodesHistoryRequest(traktUser).ConfigureAwait(false));
+                // Plain watched/shows doesn't return the seasons the diff below needs, so without
+                // extended=progress it would re-post the full watched history every run.
+                traktWatchedShows.AddRange(await _traktApi.SendGetWatchedShowsProgressRequest(traktUser, cancellationToken).ConfigureAwait(false));
             }
 
             if (traktUser.SynchronizeCollections)
@@ -460,10 +462,18 @@ public class SyncLibraryTask : IScheduledTask
 
                         // Local season/episode numbering can differ from trakt.tv's structure
                         // (e.g. absolute-numbered anime), so also match by provider ids against
-                        // the watched history before treating the episode as unplayed.
-                        if (!isPlayedTraktTv && Extensions.FindMatch(episode, traktWatchedEpisodesHistory) != null)
+                        // the watched episodes before treating the episode as unplayed. That is a
+                        // full walk of the watched episodes, so only fetch it once one is needed.
+                        if (!isPlayedTraktTv)
                         {
-                            isPlayedTraktTv = true;
+                            if (!watchedEpisodesFetched)
+                            {
+                                watchedEpisodesFetched = true;
+                                traktWatchedEpisodes.AddRange(await _traktApi.SendGetWatchedEpisodesRequest(traktUser).ConfigureAwait(false));
+                                _logger.LogInformation("Trakt.tv watched episodes for user {User}: {Count}", user.Username, traktWatchedEpisodes.Count);
+                            }
+
+                            isPlayedTraktTv = Extensions.FindMatch(episode, traktWatchedEpisodes) != null;
                         }
 
                         // If the show has been played locally and is unplayed on trakt.tv then add it to the list
