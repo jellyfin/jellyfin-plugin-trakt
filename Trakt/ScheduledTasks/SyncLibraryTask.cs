@@ -395,7 +395,9 @@ public class SyncLibraryTask : IScheduledTask
             */
             if (traktUser.PostWatchedHistory || traktUser.PostUnwatchedHistory)
             {
-                traktWatchedShows.AddRange(await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false));
+                // Plain watched/shows doesn't return the seasons the diff below needs, so without
+                // extended=progress it would re-post the full watched history every run.
+                traktWatchedShows.AddRange(await _traktApi.SendGetWatchedShowsProgressRequest(traktUser, cancellationToken).ConfigureAwait(false));
                 traktWatchedEpisodes.AddRange(await _traktApi.SendGetWatchedEpisodesRequest(traktUser).ConfigureAwait(false));
             }
 
