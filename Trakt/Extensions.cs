@@ -143,6 +143,12 @@ public static class Extensions
     /// <returns><see cref="bool"/> indicating if the new movie has different metadata to the already collected.</returns>
     public static bool MetadataIsDifferent(this TraktMovieCollected collectedMovie, Movie movie)
     {
+        // trakt.tv omits metadata for items collected without media info
+        if (collectedMovie.Metadata == null || collectedMovie.Metadata.IsEmpty())
+        {
+            return true;
+        }
+
         var match = false;
         var mediaStreams = movie.GetMediaStreams();
         var defaultVideoStream = mediaStreams.FirstOrDefault(x => x.Index == movie.DefaultVideoStreamIndex);
@@ -174,6 +180,12 @@ public static class Extensions
     /// <returns><see cref="bool"/> indicating if the new episode has different metadata to the already collected.</returns>
     public static bool MetadataIsDifferent(this TraktEpisodeCollected collectedEpisode, Episode episode)
     {
+        // trakt.tv omits metadata for items collected without media info
+        if (collectedEpisode.Metadata == null || collectedEpisode.Metadata.IsEmpty())
+        {
+            return true;
+        }
+
         var match = false;
         var mediaStreams = episode.GetMediaStreams();
         var defaultVideoStream = mediaStreams.FirstOrDefault(x => x.Index == episode.DefaultVideoStreamIndex);
