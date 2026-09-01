@@ -44,9 +44,12 @@ public class TraktApi
 
     private const int MaxPages = 500;
 
+    private const int MaxRetryAttempts = 3;
+
     private static readonly SemaphoreSlim _traktResourcePool = new SemaphoreSlim(1, 1);
     private static readonly TimeSpan _tooManyRequestDelay = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan _gatewayDelay = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan _maximumRetryDelay = TimeSpan.FromMinutes(2);
 
     private readonly ILogger<TraktApi> _logger;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -1091,7 +1094,7 @@ public class TraktApi
 
         try
         {
-            var response = await RetryHttpRequest(async () => await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+            var response = await RetryHttpRequest(async () => await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 return default(T);
@@ -1136,7 +1139,7 @@ public class TraktApi
 
             try
             {
-                var response = await RetryHttpRequest(async () => await httpClient.GetAsync(urlWithPage, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+                var response = await RetryHttpRequest(async () => await httpClient.GetAsync(urlWithPage, cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
                     return result;
@@ -1259,7 +1262,7 @@ public class TraktApi
 
         try
         {
-            var response = await RetryHttpRequest(async () => await httpClient.PostAsync(url, content, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
+            var response = await RetryHttpRequest(async () => await httpClient.PostAsync(url, content, cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 return default(T);
@@ -1279,49 +1282,95 @@ public class TraktApi
         }
     }
 
-    private async Task<HttpResponseMessage> RetryHttpRequest(Func<Task<HttpResponseMessage>> function)
+    private async Task<HttpResponseMessage> RetryHttpRequest(Func<Task<HttpResponseMessage>> function, CancellationToken cancellationToken)
     {
         HttpResponseMessage response = null;
         Exception lastException = null;
-        for (int i = 0; i < 3; i++)
+
+        for (int attempt = 0; attempt < MaxRetryAttempts; attempt++)
         {
+            TimeSpan delay;
+
             try
             {
                 response = await function().ConfigureAwait(false);
                 var statusCode = response.StatusCode;
 
-                if (statusCode.HasFlag(HttpStatusCode.TooManyRequests))
+                if (statusCode == HttpStatusCode.Locked)
                 {
-                    var delay = response.Headers.RetryAfter?.Delta ?? _tooManyRequestDelay;
-                    _logger.LogDebug("Too many requests while communicating with trakt.tv - waiting {Time}s", delay.TotalSeconds);
-                    await Task.Delay(delay).ConfigureAwait(false);
+                    _logger.LogError("The trakt.tv account is locked - the user needs to contact trakt.tv support before syncing can continue");
+                    return response;
                 }
-                else if (statusCode.HasFlag(HttpStatusCode.BadGateway)
-                    || statusCode.HasFlag(HttpStatusCode.GatewayTimeout)
-                    || statusCode.HasFlag(HttpStatusCode.ServiceUnavailable))
+
+                if (statusCode == HttpStatusCode.TooManyRequests)
                 {
-                    _logger.LogDebug("Connectivity error while communicating with trakt.tv - waiting {Time}s", _gatewayDelay.TotalSeconds);
-                    await Task.Delay(_gatewayDelay).ConfigureAwait(false);
+                    delay = GetRetryAfterDelay(response) ?? GetBackoffDelay(_tooManyRequestDelay, attempt);
+                    _logger.LogDebug("Too many requests while communicating with trakt.tv - waiting {Time}s", delay.TotalSeconds);
+                }
+                else if (statusCode == HttpStatusCode.BadGateway
+                    || statusCode == HttpStatusCode.GatewayTimeout
+                    || statusCode == HttpStatusCode.ServiceUnavailable)
+                {
+                    delay = GetRetryAfterDelay(response) ?? GetBackoffDelay(_gatewayDelay, attempt);
+                    _logger.LogDebug("Connectivity error while communicating with trakt.tv - waiting {Time}s", delay.TotalSeconds);
                 }
                 else
                 {
-                    break;
+                    return response;
                 }
             }
-            catch (Exception ex)
+            catch (HttpRequestException ex)
             {
-                lastException = ex;
                 response = null;
-                _logger.LogDebug(ex, "Trakt request attempt {Attempt} of 3 failed", i + 1);
+                lastException = ex;
+                delay = GetBackoffDelay(_gatewayDelay, attempt);
+                _logger.LogWarning(ex, "Request to trakt.tv failed - waiting {Time}s", delay.TotalSeconds);
+            }
+            catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+            {
+                response = null;
+                lastException = ex;
+                delay = GetBackoffDelay(_gatewayDelay, attempt);
+                _logger.LogWarning(ex, "Request to trakt.tv timed out - waiting {Time}s", delay.TotalSeconds);
+            }
+
+            if (attempt < MaxRetryAttempts - 1)
+            {
+                await Task.Delay(delay, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        if (response == null && lastException != null)
+        if (response == null)
         {
-            throw lastException;
+            throw new HttpRequestException($"Request to trakt.tv failed after {MaxRetryAttempts} attempts", lastException);
         }
 
         return response;
+    }
+
+    private static TimeSpan? GetRetryAfterDelay(HttpResponseMessage response)
+    {
+        var retryAfter = response.Headers.RetryAfter;
+        if (retryAfter == null)
+        {
+            return null;
+        }
+
+        var delay = retryAfter.Delta ?? (retryAfter.Date.HasValue ? retryAfter.Date.Value - DateTimeOffset.UtcNow : null);
+        if (!delay.HasValue)
+        {
+            return null;
+        }
+
+        return delay.Value > TimeSpan.Zero ? delay.Value : TimeSpan.Zero;
+    }
+
+    private static TimeSpan GetBackoffDelay(TimeSpan baseDelay, int attempt)
+    {
+        var backoff = baseDelay.TotalMilliseconds * Math.Pow(2, attempt);
+        var jittered = (backoff / 2) + (Random.Shared.NextDouble() * backoff / 2);
+
+        return TimeSpan.FromMilliseconds(Math.Min(jittered, _maximumRetryDelay.TotalMilliseconds));
     }
 
     private HttpClient GetHttpClient()
