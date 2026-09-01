@@ -125,7 +125,6 @@ public class SyncFromTraktTask : IScheduledTask
 
         List<TraktMovieWatched> traktWatchedMovies = new List<TraktMovieWatched>();
         List<TraktShowWatched> traktWatchedShows = new List<TraktShowWatched>();
-        List<TraktMovieWatchedHistory> traktWatchedMoviesHistory = new List<TraktMovieWatchedHistory>(); // not used for now, just for reference to get watched movies history count
         List<TraktEpisodeWatchedHistory> traktWatchedEpisodesHistory = new List<TraktEpisodeWatchedHistory>(); // used for fall episode matching by ids
         List<TraktMoviePaused> traktPausedMovies = new List<TraktMoviePaused>();
         List<TraktEpisodePaused> traktPausedEpisodes = new List<TraktEpisodePaused>();
@@ -141,7 +140,6 @@ public class SyncFromTraktTask : IScheduledTask
             {
                 traktWatchedMovies.AddRange(await _traktApi.SendGetAllWatchedMoviesRequest(traktUser).ConfigureAwait(false));
                 traktWatchedShows.AddRange(await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false));
-                traktWatchedMoviesHistory.AddRange(await _traktApi.SendGetWatchedMoviesHistoryRequest(traktUser).ConfigureAwait(false));
                 traktWatchedEpisodesHistory.AddRange(await _traktApi.SendGetWatchedEpisodesHistoryRequest(traktUser).ConfigureAwait(false));
             }
 
@@ -163,7 +161,6 @@ public class SyncFromTraktTask : IScheduledTask
         }
 
         _logger.LogInformation("Trakt.tv watched movies for user {User}: {Count}", user.Username, traktWatchedMovies.Count);
-        _logger.LogInformation("Trakt.tv watched movies history for user {User}: {Count}", user.Username, traktWatchedMoviesHistory.Count);
         _logger.LogInformation("Trakt.tv paused movies for user {User}: {Count}", user.Username, traktPausedMovies.Count);
         _logger.LogInformation("Trakt.tv watched shows for user {User}: {Count}", user.Username, traktWatchedShows.Count);
         _logger.LogInformation("Trakt.tv watched episodes history for user {User}: {Count}", user.Username, traktWatchedEpisodesHistory.Count);

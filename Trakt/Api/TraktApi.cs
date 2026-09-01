@@ -641,16 +641,6 @@ public class TraktApi
     }
 
     /// <summary>
-    /// Get watched movies history.
-    /// </summary>
-    /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
-    /// <returns>Task{List{DataContracts.Sync.History.TraktMovieWatchedHistory}}.</returns>
-    public async Task<List<DataContracts.Sync.History.TraktMovieWatchedHistory>> SendGetWatchedMoviesHistoryRequest(TraktUser traktUser)
-    {
-        return await GetFromTraktWithPaging<DataContracts.Sync.History.TraktMovieWatchedHistory>(TraktUris.SyncWatchedMoviesHistory, traktUser).ConfigureAwait(false);
-    }
-
-    /// <summary>
     /// Get watched episodes history.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
