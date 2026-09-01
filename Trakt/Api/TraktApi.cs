@@ -42,6 +42,8 @@ public class TraktApi
     // trakt.tv caps page size at 250
     private const int PageLimit = 250;
 
+    private const int MaxPages = 500;
+
     private static readonly SemaphoreSlim _traktResourcePool = new SemaphoreSlim(1, 1);
     private static readonly TimeSpan _tooManyRequestDelay = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan _gatewayDelay = TimeSpan.FromSeconds(30);
@@ -1120,15 +1122,20 @@ public class TraktApi
             await SetRequestHeaders(httpClient, traktUser).ConfigureAwait(false);
         }
 
-        await _traktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
-
-        try
+        while (page <= MaxPages)
         {
-            while (true)
+            var urlWithPage = url
+                .Replace("{page}", page.ToString(CultureInfo.InvariantCulture), StringComparison.InvariantCulture)
+                .Replace("{limit}", PageLimit.ToString(CultureInfo.InvariantCulture), StringComparison.InvariantCulture);
+
+            List<T> pageResult;
+            int? pageCount;
+            int? serverLimit;
+
+            await _traktResourcePool.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+            try
             {
-                var urlWithPage = url
-                    .Replace("{page}", page.ToString(CultureInfo.InvariantCulture), StringComparison.InvariantCulture)
-                    .Replace("{limit}", PageLimit.ToString(CultureInfo.InvariantCulture), StringComparison.InvariantCulture);
                 var response = await RetryHttpRequest(async () => await httpClient.GetAsync(urlWithPage, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
@@ -1136,28 +1143,62 @@ public class TraktApi
                 }
 
                 response.EnsureSuccessStatusCode();
-                var tmpResult = await response.Content.ReadFromJsonAsync<List<T>>(_jsonOptions, cancellationToken).ConfigureAwait(false);
-                if (tmpResult != null)
-                {
-                    result.AddRange(tmpResult);
-                }
-
-                if (page < int.Parse(response.Headers.GetValues("X-Pagination-Page-Count").FirstOrDefault(page.ToString(CultureInfo.InvariantCulture)), CultureInfo.InvariantCulture))
-                {
-                    page++;
-                }
-                else
-                {
-                    break; // break loop when no more new pages are available
-                }
+                pageResult = await response.Content.ReadFromJsonAsync<List<T>>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+                pageCount = GetIntHeader(response, "X-Pagination-Page-Count");
+                serverLimit = GetIntHeader(response, "X-Pagination-Limit");
+            }
+            finally
+            {
+                _traktResourcePool.Release();
             }
 
-            return result;
+            if (pageResult == null || pageResult.Count == 0)
+            {
+                break;
+            }
+
+            result.AddRange(pageResult);
+
+            // No page-count header means the endpoint isn't paginated
+            if (!pageCount.HasValue)
+            {
+                break;
+            }
+
+            // Page count can read 0 mid-pagination, and extended=progress clamps page size
+            // below the request, so require a short page against the served limit AND page >= count.
+            var effectiveLimit = serverLimit.HasValue && serverLimit.Value > 0 && serverLimit.Value < PageLimit
+                ? serverLimit.Value
+                : PageLimit;
+            if (pageResult.Count < effectiveLimit && page >= pageCount.Value)
+            {
+                break;
+            }
+
+            page++;
         }
-        finally
+
+        if (page > MaxPages)
         {
-            _traktResourcePool.Release();
+            _logger.LogWarning("Stopped requesting pages from trakt.tv after the maximum of {MaxPages} pages", MaxPages);
         }
+
+        return result;
+    }
+
+    private static int? GetIntHeader(HttpResponseMessage response, string name)
+    {
+        if (!response.Headers.TryGetValues(name, out var values))
+        {
+            return null;
+        }
+
+        if (int.TryParse(values.FirstOrDefault(), CultureInfo.InvariantCulture, out var parsedValue))
+        {
+            return parsedValue;
+        }
+
+        return null;
     }
 
     private async Task<HttpResponseMessage> PostToTrakt(string url, object data)
