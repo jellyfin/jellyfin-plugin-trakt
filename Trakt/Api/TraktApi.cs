@@ -39,6 +39,9 @@ namespace Trakt.Api;
 /// </summary>
 public class TraktApi
 {
+    // trakt.tv caps page size at 250
+    private const int PageLimit = 250;
+
     private static readonly SemaphoreSlim _traktResourcePool = new SemaphoreSlim(1, 1);
     private static readonly TimeSpan _tooManyRequestDelay = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan _gatewayDelay = TimeSpan.FromSeconds(30);
@@ -1123,7 +1126,9 @@ public class TraktApi
         {
             while (true)
             {
-                var urlWithPage = url.Replace("{page}", page.ToString(CultureInfo.InvariantCulture), StringComparison.InvariantCulture);
+                var urlWithPage = url
+                    .Replace("{page}", page.ToString(CultureInfo.InvariantCulture), StringComparison.InvariantCulture)
+                    .Replace("{limit}", PageLimit.ToString(CultureInfo.InvariantCulture), StringComparison.InvariantCulture);
                 var response = await RetryHttpRequest(async () => await httpClient.GetAsync(urlWithPage, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
