@@ -51,11 +51,6 @@ public static class TraktUris
     public const string SyncCollectionRemove = BaseUrl + "/sync/collection/remove";
 
     /// <summary>
-    /// The watched episodes history URI.
-    /// </summary>
-    public const string SyncWatchedEpisodesHistory = BaseUrl + "/sync/history/episodes?page={page}&limit={limit}";
-
-    /// <summary>
     /// The watched history add URI.
     /// </summary>
     public const string SyncWatchedHistoryAdd = BaseUrl + "/sync/history";
@@ -94,6 +89,11 @@ public static class TraktUris
     /// The watched shows URI.
     /// </summary>
     public const string WatchedShows = BaseUrl + "/sync/watched/shows?page={page}&limit={limit}";
+
+    /// <summary>
+    /// The watched episodes URI.
+    /// </summary>
+    public const string WatchedEpisodes = BaseUrl + "/sync/watched/episodes?page={page}&limit={limit}";
 
     /// <summary>
     /// The paused movies URI.
