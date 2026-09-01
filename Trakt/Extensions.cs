@@ -158,7 +158,7 @@ public static class Extensions
             var is3D = movie.Is3D;
             var resolution = defaultVideoStream.GetResolution();
             var hdr = defaultVideoStream.GetHdr();
-            match = match || collectedMovie.Metadata.Resolution != resolution || collectedMovie.Metadata.Is3D != is3D || collectedMovie.Metadata.Hdr != hdr;
+            match = match || collectedMovie.Metadata.Resolution != resolution || (collectedMovie.Metadata.Is3D ?? false) != is3D || collectedMovie.Metadata.Hdr != hdr;
         }
 
         if (audioStream != null)
@@ -195,7 +195,7 @@ public static class Extensions
             var is3D = episode.Is3D;
             var resolution = defaultVideoStream.GetResolution();
             var hdr = defaultVideoStream.GetHdr();
-            match = match || collectedEpisode.Metadata.Resolution != resolution || collectedEpisode.Metadata.Is3D != is3D || collectedEpisode.Metadata.Hdr != hdr;
+            match = match || collectedEpisode.Metadata.Resolution != resolution || (collectedEpisode.Metadata.Is3D ?? false) != is3D || collectedEpisode.Metadata.Hdr != hdr;
         }
 
         if (audioStream != null)
