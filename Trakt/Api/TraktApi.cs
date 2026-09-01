@@ -1094,7 +1094,7 @@ public class TraktApi
 
         try
         {
-            var response = await RetryHttpRequest(async () => await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
+            var response = await RetryHttpRequest(async () => await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false), cancellationToken, retryServerError: true).ConfigureAwait(false);
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 return default(T);
@@ -1139,7 +1139,7 @@ public class TraktApi
 
             try
             {
-                var response = await RetryHttpRequest(async () => await httpClient.GetAsync(urlWithPage, cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);
+                var response = await RetryHttpRequest(async () => await httpClient.GetAsync(urlWithPage, cancellationToken).ConfigureAwait(false), cancellationToken, retryServerError: true).ConfigureAwait(false);
                 if (response.StatusCode == HttpStatusCode.NotFound)
                 {
                     return result;
@@ -1282,7 +1282,7 @@ public class TraktApi
         }
     }
 
-    private async Task<HttpResponseMessage> RetryHttpRequest(Func<Task<HttpResponseMessage>> function, CancellationToken cancellationToken)
+    private async Task<HttpResponseMessage> RetryHttpRequest(Func<Task<HttpResponseMessage>> function, CancellationToken cancellationToken, bool retryServerError = false)
     {
         HttpResponseMessage response = null;
         Exception lastException = null;
@@ -1313,6 +1313,12 @@ public class TraktApi
                 {
                     delay = GetRetryAfterDelay(response) ?? GetBackoffDelay(_gatewayDelay, attempt);
                     _logger.LogDebug("Connectivity error while communicating with trakt.tv - waiting {Time}s", delay.TotalSeconds);
+                }
+                else if (retryServerError && statusCode == HttpStatusCode.InternalServerError)
+                {
+                    // Only GETs retry 500s: a POST may already have been applied
+                    delay = GetBackoffDelay(_gatewayDelay, attempt);
+                    _logger.LogDebug("Server error while communicating with trakt.tv - waiting {Time}s", delay.TotalSeconds);
                 }
                 else
                 {
