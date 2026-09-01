@@ -31,6 +31,7 @@ public class TraktUser
         LocationsExcluded = null;
         AccessTokenExpiration = DateTime.MinValue;
         DontRemoveItemFromTrakt = true;
+        LastSyncFromTraktAt = DateTime.MinValue;
     }
 
     /// <summary>
@@ -117,4 +118,35 @@ public class TraktUser
     /// Gets or sets a value indicating whether item should be removed from trakt.tv.
     /// </summary>
     public bool DontRemoveItemFromTrakt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the movie watched activity date seen during the last import from trakt.tv.
+    /// </summary>
+    public string LastWatchedMoviesActivity { get; set; }
+
+    /// <summary>
+    /// Gets or sets the movie playback progress activity date seen during the last import from trakt.tv.
+    /// </summary>
+    public string LastPausedMoviesActivity { get; set; }
+
+    /// <summary>
+    /// Gets or sets the episode watched activity date seen during the last import from trakt.tv.
+    /// </summary>
+    public string LastWatchedEpisodesActivity { get; set; }
+
+    /// <summary>
+    /// Gets or sets the episode playback progress activity date seen during the last import from trakt.tv.
+    /// </summary>
+    public string LastPausedEpisodesActivity { get; set; }
+
+    /// <summary>
+    /// Gets or sets the show hidden activity date seen during the last import from trakt.tv.
+    /// </summary>
+    public string LastHiddenShowsActivity { get; set; }
+
+    /// <summary>
+    /// Gets or sets the date the last import from trakt.tv started, used to detect
+    /// library items added since then. MinValue means never synced.
+    /// </summary>
+    public DateTime LastSyncFromTraktAt { get; set; }
 }
