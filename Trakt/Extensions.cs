@@ -439,6 +439,44 @@ public static class Extensions
     }
 
     /// <summary>
+    /// Gets a watched match for an episode from a watched show's per-episode progress,
+    /// by season and episode number. Only intended for episodes without any tv provider
+    /// id (see <see cref="HasAnyProviderTvId"/>), where matching by ids is impossible.
+    /// </summary>
+    /// <param name="item">The <see cref="Episode"/>.</param>
+    /// <param name="watchedShow">The <see cref="TraktShowWatched"/> matching the episode's series.</param>
+    /// <returns>TraktWatchedEpisode.</returns>
+    public static TraktWatchedEpisode FindMatchFromShowProgress(Episode item, TraktShowWatched watchedShow)
+    {
+        var season = watchedShow?.Seasons?.FirstOrDefault(s => s.Number == item.GetSeasonNumber());
+        var watchedEpisode = season?.Episodes?.FirstOrDefault(e => item.ContainsEpisodeNumber(e.Number));
+        if (watchedEpisode == null)
+        {
+            return null;
+        }
+
+        return new TraktWatchedEpisode
+        {
+            Plays = watchedEpisode.Plays,
+            LastWatchedAt = watchedEpisode.LastWatchedAt,
+            LastUpdatedAt = watchedEpisode.LastUpdatedAt
+        };
+    }
+
+    /// <summary>
+    /// Checks if an <see cref="Episode"/> has any tv provider id that trakt.tv episodes carry.
+    /// </summary>
+    /// <param name="item">The <see cref="Episode"/>.</param>
+    /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> has any tv provider id.</returns>
+    public static bool HasAnyProviderTvId(Episode item)
+    {
+        return item.HasProviderId(MetadataProvider.Tvdb)
+            || item.HasProviderId(MetadataProvider.Imdb)
+            || item.HasProviderId(MetadataProvider.Tmdb)
+            || item.HasProviderId(MetadataProvider.TvRage);
+    }
+
+    /// <summary>
     /// Checks if a <see cref="BaseItem"/> matches a <see cref="TraktMovie"/>.
     /// </summary>
     /// <param name="item">The <see cref="BaseItem"/>.</param>

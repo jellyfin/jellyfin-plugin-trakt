@@ -91,6 +91,13 @@ public static class TraktUris
     public const string WatchedShows = BaseUrl + "/sync/watched/shows?page={page}&limit={limit}";
 
     /// <summary>
+    /// The watched shows URI including per-episode progress, used as a fallback
+    /// to match episodes that carry no provider ids. The server may enforce a
+    /// smaller page size for this variant.
+    /// </summary>
+    public const string WatchedShowsProgress = BaseUrl + "/sync/watched/shows?extended=progress&page={page}&limit={limit}";
+
+    /// <summary>
     /// The watched episodes URI.
     /// </summary>
     public const string WatchedEpisodes = BaseUrl + "/sync/watched/episodes?page={page}&limit={limit}";
