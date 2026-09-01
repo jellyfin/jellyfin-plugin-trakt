@@ -21,6 +21,7 @@ using Trakt.Api;
 using Trakt.Api.DataContracts.Users.Playback;
 using Trakt.Api.DataContracts.Users.Watched;
 using Trakt.Helpers;
+using Trakt.Model;
 using Episode = MediaBrowser.Controller.Entities.TV.Episode;
 
 namespace Trakt.ScheduledTasks;
@@ -164,6 +165,8 @@ public class SyncFromTraktTask : IScheduledTask
         _logger.LogInformation("Trakt.tv watched shows for user {User}: {Count}", user.Username, traktWatchedShows.Count);
         _logger.LogInformation("Trakt.tv watched episodes for user {User}: {Count}", user.Username, traktWatchedEpisodes.Count);
         _logger.LogInformation("Trakt.tv paused episodes for user {User}: {Count}", user.Username, traktPausedEpisodes.Count);
+
+        var watchedShowsProgressFetched = false;
 
         var baseQuery = new InternalItemsQuery(user)
         {
@@ -338,6 +341,20 @@ public class SyncFromTraktTask : IScheduledTask
 
                     var matchedWatchedEpisode = Extensions.FindMatch(episode, traktWatchedEpisodes);
 
+                    // /sync/watched/episodes has no show object, so id-less episodes only
+                    // match by season/episode against show progress
+                    if (matchedWatchedEpisode == null && !Extensions.HasAnyProviderTvId(episode))
+                    {
+                        if (!watchedShowsProgressFetched)
+                        {
+                            watchedShowsProgressFetched = true;
+                            await FetchWatchedShowsProgress(traktWatchedShows, traktUser, user, cancellationToken).ConfigureAwait(false);
+                            matchedWatchedShow = Extensions.FindMatch(episode.Series, traktWatchedShows);
+                        }
+
+                        matchedWatchedEpisode = Extensions.FindMatchFromShowProgress(episode, matchedWatchedShow);
+                    }
+
                     DateTime? tLastPlayed = null;
                     if (matchedWatchedEpisode != null
                         && DateTimeOffset.TryParse(matchedWatchedEpisode.LastWatchedAt, out var lastWatchedValue))
@@ -464,6 +481,21 @@ public class SyncFromTraktTask : IScheduledTask
             }
         }
         while (previousCount != 0);
+    }
+
+    private async Task FetchWatchedShowsProgress(List<TraktShowWatched> traktWatchedShows, TraktUser traktUser, User user, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var watchedShowsProgress = await _traktApi.SendGetWatchedShowsProgressRequest(traktUser, cancellationToken).ConfigureAwait(false);
+            traktWatchedShows.Clear();
+            traktWatchedShows.AddRange(watchedShowsProgress);
+            _logger.LogInformation("Trakt.tv watched shows progress for user {User}: {Count}", user.Username, watchedShowsProgress.Count);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Failed to fetch watched shows progress for user {User} - episodes without provider ids will not be matched", user.Username);
+        }
     }
 
     private static string GetVerboseEpisodeData(Episode episode)

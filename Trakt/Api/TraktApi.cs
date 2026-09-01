@@ -641,6 +641,17 @@ public class TraktApi
     }
 
     /// <summary>
+    /// Get watched shows including per-episode progress.
+    /// </summary>
+    /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
+    /// <returns>Task{List{DataContracts.Users.Watched.TraktShowWatched}}.</returns>
+    public async Task<List<DataContracts.Users.Watched.TraktShowWatched>> SendGetWatchedShowsProgressRequest(TraktUser traktUser, CancellationToken cancellationToken)
+    {
+        return await GetFromTraktWithPaging<DataContracts.Users.Watched.TraktShowWatched>(TraktUris.WatchedShowsProgress, traktUser, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Get watched episodes.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
