@@ -323,6 +323,9 @@ dotnet_diagnostic.CA1871.severity = error
 # error on CA1872: Prefer 'Convert.ToHexString' and 'Convert.ToHexStringLower' over call chains based on 'BitConverter.ToString'
 dotnet_diagnostic.CA1872.severity = error
 
+# disable warning CA1873: Evaluation of this argument may be expensive and unnecessary if logging is disabled
+dotnet_diagnostic.CA1873.severity = none
+
 # error on CA2016: Forward the CancellationToken parameter to methods that take one
 #  or pass in 'CancellationToken.None' explicitly to indicate intentionally not propagating the token
 dotnet_diagnostic.CA2016.severity = error
