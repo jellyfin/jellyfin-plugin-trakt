@@ -129,14 +129,14 @@ public class SyncFromTraktTask : IScheduledTask
 
         try
         {
-            activities = await _traktApi.SendGetLastActivitiesRequest(traktUser).ConfigureAwait(false);
+            activities = await _traktApi.SendGetLastActivitiesRequest(traktUser, cancellationToken).ConfigureAwait(false);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Locked)
         {
             _logger.LogError(ex, "Skipping sync for user {User} because their trakt.tv account is locked", user.Username);
             return;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogWarning(ex, "Couldn't fetch last activities for user {User}, falling back to full sync", user.Username);
         }
@@ -204,13 +204,13 @@ public class SyncFromTraktTask : IScheduledTask
                 // lists: the item loop unmarks anything missing from them.
                 if (movieSyncNeeded)
                 {
-                    traktWatchedMovies.AddRange(await _traktApi.SendGetAllWatchedMoviesRequest(traktUser).ConfigureAwait(false));
+                    traktWatchedMovies.AddRange(await _traktApi.SendGetAllWatchedMoviesRequest(traktUser, cancellationToken).ConfigureAwait(false));
                 }
 
                 if (episodeSyncNeeded)
                 {
-                    traktWatchedShows.AddRange(await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false));
-                    traktWatchedEpisodes.AddRange(await _traktApi.SendGetWatchedEpisodesRequest(traktUser).ConfigureAwait(false));
+                    traktWatchedShows.AddRange(await _traktApi.SendGetWatchedShowsRequest(traktUser, cancellationToken).ConfigureAwait(false));
+                    traktWatchedEpisodes.AddRange(await _traktApi.SendGetWatchedEpisodesRequest(traktUser, cancellationToken).ConfigureAwait(false));
                 }
             }
 
@@ -218,12 +218,12 @@ public class SyncFromTraktTask : IScheduledTask
             {
                 if (movieSyncNeeded)
                 {
-                    traktPausedMovies.AddRange(await _traktApi.SendGetAllPausedMoviesRequest(traktUser).ConfigureAwait(false));
+                    traktPausedMovies.AddRange(await _traktApi.SendGetAllPausedMoviesRequest(traktUser, cancellationToken).ConfigureAwait(false));
                 }
 
                 if (episodeSyncNeeded)
                 {
-                    traktPausedEpisodes.AddRange(await _traktApi.SendGetPausedEpisodesRequest(traktUser).ConfigureAwait(false));
+                    traktPausedEpisodes.AddRange(await _traktApi.SendGetPausedEpisodesRequest(traktUser, cancellationToken).ConfigureAwait(false));
                 }
             }
         }

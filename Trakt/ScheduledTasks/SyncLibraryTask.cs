@@ -155,12 +155,12 @@ public class SyncLibraryTask : IScheduledTask
             */
             if (traktUser.PostWatchedHistory || traktUser.PostUnwatchedHistory)
             {
-                traktWatchedMovies.AddRange(await _traktApi.SendGetAllWatchedMoviesRequest(traktUser).ConfigureAwait(false));
+                traktWatchedMovies.AddRange(await _traktApi.SendGetAllWatchedMoviesRequest(traktUser, cancellationToken).ConfigureAwait(false));
             }
 
             if (traktUser.SynchronizeCollections)
             {
-                traktCollectedMovies.AddRange(await _traktApi.SendGetAllCollectedMoviesRequest(traktUser).ConfigureAwait(false));
+                traktCollectedMovies.AddRange(await _traktApi.SendGetAllCollectedMoviesRequest(traktUser, cancellationToken).ConfigureAwait(false));
             }
         }
         catch (Exception ex)
@@ -404,7 +404,7 @@ public class SyncLibraryTask : IScheduledTask
 
             if (traktUser.SynchronizeCollections)
             {
-                traktCollectedShows.AddRange(await _traktApi.SendGetCollectedShowsRequest(traktUser).ConfigureAwait(false));
+                traktCollectedShows.AddRange(await _traktApi.SendGetCollectedShowsRequest(traktUser, cancellationToken).ConfigureAwait(false));
             }
         }
         catch (Exception ex)
@@ -469,7 +469,7 @@ public class SyncLibraryTask : IScheduledTask
                             if (!watchedEpisodesFetched)
                             {
                                 watchedEpisodesFetched = true;
-                                traktWatchedEpisodes.AddRange(await _traktApi.SendGetWatchedEpisodesRequest(traktUser).ConfigureAwait(false));
+                                traktWatchedEpisodes.AddRange(await _traktApi.SendGetWatchedEpisodesRequest(traktUser, cancellationToken).ConfigureAwait(false));
                                 _logger.LogInformation("Trakt.tv watched episodes for user {User}: {Count}", user.Username, traktWatchedEpisodes.Count);
                             }
 

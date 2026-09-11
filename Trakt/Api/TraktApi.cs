@@ -603,50 +603,55 @@ public class TraktApi
     /// Get movie recommendations.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns>Task{List{TraktMovie}}.</returns>
-    public async Task<List<TraktMovie>> SendMovieRecommendationsRequest(TraktUser traktUser)
+    public async Task<List<TraktMovie>> SendMovieRecommendationsRequest(TraktUser traktUser, CancellationToken cancellationToken)
     {
-        return await GetFromTrakt<List<TraktMovie>>(TraktUris.RecommendationsMovies, traktUser).ConfigureAwait(false);
+        return await GetFromTrakt<List<TraktMovie>>(TraktUris.RecommendationsMovies, traktUser, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Get show recommendations.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns>Task{List{TraktShow}}.</returns>
-    public async Task<List<TraktShow>> SendShowRecommendationsRequest(TraktUser traktUser)
+    public async Task<List<TraktShow>> SendShowRecommendationsRequest(TraktUser traktUser, CancellationToken cancellationToken)
     {
-        return await GetFromTrakt<List<TraktShow>>(TraktUris.RecommendationsShows, traktUser).ConfigureAwait(false);
+        return await GetFromTrakt<List<TraktShow>>(TraktUris.RecommendationsShows, traktUser, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Get the dates the user's sync data was last changed on trakt.tv.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns>Task{DataContracts.Sync.LastActivities.TraktSyncLastActivities}.</returns>
-    public async Task<DataContracts.Sync.LastActivities.TraktSyncLastActivities> SendGetLastActivitiesRequest(TraktUser traktUser)
+    public async Task<DataContracts.Sync.LastActivities.TraktSyncLastActivities> SendGetLastActivitiesRequest(TraktUser traktUser, CancellationToken cancellationToken)
     {
-        return await GetFromTrakt<DataContracts.Sync.LastActivities.TraktSyncLastActivities>(TraktUris.SyncLastActivities, traktUser).ConfigureAwait(false);
+        return await GetFromTrakt<DataContracts.Sync.LastActivities.TraktSyncLastActivities>(TraktUris.SyncLastActivities, traktUser, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Get all watched movies.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns>Task{List{DataContracts.Users.Watched.TraktMovieWatched}}.</returns>
-    public async Task<List<DataContracts.Users.Watched.TraktMovieWatched>> SendGetAllWatchedMoviesRequest(TraktUser traktUser)
+    public async Task<List<DataContracts.Users.Watched.TraktMovieWatched>> SendGetAllWatchedMoviesRequest(TraktUser traktUser, CancellationToken cancellationToken)
     {
-        return await GetFromTraktWithPaging<DataContracts.Users.Watched.TraktMovieWatched>(TraktUris.WatchedMovies, traktUser).ConfigureAwait(false);
+        return await GetFromTraktWithPaging<DataContracts.Users.Watched.TraktMovieWatched>(TraktUris.WatchedMovies, traktUser, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Get watched shows.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns>Task{List{DataContracts.Users.Watched.TraktShowWatched}}.</returns>
-    public async Task<List<DataContracts.Users.Watched.TraktShowWatched>> SendGetWatchedShowsRequest(TraktUser traktUser)
+    public async Task<List<DataContracts.Users.Watched.TraktShowWatched>> SendGetWatchedShowsRequest(TraktUser traktUser, CancellationToken cancellationToken)
     {
-        return await GetFromTraktWithPaging<DataContracts.Users.Watched.TraktShowWatched>(TraktUris.WatchedShows, traktUser).ConfigureAwait(false);
+        return await GetFromTraktWithPaging<DataContracts.Users.Watched.TraktShowWatched>(TraktUris.WatchedShows, traktUser, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -664,50 +669,55 @@ public class TraktApi
     /// Get watched episodes.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns>Task{List{DataContracts.Users.Watched.TraktWatchedEpisode}}.</returns>
-    public async Task<List<DataContracts.Users.Watched.TraktWatchedEpisode>> SendGetWatchedEpisodesRequest(TraktUser traktUser)
+    public async Task<List<DataContracts.Users.Watched.TraktWatchedEpisode>> SendGetWatchedEpisodesRequest(TraktUser traktUser, CancellationToken cancellationToken)
     {
-        return await GetFromTraktWithPaging<DataContracts.Users.Watched.TraktWatchedEpisode>(TraktUris.WatchedEpisodes, traktUser).ConfigureAwait(false);
+        return await GetFromTraktWithPaging<DataContracts.Users.Watched.TraktWatchedEpisode>(TraktUris.WatchedEpisodes, traktUser, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Get all paused movies.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns>Task{List{DataContracts.Users.Playback.TraktMoviePaused}}.</returns>
-    public async Task<List<DataContracts.Users.Playback.TraktMoviePaused>> SendGetAllPausedMoviesRequest(TraktUser traktUser)
+    public async Task<List<DataContracts.Users.Playback.TraktMoviePaused>> SendGetAllPausedMoviesRequest(TraktUser traktUser, CancellationToken cancellationToken)
     {
-        return await GetFromTraktWithPaging<DataContracts.Users.Playback.TraktMoviePaused>(TraktUris.PausedMovies, traktUser).ConfigureAwait(false);
+        return await GetFromTraktWithPaging<DataContracts.Users.Playback.TraktMoviePaused>(TraktUris.PausedMovies, traktUser, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Get paused episodes.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns>Task{List{DataContracts.Users.Playback.TraktEpisodePaused}}.</returns>
-    public async Task<List<DataContracts.Users.Playback.TraktEpisodePaused>> SendGetPausedEpisodesRequest(TraktUser traktUser)
+    public async Task<List<DataContracts.Users.Playback.TraktEpisodePaused>> SendGetPausedEpisodesRequest(TraktUser traktUser, CancellationToken cancellationToken)
     {
-        return await GetFromTraktWithPaging<DataContracts.Users.Playback.TraktEpisodePaused>(TraktUris.PausedEpisodes, traktUser).ConfigureAwait(false);
+        return await GetFromTraktWithPaging<DataContracts.Users.Playback.TraktEpisodePaused>(TraktUris.PausedEpisodes, traktUser, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Get collected movies.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns>Task{List{DataContracts.Users.Collection.TraktMovieCollected}}.</returns>
-    public async Task<List<DataContracts.Users.Collection.TraktMovieCollected>> SendGetAllCollectedMoviesRequest(TraktUser traktUser)
+    public async Task<List<DataContracts.Users.Collection.TraktMovieCollected>> SendGetAllCollectedMoviesRequest(TraktUser traktUser, CancellationToken cancellationToken)
     {
-        return await GetFromTraktWithPaging<DataContracts.Users.Collection.TraktMovieCollected>(TraktUris.CollectedMovies, traktUser).ConfigureAwait(false);
+        return await GetFromTraktWithPaging<DataContracts.Users.Collection.TraktMovieCollected>(TraktUris.CollectedMovies, traktUser, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Get collected shows.
     /// </summary>
     /// <param name="traktUser">The <see cref="TraktUser"/>.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <returns>Task{List{DataContracts.Users.Collection.TraktShowCollected}}.</returns>
-    public async Task<List<DataContracts.Users.Collection.TraktShowCollected>> SendGetCollectedShowsRequest(TraktUser traktUser)
+    public async Task<List<DataContracts.Users.Collection.TraktShowCollected>> SendGetCollectedShowsRequest(TraktUser traktUser, CancellationToken cancellationToken)
     {
-        return await GetFromTraktWithPaging<DataContracts.Users.Collection.TraktShowCollected>(TraktUris.CollectedShows, traktUser).ConfigureAwait(false);
+        return await GetFromTraktWithPaging<DataContracts.Users.Collection.TraktShowCollected>(TraktUris.CollectedShows, traktUser, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -1086,11 +1096,6 @@ public class TraktApi
         }
     }
 
-    private Task<T> GetFromTrakt<T>(string url, TraktUser traktUser)
-    {
-        return GetFromTrakt<T>(url, traktUser, CancellationToken.None);
-    }
-
     private async Task<T> GetFromTrakt<T>(string url, TraktUser traktUser, CancellationToken cancellationToken)
     {
         var httpClient = GetHttpClient();
@@ -1117,11 +1122,6 @@ public class TraktApi
         {
             _traktResourcePool.Release();
         }
-    }
-
-    private Task<List<T>> GetFromTraktWithPaging<T>(string url, TraktUser traktUser)
-    {
-        return GetFromTraktWithPaging<T>(url, traktUser, CancellationToken.None);
     }
 
     private async Task<List<T>> GetFromTraktWithPaging<T>(string url, TraktUser traktUser, CancellationToken cancellationToken)
