@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Mime;
+using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Common.Api;
 using MediaBrowser.Controller;
@@ -167,25 +168,27 @@ public class TraktController : ControllerBase
     /// Get recommended trakt.tv movies.
     /// </summary>
     /// <param name="userGuid">The user's GUID.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <response code="200">Recommended movies returned.</response>
     /// <returns>A <see cref="List{TraktMovie}"/> with recommended movies.</returns>
     [HttpPost("Users/{userGuid}/RecommendedMovies")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<TraktMovie>>> RecommendedTraktMovies([FromRoute] Guid userGuid)
+    public async Task<ActionResult<List<TraktMovie>>> RecommendedTraktMovies([FromRoute] Guid userGuid, CancellationToken cancellationToken)
     {
-        return await _traktApi.SendMovieRecommendationsRequest(UserHelper.GetTraktUser(userGuid, true)).ConfigureAwait(false);
+        return await _traktApi.SendMovieRecommendationsRequest(UserHelper.GetTraktUser(userGuid, true), cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
     /// Get recommended trakt.tv shows.
     /// </summary>
     /// <param name="userGuid">The user's GUID.</param>
+    /// <param name="cancellationToken">The <see cref="CancellationToken"/>.</param>
     /// <response code="200">Recommended shows returned.</response>
     /// <returns>A <see cref="List{TraktShow}"/> with recommended movies.</returns>
     [HttpPost("Users/{userGuid}/RecommendedShows")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<TraktShow>>> RecommendedTraktShows([FromRoute] Guid userGuid)
+    public async Task<ActionResult<List<TraktShow>>> RecommendedTraktShows([FromRoute] Guid userGuid, CancellationToken cancellationToken)
     {
-        return await _traktApi.SendShowRecommendationsRequest(UserHelper.GetTraktUser(userGuid, true)).ConfigureAwait(false);
+        return await _traktApi.SendShowRecommendationsRequest(UserHelper.GetTraktUser(userGuid, true), cancellationToken).ConfigureAwait(false);
     }
 }

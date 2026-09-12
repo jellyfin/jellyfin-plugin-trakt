@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using Trakt.Api.Converters;
 using Trakt.Api.Enums;
 
 namespace Trakt.Api.DataContracts.Users.Collection;
@@ -36,6 +37,7 @@ public class TraktMetadata
     /// Gets or sets a value indicating whether the movie is 3D.
     /// </summary>
     [JsonPropertyName("3d")]
+    [JsonConverter(typeof(TraktFlexibleBooleanConverter))]
     public bool? Is3D { get; set; } = false;
 
     /// <summary>

@@ -8,7 +8,6 @@ using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Model.Entities;
 using Trakt.Api.DataContracts.BaseModel;
-using Trakt.Api.DataContracts.Sync.History;
 using Trakt.Api.DataContracts.Users.Collection;
 using Trakt.Api.DataContracts.Users.Playback;
 using Trakt.Api.DataContracts.Users.Watched;
@@ -143,6 +142,12 @@ public static class Extensions
     /// <returns><see cref="bool"/> indicating if the new movie has different metadata to the already collected.</returns>
     public static bool MetadataIsDifferent(this TraktMovieCollected collectedMovie, Movie movie)
     {
+        // trakt.tv omits metadata for items collected without media info
+        if (collectedMovie.Metadata == null || collectedMovie.Metadata.IsEmpty())
+        {
+            return true;
+        }
+
         var match = false;
         var mediaStreams = movie.GetMediaStreams();
         var defaultVideoStream = mediaStreams.FirstOrDefault(x => x.Index == movie.DefaultVideoStreamIndex);
@@ -153,7 +158,7 @@ public static class Extensions
             var is3D = movie.Is3D;
             var resolution = defaultVideoStream.GetResolution();
             var hdr = defaultVideoStream.GetHdr();
-            match = match || collectedMovie.Metadata.Resolution != resolution || collectedMovie.Metadata.Is3D != is3D || collectedMovie.Metadata.Hdr != hdr;
+            match = match || collectedMovie.Metadata.Resolution != resolution || (collectedMovie.Metadata.Is3D ?? false) != is3D || collectedMovie.Metadata.Hdr != hdr;
         }
 
         if (audioStream != null)
@@ -174,6 +179,12 @@ public static class Extensions
     /// <returns><see cref="bool"/> indicating if the new episode has different metadata to the already collected.</returns>
     public static bool MetadataIsDifferent(this TraktEpisodeCollected collectedEpisode, Episode episode)
     {
+        // trakt.tv omits metadata for items collected without media info
+        if (collectedEpisode.Metadata == null || collectedEpisode.Metadata.IsEmpty())
+        {
+            return true;
+        }
+
         var match = false;
         var mediaStreams = episode.GetMediaStreams();
         var defaultVideoStream = mediaStreams.FirstOrDefault(x => x.Index == episode.DefaultVideoStreamIndex);
@@ -184,7 +195,7 @@ public static class Extensions
             var is3D = episode.Is3D;
             var resolution = defaultVideoStream.GetResolution();
             var hdr = defaultVideoStream.GetHdr();
-            match = match || collectedEpisode.Metadata.Resolution != resolution || collectedEpisode.Metadata.Is3D != is3D || collectedEpisode.Metadata.Hdr != hdr;
+            match = match || collectedEpisode.Metadata.Resolution != resolution || (collectedEpisode.Metadata.Is3D ?? false) != is3D || collectedEpisode.Metadata.Hdr != hdr;
         }
 
         if (audioStream != null)
@@ -417,36 +428,52 @@ public static class Extensions
     }
 
     /// <summary>
-    /// Gets a watched history match for a movie.
+    /// Gets a watched match for an episode.
     /// </summary>
-    /// <param name="item">The <see cref="BaseItem"/>.</param>
-    /// <param name="results">>The <see cref="IEnumerable{TraktMovieWatchedHistory}"/>.</param>
-    /// <returns>TraktMovieWatchedHistory.</returns>
-    public static TraktMovieWatchedHistory FindMatch(Movie item, IEnumerable<TraktMovieWatchedHistory> results)
-    {
-        return results.FirstOrDefault(i => IsMatch(item, i.Movie));
-    }
-
-    /// <summary>
-    /// Gets a watched history match for an episode.
-    /// </summary>
-    /// <param name="item">The <see cref="BaseItem"/>.</param>
-    /// <param name="results">>The <see cref="IEnumerable{TraktEpisodeWatchedHistory}"/>.</param>
-    /// <returns>TraktEpisodeWatchedHistory.</returns>
-    public static TraktEpisodeWatchedHistory FindMatch(Episode item, IEnumerable<TraktEpisodeWatchedHistory> results)
+    /// <param name="item">The <see cref="Episode"/>.</param>
+    /// <param name="results">>The <see cref="IEnumerable{TraktWatchedEpisode}"/>.</param>
+    /// <returns>TraktWatchedEpisode.</returns>
+    public static TraktWatchedEpisode FindMatch(Episode item, IEnumerable<TraktWatchedEpisode> results)
     {
         return results.FirstOrDefault(i => IsMatch(item, i));
     }
 
     /// <summary>
-    /// Gets all watched history matches for an episode.
+    /// Gets a watched match for an episode from a watched show's per-episode progress,
+    /// by season and episode number. Only intended for episodes without any tv provider
+    /// id (see <see cref="HasAnyProviderTvId"/>), where matching by ids is impossible.
     /// </summary>
-    /// <param name="item">The <see cref="BaseItem"/>.</param>
-    /// <param name="results">>The <see cref="IEnumerable{TraktEpisodeWatchedHistory}"/>.</param>
-    /// <returns>IEnumerable{TraktEpisodeWatchedHistory}.</returns>
-    public static IReadOnlyList<TraktEpisodeWatchedHistory> FindAllMatches(Episode item, IEnumerable<TraktEpisodeWatchedHistory> results)
+    /// <param name="item">The <see cref="Episode"/>.</param>
+    /// <param name="watchedShow">The <see cref="TraktShowWatched"/> matching the episode's series.</param>
+    /// <returns>TraktWatchedEpisode.</returns>
+    public static TraktWatchedEpisode FindMatchFromShowProgress(Episode item, TraktShowWatched watchedShow)
     {
-        return results.Where(i => IsMatch(item, i)).ToList();
+        var season = watchedShow?.Seasons?.FirstOrDefault(s => s.Number == item.GetSeasonNumber());
+        var watchedEpisode = season?.Episodes?.FirstOrDefault(e => item.ContainsEpisodeNumber(e.Number));
+        if (watchedEpisode == null)
+        {
+            return null;
+        }
+
+        return new TraktWatchedEpisode
+        {
+            Plays = watchedEpisode.Plays,
+            LastWatchedAt = watchedEpisode.LastWatchedAt,
+            LastUpdatedAt = watchedEpisode.LastUpdatedAt
+        };
+    }
+
+    /// <summary>
+    /// Checks if an <see cref="Episode"/> has any tv provider id that trakt.tv episodes carry.
+    /// </summary>
+    /// <param name="item">The <see cref="Episode"/>.</param>
+    /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> has any tv provider id.</returns>
+    public static bool HasAnyProviderTvId(Episode item)
+    {
+        return item.HasProviderId(MetadataProvider.Tvdb)
+            || item.HasProviderId(MetadataProvider.Imdb)
+            || item.HasProviderId(MetadataProvider.Tmdb)
+            || item.HasProviderId(MetadataProvider.TvRage);
     }
 
     /// <summary>
@@ -543,25 +570,26 @@ public static class Extensions
     }
 
     /// <summary>
-    /// Checks if a <see cref="Episode"/> matches a <see cref="TraktEpisodeWatchedHistory"/>.
+    /// Checks if a <see cref="Episode"/> matches a <see cref="TraktWatchedEpisode"/>.
     /// </summary>
     /// <param name="item">The <see cref="Episode"/>.</param>
-    /// <param name="episodeHistory">The <see cref="TraktEpisodeWatchedHistory"/>.</param>
-    /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktEpisodeWatchedHistory"/>.</returns>
-    public static bool IsMatch(Episode item, TraktEpisodeWatchedHistory episodeHistory)
+    /// <param name="watchedEpisode">The <see cref="TraktWatchedEpisode"/>.</param>
+    /// <returns><see cref="bool"/> indicating if the <see cref="Episode"/> matches a <see cref="TraktWatchedEpisode"/>.</returns>
+    public static bool IsMatch(Episode item, TraktWatchedEpisode watchedEpisode)
     {
         // Match by provider id's
-        if (IsMatch(item, episodeHistory.Episode))
+        if (IsMatch(item, watchedEpisode.Episode))
         {
             return true;
         }
 
         // Match by show, season and episode number if there isn't any provider id in common
         // If there was a common provider id between the item and the trakt episode (f.e. both have tvdb id), you shouldn't check anymore by season/number
-        if (!HasAnyProviderTvIdInCommon(item, episodeHistory.Episode)
-            && IsMatch(item.Series, episodeHistory.Show)
-            && item.GetSeasonNumber() == episodeHistory.Episode.Season
-            && item.ContainsEpisodeNumber(episodeHistory.Episode.Number))
+        if (!HasAnyProviderTvIdInCommon(item, watchedEpisode.Episode)
+            && watchedEpisode.Show != null
+            && IsMatch(item.Series, watchedEpisode.Show)
+            && item.GetSeasonNumber() == watchedEpisode.Episode.Season
+            && item.ContainsEpisodeNumber(watchedEpisode.Episode.Number))
         {
             return true;
         }

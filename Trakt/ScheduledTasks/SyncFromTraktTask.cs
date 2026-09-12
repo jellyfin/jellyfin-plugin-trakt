@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading;
@@ -17,10 +18,11 @@ using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Tasks;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
-using Trakt.Api.DataContracts.Sync.History;
+using Trakt.Api.DataContracts.Sync.LastActivities;
 using Trakt.Api.DataContracts.Users.Playback;
 using Trakt.Api.DataContracts.Users.Watched;
 using Trakt.Helpers;
+using Trakt.Model;
 using Episode = MediaBrowser.Controller.Entities.TV.Episode;
 
 namespace Trakt.ScheduledTasks;
@@ -122,10 +124,70 @@ public class SyncFromTraktTask : IScheduledTask
             return;
         }
 
+        var syncStartedAt = DateTime.UtcNow;
+        TraktSyncLastActivities activities = null;
+
+        try
+        {
+            activities = await _traktApi.SendGetLastActivitiesRequest(traktUser, cancellationToken).ConfigureAwait(false);
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Locked)
+        {
+            _logger.LogError(ex, "Skipping sync for user {User} because their trakt.tv account is locked", user.Username);
+            return;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Couldn't fetch last activities for user {User}, falling back to full sync", user.Username);
+        }
+
+        var watchedRelevant = !(traktUser.SkipWatchedImportFromTrakt && traktUser.SkipUnwatchedImportFromTrakt);
+        var pausedRelevant = !traktUser.SkipPlaybackProgressImportFromTrakt;
+
+        // Activity dates are server mutation times that can move backwards, so compare them for
+        // inequality only. LastSyncFromTraktAt marks that a snapshot exists, so a stored null is
+        // not read as changed forever.
+        bool Changed(bool relevant, string stored, string current)
+            => relevant && (activities == null
+                || traktUser.LastSyncFromTraktAt == DateTime.MinValue
+                || !string.Equals(stored ?? string.Empty, current ?? string.Empty, StringComparison.Ordinal));
+
+        // DateLastSaved, not DateCreated: DateCreated can be backdated to the file creation time
+        bool newMovies = true, newEpisodes = true;
+        if (traktUser.LastSyncFromTraktAt != DateTime.MinValue)
+        {
+            newMovies = _libraryManager.GetCount(new InternalItemsQuery(user)
+            {
+                IncludeItemTypes = new[] { BaseItemKind.Movie },
+                IsVirtualItem = false,
+                MinDateLastSaved = traktUser.LastSyncFromTraktAt
+            }) > 0;
+
+            newEpisodes = _libraryManager.GetCount(new InternalItemsQuery(user)
+            {
+                IncludeItemTypes = new[] { BaseItemKind.Episode },
+                IsVirtualItem = false,
+                MinDateLastSaved = traktUser.LastSyncFromTraktAt
+            }) > 0;
+        }
+
+        var movieSyncNeeded = Changed(watchedRelevant, traktUser.LastWatchedMoviesActivity, activities?.Movies?.WatchedAt)
+            || Changed(pausedRelevant, traktUser.LastPausedMoviesActivity, activities?.Movies?.PausedAt)
+            || newMovies;
+        var episodeSyncNeeded = Changed(watchedRelevant, traktUser.LastWatchedEpisodesActivity, activities?.Episodes?.WatchedAt)
+            || Changed(watchedRelevant, traktUser.LastHiddenShowsActivity, activities?.Shows?.HiddenAt)
+            || Changed(pausedRelevant, traktUser.LastPausedEpisodesActivity, activities?.Episodes?.PausedAt)
+            || newEpisodes;
+
+        if (!movieSyncNeeded && !episodeSyncNeeded)
+        {
+            _logger.LogInformation("No trakt.tv activity and no new library items for user {User} since last sync, skipping import", user.Username);
+            return;
+        }
+
         List<TraktMovieWatched> traktWatchedMovies = new List<TraktMovieWatched>();
         List<TraktShowWatched> traktWatchedShows = new List<TraktShowWatched>();
-        List<TraktMovieWatchedHistory> traktWatchedMoviesHistory = new List<TraktMovieWatchedHistory>(); // not used for now, just for reference to get watched movies history count
-        List<TraktEpisodeWatchedHistory> traktWatchedEpisodesHistory = new List<TraktEpisodeWatchedHistory>(); // used for fall episode matching by ids
+        List<TraktWatchedEpisode> traktWatchedEpisodes = new List<TraktWatchedEpisode>();
         List<TraktMoviePaused> traktPausedMovies = new List<TraktMoviePaused>();
         List<TraktEpisodePaused> traktPausedEpisodes = new List<TraktEpisodePaused>();
 
@@ -138,17 +200,37 @@ public class SyncFromTraktTask : IScheduledTask
              */
             if (!(traktUser.SkipUnwatchedImportFromTrakt && traktUser.SkipWatchedImportFromTrakt))
             {
-                traktWatchedMovies.AddRange(await _traktApi.SendGetAllWatchedMoviesRequest(traktUser).ConfigureAwait(false));
-                traktWatchedShows.AddRange(await _traktApi.SendGetWatchedShowsRequest(traktUser).ConfigureAwait(false));
-                traktWatchedMoviesHistory.AddRange(await _traktApi.SendGetWatchedMoviesHistoryRequest(traktUser).ConfigureAwait(false));
-                traktWatchedEpisodesHistory.AddRange(await _traktApi.SendGetWatchedEpisodesHistoryRequest(traktUser).ConfigureAwait(false));
+                // Removals bump the same dates as additions, so a synced domain fetches its full
+                // lists: the item loop unmarks anything missing from them.
+                if (movieSyncNeeded)
+                {
+                    traktWatchedMovies.AddRange(await _traktApi.SendGetAllWatchedMoviesRequest(traktUser, cancellationToken).ConfigureAwait(false));
+                }
+
+                if (episodeSyncNeeded)
+                {
+                    traktWatchedShows.AddRange(await _traktApi.SendGetWatchedShowsRequest(traktUser, cancellationToken).ConfigureAwait(false));
+                    traktWatchedEpisodes.AddRange(await _traktApi.SendGetWatchedEpisodesRequest(traktUser, cancellationToken).ConfigureAwait(false));
+                }
             }
 
             if (!traktUser.SkipPlaybackProgressImportFromTrakt)
             {
-                traktPausedMovies.AddRange(await _traktApi.SendGetAllPausedMoviesRequest(traktUser).ConfigureAwait(false));
-                traktPausedEpisodes.AddRange(await _traktApi.SendGetPausedEpisodesRequest(traktUser).ConfigureAwait(false));
+                if (movieSyncNeeded)
+                {
+                    traktPausedMovies.AddRange(await _traktApi.SendGetAllPausedMoviesRequest(traktUser, cancellationToken).ConfigureAwait(false));
+                }
+
+                if (episodeSyncNeeded)
+                {
+                    traktPausedEpisodes.AddRange(await _traktApi.SendGetPausedEpisodesRequest(traktUser, cancellationToken).ConfigureAwait(false));
+                }
             }
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Locked)
+        {
+            _logger.LogError(ex, "Skipping sync for user {User} because their trakt.tv account is locked", user.Username);
+            return;
         }
         catch (Exception ex)
         {
@@ -157,19 +239,28 @@ public class SyncFromTraktTask : IScheduledTask
         }
 
         _logger.LogInformation("Trakt.tv watched movies for user {User}: {Count}", user.Username, traktWatchedMovies.Count);
-        _logger.LogInformation("Trakt.tv watched movies history for user {User}: {Count}", user.Username, traktWatchedMoviesHistory.Count);
         _logger.LogInformation("Trakt.tv paused movies for user {User}: {Count}", user.Username, traktPausedMovies.Count);
         _logger.LogInformation("Trakt.tv watched shows for user {User}: {Count}", user.Username, traktWatchedShows.Count);
-        _logger.LogInformation("Trakt.tv watched episodes history for user {User}: {Count}", user.Username, traktWatchedEpisodesHistory.Count);
+        _logger.LogInformation("Trakt.tv watched episodes for user {User}: {Count}", user.Username, traktWatchedEpisodes.Count);
         _logger.LogInformation("Trakt.tv paused episodes for user {User}: {Count}", user.Username, traktPausedEpisodes.Count);
+
+        var watchedShowsProgressFetched = false;
+        var watchedShowsProgressAvailable = false;
+
+        var includeItemTypes = new List<BaseItemKind>();
+        if (movieSyncNeeded)
+        {
+            includeItemTypes.Add(BaseItemKind.Movie);
+        }
+
+        if (episodeSyncNeeded)
+        {
+            includeItemTypes.Add(BaseItemKind.Episode);
+        }
 
         var baseQuery = new InternalItemsQuery(user)
         {
-            IncludeItemTypes = new[]
-            {
-                BaseItemKind.Movie,
-                BaseItemKind.Episode
-            },
+            IncludeItemTypes = includeItemTypes.ToArray(),
             IsVirtualItem = false,
             OrderBy = new[]
             {
@@ -184,7 +275,7 @@ public class SyncFromTraktTask : IScheduledTask
         int offset = 0, previousCount;
 
         // Purely for progress reporting
-        var percentPerIteration = percentPerUser / (totalCount / (double)Limit);
+        var percentPerIteration = totalCount > 0 ? percentPerUser / (totalCount / (double)Limit) : 0;
 
         do
         {
@@ -199,7 +290,7 @@ public class SyncFromTraktTask : IScheduledTask
             mediaItems = mediaItems.Where(i => _traktApi.CanSync(i, traktUser)).ToList();
 
             // Purely for progress reporting
-            var percentPerItem = percentPerIteration / mediaItems.Count;
+            var percentPerItem = mediaItems.Count > 0 ? percentPerIteration / mediaItems.Count : 0;
 
             foreach (var movie in mediaItems.OfType<Movie>())
             {
@@ -324,6 +415,7 @@ public class SyncFromTraktTask : IScheduledTask
                 var userData = _userDataManager.GetUserData(user, episode);
                 bool changed = false;
                 bool episodeWatched = false;
+                bool episodeWatchedUnknown = false;
 
                 if (!traktUser.SkipWatchedImportFromTrakt && matchedWatchedShow != null)
                 {
@@ -334,80 +426,97 @@ public class SyncFromTraktTask : IScheduledTask
                         tLastReset = resetValue.UtcDateTime;
                     }
 
-                    var matchedWatchedEpisodeHistory = Extensions.FindAllMatches(episode, traktWatchedEpisodesHistory);
+                    var matchedWatchedEpisode = Extensions.FindMatch(episode, traktWatchedEpisodes);
 
-                    // Check if match is found in history
-                    if (matchedWatchedEpisodeHistory != null && matchedWatchedEpisodeHistory.Any())
+                    // /sync/watched/episodes has no show object, so id-less episodes only
+                    // match by season/episode against show progress
+                    if (matchedWatchedEpisode == null && !Extensions.HasAnyProviderTvId(episode))
                     {
-                        // History is ordered with last watched first, so take the first one
-                        var lastWatchedEpisodeHistory = matchedWatchedEpisodeHistory[0];
-
-                        // Prepend a check if the matched episode is on a rewatch cycle and
-                        // discard it if the last play date was before the reset date
-                        if (lastWatchedEpisodeHistory != null
-                            && tLastReset != null
-                            && DateTimeOffset.TryParse(lastWatchedEpisodeHistory.WatchedAt, out var lastPlayedValue)
-                            && lastPlayedValue.UtcDateTime < tLastReset)
+                        if (!watchedShowsProgressFetched)
                         {
-                            lastWatchedEpisodeHistory = null;
+                            watchedShowsProgressFetched = true;
+                            watchedShowsProgressAvailable = await FetchWatchedShowsProgress(traktWatchedShows, traktUser, user, cancellationToken).ConfigureAwait(false);
+                            matchedWatchedShow = Extensions.FindMatch(episode.Series, traktWatchedShows);
                         }
 
-                        if (lastWatchedEpisodeHistory != null)
+                        if (watchedShowsProgressAvailable)
                         {
-                            _logger.LogDebug("Episode is in watched history list of user {User}: {Data}", user.Username, GetVerboseEpisodeData(episode));
+                            matchedWatchedEpisode = Extensions.FindMatchFromShowProgress(episode, matchedWatchedShow);
+                        }
+                        else
+                        {
+                            // Without progress data the episode can't be matched at all, so its
+                            // watched state is unknown rather than unwatched
+                            episodeWatchedUnknown = true;
+                        }
+                    }
 
-                            episodeWatched = true;
-                            DateTime? tLastPlayed = null;
-                            if (DateTimeOffset.TryParse(lastWatchedEpisodeHistory.WatchedAt, out var lastWatchedValue))
+                    DateTime? tLastPlayed = null;
+                    if (matchedWatchedEpisode != null
+                        && DateTimeOffset.TryParse(matchedWatchedEpisode.LastWatchedAt, out var lastWatchedValue))
+                    {
+                        tLastPlayed = lastWatchedValue.UtcDateTime;
+                    }
+
+                    // Discard the match if the episode is on a rewatch cycle and
+                    // the last play date was before the reset date
+                    if (matchedWatchedEpisode != null
+                        && tLastReset != null
+                        && tLastPlayed != null
+                        && tLastPlayed < tLastReset)
+                    {
+                        matchedWatchedEpisode = null;
+                    }
+
+                    if (matchedWatchedEpisode != null)
+                    {
+                        _logger.LogDebug("Episode is in watched list of user {User}: {Data}", user.Username, GetVerboseEpisodeData(episode));
+
+                        episodeWatched = true;
+
+                        // Set episode as watched
+                        if (!userData.Played)
+                        {
+                            // Only change LastPlayedDate if not set or the local and remote are more than 10 minutes apart
+                            _logger.LogDebug("Marking episode as watched for user {User} locally: {Data}", user.Username, GetVerboseEpisodeData(episode));
+                            if (tLastPlayed == null && userData.LastPlayedDate == null)
                             {
-                                tLastPlayed = lastWatchedValue.UtcDateTime;
+                                _logger.LogDebug("Episode's local and remote last played date are missing, falling back to the current time for user {User} locally: {Data}", user.Username, GetVerboseEpisodeData(episode));
+                                userData.LastPlayedDate = DateTime.UtcNow;
                             }
 
-                            // Set episode as watched
-                            if (!userData.Played)
+                            if (tLastPlayed != null
+                                && userData.LastPlayedDate != null
+                                && (tLastPlayed.Value - userData.LastPlayedDate.Value).Duration() > TimeSpan.FromMinutes(10)
+                                && userData.LastPlayedDate < tLastPlayed)
                             {
-                                // Only change LastPlayedDate if not set or the local and remote are more than 10 minutes apart
-                                _logger.LogDebug("Marking episode as watched for user {User} locally: {Data}", user.Username, GetVerboseEpisodeData(episode));
-                                if (tLastPlayed == null && userData.LastPlayedDate == null)
-                                {
-                                    _logger.LogDebug("Episode's local and remote last played date are missing, falling back to the current time for user {User} locally: {Data}", user.Username, GetVerboseEpisodeData(episode));
-                                    userData.LastPlayedDate = DateTime.UtcNow;
-                                }
-
-                                if (tLastPlayed != null
-                                    && userData.LastPlayedDate != null
-                                    && (tLastPlayed.Value - userData.LastPlayedDate.Value).Duration() > TimeSpan.FromMinutes(10)
-                                    && userData.LastPlayedDate < tLastPlayed)
-                                {
-                                    _logger.LogDebug("Setting episode's last played date to remote which is more than 10 minutes more recent than local (remote: {Remote} | local: {Local}) for user {User} locally: {Data}", tLastPlayed, userData.LastPlayedDate, user.Username, GetVerboseEpisodeData(episode));
-                                    userData.LastPlayedDate = tLastPlayed;
-                                }
-
-                                userData.Played = true;
-                                changed = true;
-                            }
-
-                            // Update last played if remote time is more recent
-                            if (tLastPlayed != null && (userData.LastPlayedDate == null || userData.LastPlayedDate < tLastPlayed))
-                            {
-                                _logger.LogDebug("Adjusting episode's last played date to match a more recent remote last played date (remote: {Remote} | local: {Local}) for user {User} locally: {Name}", tLastPlayed, userData.LastPlayedDate, user.Username, episode.Name);
+                                _logger.LogDebug("Setting episode's last played date to remote which is more than 10 minutes more recent than local (remote: {Remote} | local: {Local}) for user {User} locally: {Data}", tLastPlayed, userData.LastPlayedDate, user.Username, GetVerboseEpisodeData(episode));
                                 userData.LastPlayedDate = tLastPlayed;
-                                changed = true;
                             }
 
-                            // Keep the highest play count
-                            var playCount = matchedWatchedEpisodeHistory.Count;
-                            if (userData.PlayCount < playCount)
-                            {
-                                _logger.LogDebug("Adjusting episode's play count to match a higher remote value (remote: {Remote} | local: {Local}) for user {User} locally: {Data}", playCount, userData.PlayCount, user.Username, GetVerboseEpisodeData(episode));
-                                userData.PlayCount = playCount;
-                                changed = true;
-                            }
+                            userData.Played = true;
+                            changed = true;
+                        }
+
+                        // Update last played if remote time is more recent
+                        if (tLastPlayed != null && (userData.LastPlayedDate == null || userData.LastPlayedDate < tLastPlayed))
+                        {
+                            _logger.LogDebug("Adjusting episode's last played date to match a more recent remote last played date (remote: {Remote} | local: {Local}) for user {User} locally: {Name}", tLastPlayed, userData.LastPlayedDate, user.Username, episode.Name);
+                            userData.LastPlayedDate = tLastPlayed;
+                            changed = true;
+                        }
+
+                        // Keep the highest play count
+                        if (userData.PlayCount < matchedWatchedEpisode.Plays)
+                        {
+                            _logger.LogDebug("Adjusting episode's play count to match a higher remote value (remote: {Remote} | local: {Local}) for user {User} locally: {Data}", matchedWatchedEpisode.Plays, userData.PlayCount, user.Username, GetVerboseEpisodeData(episode));
+                            userData.PlayCount = matchedWatchedEpisode.Plays;
+                            changed = true;
                         }
                     }
                     else
                     {
-                        _logger.LogDebug("No episode history data found for user {User} for {Data}", user.Username, GetVerboseEpisodeData(episode));
+                        _logger.LogDebug("No watched episode data found for user {User} for {Data}", user.Username, GetVerboseEpisodeData(episode));
                     }
                 }
                 else
@@ -415,7 +524,11 @@ public class SyncFromTraktTask : IScheduledTask
                     _logger.LogDebug("No show data found for user {User} for {Data}", user.Username, GetVerboseEpisodeData(episode));
                 }
 
-                if (!traktUser.SkipUnwatchedImportFromTrakt && !episodeWatched)
+                if (episodeWatchedUnknown)
+                {
+                    _logger.LogDebug("Keeping local watched state of episode for user {User} because trakt.tv progress is unavailable: {Data}", user.Username, GetVerboseEpisodeData(episode));
+                }
+                else if (!traktUser.SkipUnwatchedImportFromTrakt && !episodeWatched)
                 {
                     _logger.LogDebug("Episode not in watched list of user {User}: {Data}", user.Username, GetVerboseEpisodeData(episode));
                     if (userData.Played)
@@ -468,6 +581,46 @@ public class SyncFromTraktTask : IScheduledTask
             }
         }
         while (previousCount != 0);
+
+        if (activities != null)
+        {
+            if (watchedRelevant)
+            {
+                traktUser.LastWatchedMoviesActivity = activities.Movies?.WatchedAt;
+                traktUser.LastWatchedEpisodesActivity = activities.Episodes?.WatchedAt;
+                traktUser.LastHiddenShowsActivity = activities.Shows?.HiddenAt;
+            }
+
+            if (pausedRelevant)
+            {
+                traktUser.LastPausedMoviesActivity = activities.Movies?.PausedAt;
+                traktUser.LastPausedEpisodesActivity = activities.Episodes?.PausedAt;
+            }
+
+            traktUser.LastSyncFromTraktAt = syncStartedAt;
+            Plugin.Instance.SaveConfiguration();
+        }
+    }
+
+    /// <summary>
+    /// Replaces the watched shows with the extended=progress variant so episodes without provider ids can be matched.
+    /// </summary>
+    /// <returns>True if the progress data was fetched, false if the request failed.</returns>
+    private async Task<bool> FetchWatchedShowsProgress(List<TraktShowWatched> traktWatchedShows, TraktUser traktUser, User user, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var watchedShowsProgress = await _traktApi.SendGetWatchedShowsProgressRequest(traktUser, cancellationToken).ConfigureAwait(false);
+            traktWatchedShows.Clear();
+            traktWatchedShows.AddRange(watchedShowsProgress);
+            _logger.LogInformation("Trakt.tv watched shows progress for user {User}: {Count}", user.Username, watchedShowsProgress.Count);
+            return true;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Failed to fetch watched shows progress for user {User} - episodes without provider ids will keep their local watched state", user.Username);
+            return false;
+        }
     }
 
     private static string GetVerboseEpisodeData(Episode episode)

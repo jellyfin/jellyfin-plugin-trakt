@@ -51,16 +51,6 @@ public static class TraktUris
     public const string SyncCollectionRemove = BaseUrl + "/sync/collection/remove";
 
     /// <summary>
-    /// The watched movies history URI.
-    /// </summary>
-    public const string SyncWatchedMoviesHistory = BaseUrl + "/sync/history/movies?page={page}&limit=1000";
-
-    /// <summary>
-    /// The watched episodes history URI.
-    /// </summary>
-    public const string SyncWatchedEpisodesHistory = BaseUrl + "/sync/history/episodes?page={page}&limit=1000";
-
-    /// <summary>
     /// The watched history add URI.
     /// </summary>
     public const string SyncWatchedHistoryAdd = BaseUrl + "/sync/history";
@@ -74,6 +64,11 @@ public static class TraktUris
     /// The ratings add URI.
     /// </summary>
     public const string SyncRatingsAdd = BaseUrl + "/sync/ratings";
+
+    /// <summary>
+    /// The last activities URI.
+    /// </summary>
+    public const string SyncLastActivities = BaseUrl + "/sync/last_activities";
 
     /// <summary>
     /// The scrobble start URI.
@@ -93,32 +88,44 @@ public static class TraktUris
     /// <summary>
     /// The watched movies URI.
     /// </summary>
-    public const string WatchedMovies = BaseUrl + "/sync/watched/movies?page={page}&limit=1000";
+    public const string WatchedMovies = BaseUrl + "/sync/watched/movies?page={page}&limit={limit}";
 
     /// <summary>
     /// The watched shows URI.
     /// </summary>
-    public const string WatchedShows = BaseUrl + "/sync/watched/shows?page={page}&limit=1000";
+    public const string WatchedShows = BaseUrl + "/sync/watched/shows?page={page}&limit={limit}";
+
+    /// <summary>
+    /// The watched shows URI including per-episode progress, used as a fallback
+    /// to match episodes that carry no provider ids. The server may enforce a
+    /// smaller page size for this variant.
+    /// </summary>
+    public const string WatchedShowsProgress = BaseUrl + "/sync/watched/shows?extended=progress&page={page}&limit={limit}";
+
+    /// <summary>
+    /// The watched episodes URI.
+    /// </summary>
+    public const string WatchedEpisodes = BaseUrl + "/sync/watched/episodes?page={page}&limit={limit}";
 
     /// <summary>
     /// The paused movies URI.
     /// </summary>
-    public const string PausedMovies = BaseUrl + "/sync/playback/movies";
+    public const string PausedMovies = BaseUrl + "/sync/playback/movies?page={page}&limit={limit}";
 
     /// <summary>
     /// The paused shows URI.
     /// </summary>
-    public const string PausedEpisodes = BaseUrl + "/sync/playback/episodes";
+    public const string PausedEpisodes = BaseUrl + "/sync/playback/episodes?page={page}&limit={limit}";
 
     /// <summary>
     /// The collected movies URI.
     /// </summary>
-    public const string CollectedMovies = BaseUrl + "/sync/collection/movies?extended=metadata";
+    public const string CollectedMovies = BaseUrl + "/sync/collection/movies?extended=metadata&page={page}&limit={limit}";
 
     /// <summary>
     /// The collected series URI.
     /// </summary>
-    public const string CollectedShows = BaseUrl + "/sync/collection/shows?extended=metadata";
+    public const string CollectedShows = BaseUrl + "/sync/collection/shows?extended=metadata&page={page}&limit={limit}";
 
     /// <summary>
     /// The movies recommendations URI.
