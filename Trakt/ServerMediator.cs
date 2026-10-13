@@ -176,7 +176,13 @@ public class ServerMediator : IHostedService, IDisposable
     {
         _logger.LogDebug("Playback started");
 
-        if (playbackProgressEventArgs.Users == null || playbackProgressEventArgs.Users.Count == 0 || playbackProgressEventArgs.Item == null)
+        if (playbackProgressEventArgs.Item == null)
+        {
+            _logger.LogDebug("Playback event received with no item. Skipping.");
+            return;
+        }
+
+        if (playbackProgressEventArgs.Users == null || playbackProgressEventArgs.Users.Count == 0)
         {
             _logger.LogError("Event details incomplete. Cannot process current media");
             return;
@@ -264,7 +270,13 @@ public class ServerMediator : IHostedService, IDisposable
     {
         _logger.LogDebug("Playback progressed");
 
-        if (playbackProgressEventArgs.Users == null || playbackProgressEventArgs.Users.Count == 0 || playbackProgressEventArgs.Item == null)
+        if (playbackProgressEventArgs.Item == null)
+        {
+            _logger.LogDebug("Playback event received with no item. Skipping.");
+            return;
+        }
+
+        if (playbackProgressEventArgs.Users == null || playbackProgressEventArgs.Users.Count == 0)
         {
             _logger.LogError("Event details incomplete. Cannot process current media");
             return;
@@ -379,7 +391,13 @@ public class ServerMediator : IHostedService, IDisposable
     /// <param name="playbackStoppedEventArgs">The <see cref="PlaybackStopEventArgs"/>.</param>
     private async void KernelPlaybackStopped(object sender, PlaybackStopEventArgs playbackStoppedEventArgs)
     {
-        if (playbackStoppedEventArgs.Users == null || playbackStoppedEventArgs.Users.Count == 0 || playbackStoppedEventArgs.Item == null)
+        if (playbackStoppedEventArgs.Item == null)
+        {
+            _logger.LogDebug("Playback event received with no item. Skipping.");
+            return;
+        }
+
+        if (playbackStoppedEventArgs.Users == null || playbackStoppedEventArgs.Users.Count == 0)
         {
             _logger.LogError("Event details incomplete. Cannot process current media");
             return;
