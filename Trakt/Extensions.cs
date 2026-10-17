@@ -106,9 +106,11 @@ public static class Extensions
                 return TraktAudio.dolby_digital;
             case "dca":
             case "dts":
-                return TraktAudio.dts;
+                return GetDtsRepresentation(audioStream);
             case "eac3":
-                return TraktAudio.dolby_digital_plus;
+                return audioStream.AudioSpatialFormat == AudioSpatialFormat.DolbyAtmos
+                    ? TraktAudio.dolby_digital_plus_atmos
+                    : TraktAudio.dolby_digital_plus;
             case "flac":
                 return TraktAudio.flac;
             case "mp2":
@@ -123,7 +125,9 @@ public static class Extensions
             case not null when audio.StartsWith("pcm_", StringComparison.Ordinal):
                 return TraktAudio.lpcm;
             case "truehd":
-                return TraktAudio.dolby_truehd;
+                return audioStream.AudioSpatialFormat == AudioSpatialFormat.DolbyAtmos
+                    ? TraktAudio.dolby_atmos
+                    : TraktAudio.dolby_truehd;
             case "wma":
             case "wmav2":
             case "wmapro":
@@ -132,6 +136,33 @@ public static class Extensions
             default:
                 return null;
         }
+    }
+
+    /// <summary>
+    /// Gets the trakt.tv representation of a DTS <see cref="MediaStream"/>, based on its FFmpeg profile.
+    /// </summary>
+    /// <param name="audioStream">The <see cref="MediaStream"/>.</param>
+    /// <returns>TraktAudio.</returns>
+    private static TraktAudio GetDtsRepresentation(MediaStream audioStream)
+    {
+        // DTS:X profiles are "DTS-HD MA + DTS:X" and "DTS-HD MA + DTS:X IMAX", so check them first
+        if (audioStream.AudioSpatialFormat == AudioSpatialFormat.DTSX)
+        {
+            return TraktAudio.dts_x;
+        }
+
+        var profile = audioStream.Profile ?? string.Empty;
+        if (profile.Contains("DTS-HD MA", StringComparison.OrdinalIgnoreCase))
+        {
+            return TraktAudio.dts_ma;
+        }
+
+        if (profile.Contains("DTS-HD HRA", StringComparison.OrdinalIgnoreCase))
+        {
+            return TraktAudio.dts_hr;
+        }
+
+        return TraktAudio.dts;
     }
 
     /// <summary>
