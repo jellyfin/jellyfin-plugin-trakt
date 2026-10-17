@@ -1399,9 +1399,11 @@ public class TraktApi
 
     private async Task SetRequestHeaders(HttpClient httpClient, TraktUser traktUser)
     {
+        // Keep the current token if the refresh fails. The expiry check leaves a quarter of the
+        // token's lifetime as margin, and an empty token would make every task skip this user
+        // until it is authorized again.
         if (DateTimeOffset.Now > traktUser.AccessTokenExpiration)
         {
-            traktUser.AccessToken = string.Empty;
             await RefreshUserAccessToken(traktUser).ConfigureAwait(false);
         }
 
