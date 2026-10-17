@@ -62,7 +62,7 @@ public class ServerMediator : IHostedService, IDisposable
         _playbackState = new Dictionary<Guid, PlaybackState>();
 
         _traktApi = new TraktApi(loggerFactory.CreateLogger<TraktApi>(), httpClientFactory, appHost, userDataManager, userManager);
-        _libraryManagerEventsHelper = new LibraryManagerEventsHelper(loggerFactory.CreateLogger<LibraryManagerEventsHelper>(), _traktApi);
+        _libraryManagerEventsHelper = new LibraryManagerEventsHelper(loggerFactory.CreateLogger<LibraryManagerEventsHelper>(), _traktApi, libraryManager);
         _userDataManagerEventsHelper = new UserDataManagerEventsHelper(loggerFactory.CreateLogger<UserDataManagerEventsHelper>(), _traktApi);
     }
 

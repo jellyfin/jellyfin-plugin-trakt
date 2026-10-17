@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
+using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
@@ -17,8 +19,10 @@ namespace Trakt.Helpers;
 internal sealed class LibraryManagerEventsHelper : IDisposable
 {
     private readonly List<LibraryEvent> _queuedEvents;
+    private readonly SemaphoreSlim _processLock = new SemaphoreSlim(1, 1);
     private readonly ILogger<LibraryManagerEventsHelper> _logger;
     private readonly TraktApi _traktApi;
+    private readonly ILibraryManager _libraryManager;
     private Timer _queueTimer;
 
     /// <summary>
@@ -26,11 +30,13 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
     /// </summary>
     /// <param name="logger">The logger.</param>
     /// <param name="traktApi">The <see cref="TraktApi"/>.</param>
-    public LibraryManagerEventsHelper(ILogger<LibraryManagerEventsHelper> logger, TraktApi traktApi)
+    /// <param name="libraryManager">The <see cref="ILibraryManager"/>.</param>
+    public LibraryManagerEventsHelper(ILogger<LibraryManagerEventsHelper> logger, TraktApi traktApi, ILibraryManager libraryManager)
     {
         _queuedEvents = new List<LibraryEvent>();
         _logger = logger;
         _traktApi = traktApi;
+        _libraryManager = libraryManager;
     }
 
     /// <summary>
@@ -64,8 +70,12 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
             }
 
             // Check if item can be synced for all users.
+            // Jellyfin removes a deleted series' episodes from the library before reporting them, so they can't be traced
+            // back to it and CanSync skips them. Queue the series itself; ProcessQueuedShowEvents checks its ids, excluded locations
+            // and whether another copy is still in the library.
+            var isSeriesRemoval = item is Series && item.Path != null && eventType == EventType.Remove;
 
-            foreach (var user in users.Where(user => _traktApi.CanSync(item, user)))
+            foreach (var user in users.Where(user => isSeriesRemoval || _traktApi.CanSync(item, user)))
             {
                 // Add to queue.
                 // Sync will be processed when the next timer elapsed event fires.
@@ -84,7 +94,16 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
     {
         try
         {
-            await OnQueueTimerCallbackInternal().ConfigureAwait(false);
+            // One batch at a time, so a later batch can't add a show back before an earlier one removes it
+            await _processLock.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                await OnQueueTimerCallbackInternal().ConfigureAwait(false);
+            }
+            finally
+            {
+                _processLock.Release();
+            }
         }
         catch (Exception ex)
         {
@@ -178,10 +197,12 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
             await ProcessQueuedMovieEvents(queuedMovieUpdates, traktUser, EventType.Update).ConfigureAwait(false);
 
             await ProcessQueuedEpisodeEvents(queuedEpisodeDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
+
+            // Remove deleted shows before adding episodes, so a series moved to another folder isn't removed after its episodes were added back
+            await ProcessQueuedShowEvents(queuedShowDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
             await ProcessQueuedEpisodeEvents(queuedEpisodeAdds, traktUser, EventType.Add).ConfigureAwait(false);
             await ProcessQueuedEpisodeEvents(queuedEpisodeUpdates, traktUser, EventType.Update).ConfigureAwait(false);
 
-            await ProcessQueuedShowEvents(queuedShowDeletes, traktUser, EventType.Remove).ConfigureAwait(false);
             await ProcessQueuedShowEvents(queuedShowAdds, traktUser, EventType.Add).ConfigureAwait(false);
             await ProcessQueuedShowEvents(queuedShowUpdates, traktUser, EventType.Update).ConfigureAwait(false);
         }
@@ -208,9 +229,14 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
 
         try
         {
-            // Should probably not be awaiting this, but it's unlikely a user will be deleting more than one or two shows at a time
+            // One request per show, so removing a whole library sends many; each is checked right before it is sent
             foreach (var show in shows)
             {
+                if (eventType == EventType.Remove && IsShowStillInLibrary(show))
+                {
+                    continue;
+                }
+
                 await _traktApi.SendLibraryUpdateAsync(show, traktUser, eventType, CancellationToken.None).ConfigureAwait(false);
             }
         }
@@ -218,6 +244,44 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
         {
             _logger.LogError(ex, "Exception handled processing queued series events");
         }
+    }
+
+    private bool IsShowStillInLibrary(Series show)
+    {
+        // The deleted series is already gone from the library, so a series with one of its ids is another copy
+        // (e.g. an HD and a 4K library) or the same show moved to another folder. Removing it would remove every copy.
+        var providerIds = new[] { MetadataProvider.Tmdb, MetadataProvider.Tvdb, MetadataProvider.Imdb, MetadataProvider.TvRage }
+            .Select(provider => (Key: provider.ToString(), Value: show.GetProviderId(provider)))
+            .Where(id => !string.IsNullOrEmpty(id.Value))
+            .ToDictionary(id => id.Key, id => id.Value);
+        if (providerIds.Count == 0)
+        {
+            // An empty filter would match every series
+            return false;
+        }
+
+        bool stillInLibrary;
+        try
+        {
+            stillInLibrary = _libraryManager.GetCount(new InternalItemsQuery
+            {
+                IncludeItemTypes = new[] { BaseItemKind.Series },
+                HasAnyProviderId = providerIds
+            }) > 0;
+        }
+        catch (Exception ex)
+        {
+            // Keeping the show collected is the safe choice when the library can't be checked
+            _logger.LogWarning(ex, "Could not check whether {Show} is still in the library, not removing it from trakt.tv", show.Name);
+            return true;
+        }
+
+        if (stillInLibrary)
+        {
+            _logger.LogInformation("Not removing {Show} from the trakt.tv collection: it is still in the library", show.Name);
+        }
+
+        return stillInLibrary;
     }
 
     /// <summary>
@@ -321,5 +385,6 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
     public void Dispose()
     {
         _queueTimer?.Dispose();
+        _processLock.Dispose();
     }
 }
