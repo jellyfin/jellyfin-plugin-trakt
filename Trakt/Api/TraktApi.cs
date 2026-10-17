@@ -1252,9 +1252,10 @@ public class TraktApi
         TraktUser traktUser,
         CancellationToken cancellationToken)
     {
-        if (traktUser != null && traktUser.ExtraLogging)
+        // The revoke request carries the user's access token
+        if (traktUser != null && traktUser.ExtraLogging && url != TraktUris.RevokeToken)
         {
-            _logger.LogDebug("{@JsonData}", data);
+            _logger.LogInformation("Posting to {Url}: {@JsonData}", url, data);
         }
 
         var httpClient = GetHttpClient();
