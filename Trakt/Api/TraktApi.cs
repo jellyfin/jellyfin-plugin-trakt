@@ -26,6 +26,7 @@ using Trakt.Api.DataContracts.Sync;
 using Trakt.Api.DataContracts.Sync.Collection;
 using Trakt.Api.DataContracts.Sync.Ratings;
 using Trakt.Api.DataContracts.Sync.Watched;
+using Trakt.Helpers;
 using Trakt.Model;
 using Trakt.Model.Enums;
 using TraktEpisodeCollected = Trakt.Api.DataContracts.Sync.Collection.TraktEpisodeCollected;
@@ -1061,7 +1062,18 @@ public class TraktApi
         await _tokenRefreshLock.WaitAsync().ConfigureAwait(false);
         try
         {
-            // Another task may have refreshed the token while this one was waiting
+            // Another task may already have refreshed the token. Saving the plugin settings replaces every
+            // TraktUser object, so that refresh may only be on the current one: take its tokens while valid.
+            var currentUser = UserHelper.GetTraktUser(traktUser.LinkedMbUserId);
+            if (currentUser != null
+                && !ReferenceEquals(currentUser, traktUser)
+                && DateTimeOffset.Now <= currentUser.AccessTokenExpiration)
+            {
+                traktUser.AccessToken = currentUser.AccessToken;
+                traktUser.RefreshToken = currentUser.RefreshToken;
+                traktUser.AccessTokenExpiration = currentUser.AccessTokenExpiration;
+            }
+
             if (DateTimeOffset.Now <= traktUser.AccessTokenExpiration)
             {
                 return;
