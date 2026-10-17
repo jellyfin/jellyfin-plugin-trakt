@@ -80,7 +80,7 @@ internal sealed class UserDataManagerEventsHelper : IDisposable
                         userPackage.SeenMovies.Clear();
                     }
                 }
-                else if (traktUser.PostSetUnwatched)
+                else if (traktUser.PostSetUnwatched && !userDataSaveEventArgs.UserData.Played)
                 {
                     userPackage.UnSeenMovies.Add(movie);
 
@@ -155,7 +155,7 @@ internal sealed class UserDataManagerEventsHelper : IDisposable
                 {
                     userPackage.SeenEpisodes.Add(episode);
                 }
-                else if (traktUser.PostSetUnwatched)
+                else if (traktUser.PostSetUnwatched && !userDataSaveEventArgs.UserData.Played)
                 {
                     userPackage.UnSeenEpisodes.Add(episode);
                 }
