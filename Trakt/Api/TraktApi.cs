@@ -445,9 +445,13 @@ public class TraktApi
         var response = await PostToTrakt<TraktSyncResponse>(url, data, traktUser, cancellationToken).ConfigureAwait(false);
         if (useProviderIds && response.NotFound.Episodes.Count > 0)
         {
-            // Send subset of episodes back to trakt.tv to try without ids
-            _logger.LogDebug("Resend episodes Library update, without episode ids");
-            await SendLibraryUpdateInternalAsync(FindNotFoundEpisodes(episodes, response), traktUser, eventType, cancellationToken, false).ConfigureAwait(false);
+            // Send the Jellyfin episodes that match the not-found entries back to trakt.tv without ids, if there are any
+            var notFoundEpisodes = FindNotFoundEpisodes(episodes, response);
+            if (notFoundEpisodes.Count > 0)
+            {
+                _logger.LogDebug("Resend episodes Library update, without episode ids");
+                await SendLibraryUpdateInternalAsync(notFoundEpisodes, traktUser, eventType, cancellationToken, false).ConfigureAwait(false);
+            }
         }
 
         return response;
@@ -901,9 +905,13 @@ public class TraktApi
 
         if (useProviderIds && response.NotFound.Episodes.Count > 0)
         {
-            // Send subset of episodes back to trakt.tv to try without ids
-            _logger.LogDebug("Resend episodes playstate update, without episode ids");
-            await SendEpisodePlaystateUpdatesInternalAsync(FindNotFoundEpisodes(episodeChunk, response), traktUser, seen, cancellationToken, false).ConfigureAwait(false);
+            // Send the Jellyfin episodes that match the not-found entries back to trakt.tv without ids, if there are any
+            var notFoundEpisodes = FindNotFoundEpisodes(episodeChunk, response);
+            if (notFoundEpisodes.Count > 0)
+            {
+                _logger.LogDebug("Resend episodes playstate update, without episode ids");
+                await SendEpisodePlaystateUpdatesInternalAsync(notFoundEpisodes, traktUser, seen, cancellationToken, false).ConfigureAwait(false);
+            }
         }
 
         return response;
