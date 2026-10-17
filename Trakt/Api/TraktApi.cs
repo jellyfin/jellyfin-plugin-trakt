@@ -270,7 +270,7 @@ public class TraktApi
 
         var moviesPayload = movies.Select(m =>
         {
-            var audioStream = m.GetMediaStreams().FirstOrDefault(x => x.Type == MediaStreamType.Audio);
+            var audioStream = m.GetMediaStreams().GetBestAudioStream();
             var traktMovieCollected = new TraktMovieCollected
             {
                 CollectedAt = m.DateCreated.ToISO8601(),
@@ -349,7 +349,7 @@ public class TraktApi
         var showPayload = new List<TraktShowCollected>();
         foreach (Episode episode in episodes)
         {
-            var audioStream = episode.GetMediaStreams().FirstOrDefault(stream => stream.Type == MediaStreamType.Audio);
+            var audioStream = episode.GetMediaStreams().GetBestAudioStream();
             var defaultVideoStream = episode.GetDefaultVideoStream();
             if (useProviderIds
                 && HasAnyProviderTvIds(episode)

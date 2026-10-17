@@ -151,7 +151,7 @@ public static class Extensions
         var match = false;
         var mediaStreams = movie.GetMediaStreams();
         var defaultVideoStream = mediaStreams.FirstOrDefault(x => x.Index == movie.DefaultVideoStreamIndex);
-        var audioStream = mediaStreams.FirstOrDefault(x => x.Type == MediaStreamType.Audio);
+        var audioStream = mediaStreams.GetBestAudioStream();
 
         if (defaultVideoStream != null)
         {
@@ -188,7 +188,7 @@ public static class Extensions
         var match = false;
         var mediaStreams = episode.GetMediaStreams();
         var defaultVideoStream = mediaStreams.FirstOrDefault(x => x.Index == episode.DefaultVideoStreamIndex);
-        var audioStream = mediaStreams.FirstOrDefault(x => x.Type == MediaStreamType.Audio);
+        var audioStream = mediaStreams.GetBestAudioStream();
 
         if (defaultVideoStream != null)
         {
@@ -206,6 +206,56 @@ public static class Extensions
         }
 
         return match || collectedEpisode.Metadata.MediaType != TraktMediaType.digital;
+    }
+
+    /// <summary>
+    /// Gets the best audio stream of an item, skipping commentary tracks.
+    /// </summary>
+    /// <remarks>
+    /// Lossless before lossy, then Dolby Atmos or DTS:X, then more channels, then a higher bitrate.
+    /// On a tie, the first stream wins.
+    /// </remarks>
+    /// <param name="mediaStreams">The <see cref="MediaStream"/>s of the item.</param>
+    /// <returns>MediaStream.</returns>
+    public static MediaStream GetBestAudioStream(this IEnumerable<MediaStream> mediaStreams)
+    {
+        var audioStreams = mediaStreams.Where(x => x.Type == MediaStreamType.Audio).ToList();
+        var candidates = audioStreams.Where(x => !IsCommentary(x)).ToList();
+        if (candidates.Count == 0)
+        {
+            candidates = audioStreams;
+        }
+
+        return candidates
+            .OrderByDescending(IsLossless)
+            .ThenByDescending(x => x.AudioSpatialFormat != AudioSpatialFormat.None)
+            .ThenByDescending(x => x.Channels ?? 0)
+            .ThenByDescending(x => x.BitRate ?? 0)
+            .FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Checks if an audio <see cref="MediaStream"/> is a commentary track.
+    /// </summary>
+    /// <param name="audioStream">The <see cref="MediaStream"/>.</param>
+    /// <returns><see cref="bool"/> indicating if the stream is a commentary track.</returns>
+    private static bool IsCommentary(MediaStream audioStream)
+        => audioStream.Title?.Contains("commentary", StringComparison.OrdinalIgnoreCase) == true;
+
+    /// <summary>
+    /// Checks if an audio <see cref="MediaStream"/> is lossless.
+    /// </summary>
+    /// <param name="audioStream">The <see cref="MediaStream"/>.</param>
+    /// <returns><see cref="bool"/> indicating if the stream is lossless.</returns>
+    private static bool IsLossless(MediaStream audioStream)
+    {
+        var codec = audioStream.Codec?.ToLowerInvariant();
+        return codec switch
+        {
+            "truehd" or "mlp" or "flac" or "alac" => true,
+            "dts" or "dca" => audioStream.Profile?.Contains("DTS-HD MA", StringComparison.OrdinalIgnoreCase) == true,
+            _ => codec?.StartsWith("pcm_", StringComparison.Ordinal) == true
+        };
     }
 
     /// <summary>
