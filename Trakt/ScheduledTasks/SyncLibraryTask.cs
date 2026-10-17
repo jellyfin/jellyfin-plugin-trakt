@@ -110,7 +110,7 @@ public class SyncLibraryTask : IScheduledTask
             {
                 await SyncUserLibrary(user, traktUser, progress, currentProgress, percentPerUser, cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {
                 _logger.LogError(ex, "Error exporting library to trakt.tv for user {UserName}", user.Username);
             }
