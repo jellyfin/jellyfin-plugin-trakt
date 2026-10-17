@@ -477,6 +477,29 @@ public static class Extensions
     }
 
     /// <summary>
+    /// Checks if a path is inside one of the excluded library folders.
+    /// </summary>
+    /// <param name="path">The item path.</param>
+    /// <param name="excludedLocations">The excluded library folders.</param>
+    /// <returns><see cref="bool"/> indicating if the path is inside an excluded folder.</returns>
+    public static bool IsPathExcluded(string path, string[] excludedLocations)
+    {
+        if (path == null || excludedLocations == null)
+        {
+            return false;
+        }
+
+        // Match whole folders only, so excluding /media/Movies doesn't also exclude /media/Movies 4K
+        return excludedLocations.Any(location =>
+        {
+            var folder = location?.TrimEnd('/', '\\');
+            return !string.IsNullOrEmpty(folder)
+                && path.StartsWith(folder, StringComparison.OrdinalIgnoreCase)
+                && (path.Length == folder.Length || path[folder.Length] is '/' or '\\');
+        });
+    }
+
+    /// <summary>
     /// Checks if a <see cref="BaseItem"/> matches a <see cref="TraktMovie"/>.
     /// </summary>
     /// <param name="item">The <see cref="BaseItem"/>.</param>
