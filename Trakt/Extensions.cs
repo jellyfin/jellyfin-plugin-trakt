@@ -255,20 +255,41 @@ public static class Extensions
     /// <param name="videoStream">The <see cref="MediaStream"/>.</param>
     /// <returns>string.</returns>
     public static TraktHdr? GetHdr(this MediaStream videoStream)
-    {
-        if (videoStream.DvProfile != null)
+        => videoStream.VideoRangeType switch
         {
-            return TraktHdr.dolby_vision;
-        }
-
-        var rageType = videoStream.VideoRangeType;
-        return rageType switch
-        {
-            VideoRangeType.DOVI => TraktHdr.dolby_vision,
+            VideoRangeType.DOVI
+                or VideoRangeType.DOVIWithHDR10
+                or VideoRangeType.DOVIWithHDR10Plus
+                or VideoRangeType.DOVIWithHLG
+                or VideoRangeType.DOVIWithSDR
+                or VideoRangeType.DOVIWithEL
+                or VideoRangeType.DOVIWithELHDR10Plus => TraktHdr.dolby_vision,
+            VideoRangeType.HDR10Plus => TraktHdr.hdr10_plus,
             VideoRangeType.HDR10 => TraktHdr.hdr10,
             VideoRangeType.HLG => TraktHdr.hlg,
+            // Jellyfin ignores invalid Dolby Vision metadata, so describe the base layer instead
+            VideoRangeType.DOVIInvalid => GetBaseLayerHdr(videoStream),
             _ => null
         };
+
+    /// <summary>
+    /// Gets the HDR type of the base layer of a <see cref="MediaStream"/>.
+    /// </summary>
+    /// <param name="videoStream">The <see cref="MediaStream"/>.</param>
+    /// <returns>TraktHdr.</returns>
+    private static TraktHdr? GetBaseLayerHdr(MediaStream videoStream)
+    {
+        if (string.Equals(videoStream.ColorTransfer, "smpte2084", StringComparison.OrdinalIgnoreCase))
+        {
+            return videoStream.Hdr10PlusPresentFlag == true ? TraktHdr.hdr10_plus : TraktHdr.hdr10;
+        }
+
+        if (string.Equals(videoStream.ColorTransfer, "arib-std-b67", StringComparison.OrdinalIgnoreCase))
+        {
+            return TraktHdr.hlg;
+        }
+
+        return null;
     }
 
     /// <summary>
