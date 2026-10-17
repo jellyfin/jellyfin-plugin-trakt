@@ -212,8 +212,8 @@ public static class Extensions
     /// Gets the best audio stream of an item, skipping commentary tracks.
     /// </summary>
     /// <remarks>
-    /// Lossless before lossy, then Dolby Atmos or DTS:X, then more channels, then a higher bitrate.
-    /// On a tie, the first stream wins.
+    /// Codecs trakt.tv has an audio value for first, then lossless before lossy, then Dolby Atmos or DTS:X,
+    /// then more channels, then a higher bitrate. On a tie, the first stream wins.
     /// </remarks>
     /// <param name="mediaStreams">The <see cref="MediaStream"/>s of the item.</param>
     /// <returns>MediaStream.</returns>
@@ -227,7 +227,8 @@ public static class Extensions
         }
 
         return candidates
-            .OrderByDescending(IsLossless)
+            .OrderByDescending(x => x.GetCodecRepresetation() != null)
+            .ThenByDescending(IsLossless)
             .ThenByDescending(x => x.AudioSpatialFormat != AudioSpatialFormat.None)
             .ThenByDescending(x => x.Channels ?? 0)
             .ThenByDescending(x => x.BitRate ?? 0)
