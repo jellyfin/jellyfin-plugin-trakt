@@ -5,8 +5,8 @@
 <img alt="Plugin Banner" src="https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/plugins/SVG/jellyfin-plugin-trakt.svg?sanitize=true"/>
 <br/>
 <br/>
-<a href="https://github.com/jellyfin/jellyfin-plugin-trakt/actions?query=workflow%3A%22Test+Build+Plugin%22">
-<img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/jellyfin/jellyfin-plugin-trakt/Test%20Build%20Plugin.svg">
+<a href="https://github.com/jellyfin/jellyfin-plugin-trakt/actions/workflows/build.yaml">
+<img alt="GitHub Workflow Status" src="https://img.shields.io/github/actions/workflow/status/jellyfin/jellyfin-plugin-trakt/build.yaml?branch=master">
 </a>
 <a href="https://github.com/jellyfin/jellyfin-plugin-trakt">
 <img alt="MIT License" src="https://img.shields.io/github/license/jellyfin/jellyfin-plugin-trakt.svg"/>
@@ -26,7 +26,7 @@ Available for install through the plugin catalog, Trakt for Jellyfin allows you 
 
 ## Build
 
-1. To build this plugin you will need [.Net 9.x](https://dotnet.microsoft.com/download/dotnet/9.0).
+1. To build this plugin you will need [.NET 10.x](https://dotnet.microsoft.com/download/dotnet/10.0).
 
 2. Build plugin with following command
   ```
