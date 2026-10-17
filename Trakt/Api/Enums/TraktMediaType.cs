@@ -36,7 +36,7 @@ public enum TraktMediaType
     /// <summary>
     /// LaserDisc media.
     /// </summary>
-    lasterdisc,
+    laserdisc,
 
     /// <summary>
     /// VCD media.
