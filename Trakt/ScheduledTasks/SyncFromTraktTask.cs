@@ -417,7 +417,7 @@ public class SyncFromTraktTask : IScheduledTask
                 bool episodeWatched = false;
                 bool episodeWatchedUnknown = false;
 
-                if (!traktUser.SkipWatchedImportFromTrakt && matchedWatchedShow != null)
+                if (matchedWatchedShow != null)
                 {
                     // Keep track of the shows rewatch cycles
                     DateTime? tLastReset = null;
@@ -474,44 +474,47 @@ public class SyncFromTraktTask : IScheduledTask
 
                         episodeWatched = true;
 
-                        // Set episode as watched
-                        if (!userData.Played)
+                        if (!traktUser.SkipWatchedImportFromTrakt)
                         {
-                            // Only change LastPlayedDate if not set or the local and remote are more than 10 minutes apart
-                            _logger.LogDebug("Marking episode as watched for user {User} locally: {Data}", user.Username, GetVerboseEpisodeData(episode));
-                            if (tLastPlayed == null && userData.LastPlayedDate == null)
+                            // Set episode as watched
+                            if (!userData.Played)
                             {
-                                _logger.LogDebug("Episode's local and remote last played date are missing, falling back to the current time for user {User} locally: {Data}", user.Username, GetVerboseEpisodeData(episode));
-                                userData.LastPlayedDate = DateTime.UtcNow;
+                                // Only change LastPlayedDate if not set or the local and remote are more than 10 minutes apart
+                                _logger.LogDebug("Marking episode as watched for user {User} locally: {Data}", user.Username, GetVerboseEpisodeData(episode));
+                                if (tLastPlayed == null && userData.LastPlayedDate == null)
+                                {
+                                    _logger.LogDebug("Episode's local and remote last played date are missing, falling back to the current time for user {User} locally: {Data}", user.Username, GetVerboseEpisodeData(episode));
+                                    userData.LastPlayedDate = DateTime.UtcNow;
+                                }
+
+                                if (tLastPlayed != null
+                                    && userData.LastPlayedDate != null
+                                    && (tLastPlayed.Value - userData.LastPlayedDate.Value).Duration() > TimeSpan.FromMinutes(10)
+                                    && userData.LastPlayedDate < tLastPlayed)
+                                {
+                                    _logger.LogDebug("Setting episode's last played date to remote which is more than 10 minutes more recent than local (remote: {Remote} | local: {Local}) for user {User} locally: {Data}", tLastPlayed, userData.LastPlayedDate, user.Username, GetVerboseEpisodeData(episode));
+                                    userData.LastPlayedDate = tLastPlayed;
+                                }
+
+                                userData.Played = true;
+                                changed = true;
                             }
 
-                            if (tLastPlayed != null
-                                && userData.LastPlayedDate != null
-                                && (tLastPlayed.Value - userData.LastPlayedDate.Value).Duration() > TimeSpan.FromMinutes(10)
-                                && userData.LastPlayedDate < tLastPlayed)
+                            // Update last played if remote time is more recent
+                            if (tLastPlayed != null && (userData.LastPlayedDate == null || userData.LastPlayedDate < tLastPlayed))
                             {
-                                _logger.LogDebug("Setting episode's last played date to remote which is more than 10 minutes more recent than local (remote: {Remote} | local: {Local}) for user {User} locally: {Data}", tLastPlayed, userData.LastPlayedDate, user.Username, GetVerboseEpisodeData(episode));
+                                _logger.LogDebug("Adjusting episode's last played date to match a more recent remote last played date (remote: {Remote} | local: {Local}) for user {User} locally: {Name}", tLastPlayed, userData.LastPlayedDate, user.Username, episode.Name);
                                 userData.LastPlayedDate = tLastPlayed;
+                                changed = true;
                             }
 
-                            userData.Played = true;
-                            changed = true;
-                        }
-
-                        // Update last played if remote time is more recent
-                        if (tLastPlayed != null && (userData.LastPlayedDate == null || userData.LastPlayedDate < tLastPlayed))
-                        {
-                            _logger.LogDebug("Adjusting episode's last played date to match a more recent remote last played date (remote: {Remote} | local: {Local}) for user {User} locally: {Name}", tLastPlayed, userData.LastPlayedDate, user.Username, episode.Name);
-                            userData.LastPlayedDate = tLastPlayed;
-                            changed = true;
-                        }
-
-                        // Keep the highest play count
-                        if (userData.PlayCount < matchedWatchedEpisode.Plays)
-                        {
-                            _logger.LogDebug("Adjusting episode's play count to match a higher remote value (remote: {Remote} | local: {Local}) for user {User} locally: {Data}", matchedWatchedEpisode.Plays, userData.PlayCount, user.Username, GetVerboseEpisodeData(episode));
-                            userData.PlayCount = matchedWatchedEpisode.Plays;
-                            changed = true;
+                            // Keep the highest play count
+                            if (userData.PlayCount < matchedWatchedEpisode.Plays)
+                            {
+                                _logger.LogDebug("Adjusting episode's play count to match a higher remote value (remote: {Remote} | local: {Local}) for user {User} locally: {Data}", matchedWatchedEpisode.Plays, userData.PlayCount, user.Username, GetVerboseEpisodeData(episode));
+                                userData.PlayCount = matchedWatchedEpisode.Plays;
+                                changed = true;
+                            }
                         }
                     }
                     else
