@@ -106,7 +106,14 @@ public class SyncLibraryTask : IScheduledTask
                 continue;
             }
 
-            await SyncUserLibrary(user, traktUser, progress, currentProgress, percentPerUser, cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await SyncUserLibrary(user, traktUser, progress, currentProgress, percentPerUser, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Error exporting library to trakt.tv for user {UserName}", user.Username);
+            }
 
             currentProgress += percentPerUser;
             progress.Report(currentProgress);
