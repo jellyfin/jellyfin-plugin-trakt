@@ -704,9 +704,35 @@ public class SyncLibraryTask : IScheduledTask
                     {
                         foreach (var traktEpisode in dataContract.NotFound.Episodes)
                         {
-                            _logger.LogError("Episode not found on trakt.tv: {@TraktEpisode}", traktEpisode);
+                            if (traktEpisode.Seasons is null)
+                            {
+                                _logger.LogError("Episode not found on trakt.tv: {@TraktEpisode}", traktEpisode);
+                            }
+                            else
+                            {
+                                LogNotFoundShowEpisodes(traktEpisode);
+                            }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    private void LogNotFoundShowEpisodes(TraktEpisodeNotFound traktShow)
+    {
+        // Episodes sent by show, season and number come back as the show that was sent, with the show ids
+        foreach (var traktSeason in traktShow.Seasons)
+        {
+            foreach (var traktEpisode in traktSeason.Episodes)
+            {
+                if (string.IsNullOrEmpty(traktShow.Title))
+                {
+                    _logger.LogError("Episode not found on trakt.tv: S{Season:D2}E{Episode:D2} of show {@ShowIds}", traktSeason.Number, traktEpisode.Number, traktShow.Ids);
+                }
+                else
+                {
+                    _logger.LogError("Episode not found on trakt.tv: {Show} ({Year}) S{Season:D2}E{Episode:D2}, show ids: {@ShowIds}", traktShow.Title, traktShow.Year, traktSeason.Number, traktEpisode.Number, traktShow.Ids);
                 }
             }
         }

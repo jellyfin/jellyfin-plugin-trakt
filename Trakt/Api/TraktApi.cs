@@ -914,7 +914,8 @@ public class TraktApi
         // Episodes not found. If using ids, try again without them
         List<Episode> episodes = new List<Episode>();
         // Build a list of unfound episodes with ids
-        foreach (TraktEpisode traktEpisode in traktSyncResponse.NotFound.Episodes.Where(episode => HasAnyProviderTvIds(episode.Ids)))
+        // Skip shows: episodes sent by show, season and number come back as the show, with the show ids
+        foreach (TraktEpisodeNotFound traktEpisode in traktSyncResponse.NotFound.Episodes.Where(episode => episode.Seasons is null && HasAnyProviderTvIds(episode.Ids)))
         {
             // Find matching episode in Jellyfin based on provider ids
             var notFoundEpisode = episodeChunk.FirstOrDefault(episode =>

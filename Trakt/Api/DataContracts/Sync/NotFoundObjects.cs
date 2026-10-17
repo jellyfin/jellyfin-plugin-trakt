@@ -27,7 +27,7 @@ public class NotFoundObjects
     /// Gets or sets the episodes.
     /// </summary>
     [JsonPropertyName("episodes")]
-    public IReadOnlyList<TraktEpisode> Episodes { get; set; }
+    public IReadOnlyList<TraktEpisodeNotFound> Episodes { get; set; }
 
     /// <summary>
     /// Gets or sets the seasons.
