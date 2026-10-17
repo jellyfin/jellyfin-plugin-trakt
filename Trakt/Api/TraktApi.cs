@@ -47,6 +47,7 @@ public class TraktApi
     private const int MaxRetryAttempts = 3;
 
     private static readonly SemaphoreSlim _traktResourcePool = new SemaphoreSlim(1, 1);
+    private static readonly SemaphoreSlim _tokenRefreshLock = new SemaphoreSlim(1, 1);
     private static readonly TimeSpan _tooManyRequestDelay = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan _gatewayDelay = TimeSpan.FromSeconds(30);
 
@@ -1054,6 +1055,27 @@ public class TraktApi
     /// <param name="traktUser">The <see cref="TraktUser"/> to refresh the access token for.</param>
     /// <returns>Task.</returns>
     public async Task RefreshUserAccessToken(TraktUser traktUser)
+    {
+        // trakt.tv replaces the refresh token on every refresh, so a second refresh started at the
+        // same time (e.g. two scheduled tasks at startup) would send a used token and get 400 Bad Request
+        await _tokenRefreshLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            // Another task may have refreshed the token while this one was waiting
+            if (DateTimeOffset.Now <= traktUser.AccessTokenExpiration)
+            {
+                return;
+            }
+
+            await RefreshUserAccessTokenLocked(traktUser).ConfigureAwait(false);
+        }
+        finally
+        {
+            _tokenRefreshLock.Release();
+        }
+    }
+
+    private async Task RefreshUserAccessTokenLocked(TraktUser traktUser)
     {
         if (string.IsNullOrWhiteSpace(traktUser.RefreshToken))
         {
