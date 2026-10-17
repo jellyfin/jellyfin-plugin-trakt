@@ -105,7 +105,7 @@ public class SyncFromTraktTask : IScheduledTask
                 currentProgress = percentPerUser * numComplete;
                 progress.Report(currentProgress);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {
                 _logger.LogError(ex, "Error syncing trakt.tv data for user {UserName}", user.Username);
             }
