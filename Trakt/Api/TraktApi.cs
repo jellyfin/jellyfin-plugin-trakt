@@ -120,6 +120,17 @@ public class TraktApi
     }
 
     /// <summary>
+    /// Checks if trakt.tv accepts a status update at this progress. A pause is only stored from 1% to
+    /// below 80%; anything else is rejected with 422 Unprocessable Entity, and from 80% trakt.tv
+    /// expects a stop instead.
+    /// </summary>
+    /// <param name="mediaStatus">The <see cref="MediaStatus"/> of the update.</param>
+    /// <param name="progressPercent">The progress percentage.</param>
+    /// <returns><see cref="bool"/> indicating if trakt.tv accepts the update.</returns>
+    private static bool IsPauseProgressAccepted(MediaStatus mediaStatus, float progressPercent)
+        => mediaStatus != MediaStatus.Paused || (progressPercent >= 1f && progressPercent < 80f);
+
+    /// <summary>
     /// Report to trakt.tv that a movie is being watched or has been watched.
     /// </summary>
     /// <param name="movie">The movie being watched/scrobbled.</param>
@@ -129,6 +140,12 @@ public class TraktApi
     /// <returns>A standard TraktResponse Data Contract.</returns>
     public async Task<TraktScrobbleResponse> SendMovieStatusUpdateAsync(Movie movie, MediaStatus mediaStatus, TraktUser traktUser, float progressPercent)
     {
+        if (!IsPauseProgressAccepted(mediaStatus, progressPercent))
+        {
+            _logger.LogDebug("Not sending pause of movie {Name} at {Progress}%, trakt.tv only stores a paused position from 1% to below 80%", movie.Name, progressPercent);
+            return null;
+        }
+
         var movieData = new TraktScrobbleMovie
         {
             AppDate = DateTimeOffset.Now.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
@@ -170,6 +187,12 @@ public class TraktApi
     /// <returns>Task{List{TraktScrobbleResponse}}.</returns>
     public async Task<List<TraktScrobbleResponse>> SendEpisodeStatusUpdateAsync(Episode episode, MediaStatus mediaStatus, TraktUser traktUser, float progressPercent, bool useProviderIds = true)
     {
+        if (!IsPauseProgressAccepted(mediaStatus, progressPercent))
+        {
+            _logger.LogDebug("Not sending pause of episode {Name} at {Progress}%, trakt.tv only stores a paused position from 1% to below 80%", episode.Name, progressPercent);
+            return new List<TraktScrobbleResponse>();
+        }
+
         var episodeDatas = new List<TraktScrobbleEpisode>();
 
         if (useProviderIds
