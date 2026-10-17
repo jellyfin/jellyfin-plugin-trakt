@@ -13,18 +13,21 @@ public class TraktMetadata
     /// Gets or sets the media type.
     /// </summary>
     [JsonPropertyName("media_type")]
+    [JsonConverter(typeof(TraktTolerantEnumConverter<TraktMediaType>))]
     public TraktMediaType? MediaType { get; set; }
 
     /// <summary>
     /// Gets or sets the resolution.
     /// </summary>
     [JsonPropertyName("resolution")]
+    [JsonConverter(typeof(TraktTolerantEnumConverter<TraktResolution>))]
     public TraktResolution? Resolution { get; set; }
 
     /// <summary>
     /// Gets or sets the audio.
     /// </summary>
     [JsonPropertyName("audio")]
+    [JsonConverter(typeof(TraktTolerantEnumConverter<TraktAudio>))]
     public TraktAudio? Audio { get; set; }
 
     /// <summary>
@@ -44,5 +47,6 @@ public class TraktMetadata
     /// Gets or sets the HDR type.
     /// </summary>
     [JsonPropertyName("hdr")]
+    [JsonConverter(typeof(TraktTolerantEnumConverter<TraktHdr>))]
     public TraktHdr? Hdr { get; set; }
 }

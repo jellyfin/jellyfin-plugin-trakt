@@ -39,7 +39,8 @@ public class TraktFlexibleBooleanConverter : JsonConverter<bool?>
             case JsonTokenType.Null:
                 return null;
             default:
-                reader.Skip();
+                // Skip throws on a partial buffer; the serializer has already buffered the whole value, so TrySkip succeeds
+                reader.TrySkip();
                 return null;
         }
     }
