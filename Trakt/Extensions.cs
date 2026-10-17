@@ -294,13 +294,12 @@ public static class Extensions
     /// <returns>string.</returns>
     public static string GetAudioChannels(this MediaStream audioStream)
     {
-        if (audioStream == null || string.IsNullOrEmpty(audioStream.ChannelLayout))
+        if (audioStream == null)
         {
             return null;
         }
 
-        var channels = audioStream.ChannelLayout;
-        switch (channels)
+        switch (audioStream.ChannelLayout)
         {
             case "22.2":
             case "hexadecagonal":
@@ -357,9 +356,29 @@ public static class Extensions
             case "mono":
                 return "1.0";
             default:
-                return null;
+                // Missing or unknown layout, e.g. "6 channels"
+                return GetAudioChannelsFromCount(audioStream.Channels);
         }
     }
+
+    /// <summary>
+    /// Gets the most common trakt.tv audio channels value for a channel count.
+    /// </summary>
+    /// <param name="channelCount">The number of audio channels.</param>
+    /// <returns>string.</returns>
+    private static string GetAudioChannelsFromCount(int? channelCount)
+        => channelCount switch
+        {
+            1 => "1.0",
+            2 => "2.0",
+            3 => "2.1",
+            4 => "4.0",
+            5 => "5.0",
+            6 => "5.1",
+            7 => "6.1",
+            8 => "7.1",
+            _ => null
+        };
 
     /// <summary>
     /// Gets a watched match for a series.
