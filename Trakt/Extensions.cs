@@ -62,6 +62,22 @@ public static class Extensions
     private const int MinWidth2160P = 3800;
 
     /// <summary>
+    /// Words in the title of an audio track that isn't the programme audio.
+    /// </summary>
+    private static readonly string[] _extraTrackTitles =
+    [
+        "commentary",
+        "commentaire",
+        "kommentar",
+        "commento",
+        "comentario",
+        "descripti",
+        "isolated",
+        "music & effects",
+        "music and effects"
+    ];
+
+    /// <summary>
     /// Convert string to int.
     /// </summary>
     /// <param name="input">String to convert to int.</param>
@@ -209,39 +225,92 @@ public static class Extensions
     }
 
     /// <summary>
-    /// Gets the best audio stream of an item, skipping commentary tracks.
+    /// Gets the audio stream that describes an item: its default audio track, skipping extra tracks.
     /// </summary>
     /// <remarks>
-    /// Codecs trakt.tv has an audio value for first, then lossless before lossy, then Dolby Atmos or DTS:X,
-    /// then more channels, then a higher bitrate. On a tie, the first stream wins.
+    /// Extra tracks are commentaries, audio descriptions, isolated scores and tracks without dialogue.
+    /// A lossless or Dolby Atmos/DTS:X track in the same language with at least as many channels replaces
+    /// the default track, so a compatibility core next to a TrueHD or DTS-HD MA track isn't described.
+    /// Only when trakt.tv has no value for that track's codec or channels does the best track it can describe win,
+    /// same language first. On a tie, the first stream wins.
     /// </remarks>
     /// <param name="mediaStreams">The <see cref="MediaStream"/>s of the item.</param>
     /// <returns>MediaStream.</returns>
     public static MediaStream GetBestAudioStream(this IEnumerable<MediaStream> mediaStreams)
     {
         var audioStreams = mediaStreams.Where(x => x.Type == MediaStreamType.Audio).ToList();
-        var candidates = audioStreams.Where(x => !IsCommentary(x)).ToList();
+        var candidates = audioStreams.Where(x => !IsExtraTrack(x)).ToList();
         if (candidates.Count == 0)
         {
             candidates = audioStreams;
         }
 
-        return candidates
-            .OrderByDescending(x => x.GetCodecRepresetation() != null)
+        var main = candidates.FirstOrDefault(x => x.IsDefault) ?? candidates.FirstOrDefault();
+        if (main == null)
+        {
+            return null;
+        }
+
+        var chosen = candidates
+            .Where(x => x != main
+                && IsSameLanguage(x, main)
+                && (x.Channels ?? 0) >= (main.Channels ?? 0)
+                && CanDescribe(x)
+                && ((IsLossless(x) && !IsLossless(main)) || (IsSpatial(x) && !IsSpatial(main))))
+            .OrderByDescending(IsSpatial)
             .ThenByDescending(IsLossless)
-            .ThenByDescending(x => x.AudioSpatialFormat != AudioSpatialFormat.None)
             .ThenByDescending(x => x.Channels ?? 0)
             .ThenByDescending(x => x.BitRate ?? 0)
-            .FirstOrDefault();
+            .FirstOrDefault() ?? main;
+        if (CanDescribe(chosen))
+        {
+            return chosen;
+        }
+
+        return candidates
+            .Where(CanDescribe)
+            .OrderByDescending(x => IsSameLanguage(x, main))
+            .ThenByDescending(IsLossless)
+            .ThenByDescending(IsSpatial)
+            .ThenByDescending(x => x.Channels ?? 0)
+            .ThenByDescending(x => x.BitRate ?? 0)
+            .FirstOrDefault() ?? chosen;
     }
 
     /// <summary>
-    /// Checks if an audio <see cref="MediaStream"/> is a commentary track.
+    /// Checks if an audio <see cref="MediaStream"/> is an extra track rather than the programme audio.
     /// </summary>
     /// <param name="audioStream">The <see cref="MediaStream"/>.</param>
-    /// <returns><see cref="bool"/> indicating if the stream is a commentary track.</returns>
-    private static bool IsCommentary(MediaStream audioStream)
-        => audioStream.Title?.Contains("commentary", StringComparison.OrdinalIgnoreCase) == true;
+    /// <returns><see cref="bool"/> indicating if the stream is a commentary, audio description, isolated score or has no dialogue.</returns>
+    private static bool IsExtraTrack(MediaStream audioStream)
+        => string.Equals(audioStream.Language, "zxx", StringComparison.OrdinalIgnoreCase)
+            || (audioStream.Title is not null
+                && _extraTrackTitles.Any(x => audioStream.Title.Contains(x, StringComparison.OrdinalIgnoreCase)));
+
+    /// <summary>
+    /// Checks if trakt.tv has a value for the codec and the channels of an audio <see cref="MediaStream"/>.
+    /// </summary>
+    /// <param name="audioStream">The <see cref="MediaStream"/>.</param>
+    /// <returns><see cref="bool"/> indicating if trakt.tv can describe the stream.</returns>
+    private static bool CanDescribe(MediaStream audioStream)
+        => audioStream.GetCodecRepresetation() != null && audioStream.GetAudioChannels() != null;
+
+    /// <summary>
+    /// Checks if two audio <see cref="MediaStream"/>s have the same language.
+    /// </summary>
+    /// <param name="first">The first <see cref="MediaStream"/>.</param>
+    /// <param name="second">The second <see cref="MediaStream"/>.</param>
+    /// <returns><see cref="bool"/> indicating if both streams have the same language.</returns>
+    private static bool IsSameLanguage(MediaStream first, MediaStream second)
+        => string.Equals(first.Language, second.Language, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Checks if an audio <see cref="MediaStream"/> is Dolby Atmos or DTS:X.
+    /// </summary>
+    /// <param name="audioStream">The <see cref="MediaStream"/>.</param>
+    /// <returns><see cref="bool"/> indicating if the stream has a spatial audio format.</returns>
+    private static bool IsSpatial(MediaStream audioStream)
+        => audioStream.AudioSpatialFormat != AudioSpatialFormat.None;
 
     /// <summary>
     /// Checks if an audio <see cref="MediaStream"/> is lossless.
