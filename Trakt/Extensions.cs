@@ -30,6 +30,30 @@ public static class Extensions
     private const int MinHeight576P = 500;
 
     /// <summary>
+    /// Minimum height for 720p videos.
+    /// </summary>
+    /// <remarks>
+    /// Catches 4:3 and narrower 720p videos (960x720) with 20px deviation.
+    /// </remarks>
+    private const int MinHeight720P = 700;
+
+    /// <summary>
+    /// Minimum height for 1080p videos.
+    /// </summary>
+    /// <remarks>
+    /// Catches 4:3 and narrower 1080p videos, also when cropped (1288x1080, 1346x1032).
+    /// </remarks>
+    private const int MinHeight1080P = 1000;
+
+    /// <summary>
+    /// Minimum height for 2160p videos.
+    /// </summary>
+    /// <remarks>
+    /// Catches 4:3 and narrower 2160p videos (2880x2160) with 60px deviation.
+    /// </remarks>
+    private const int MinHeight2160P = 2100;
+
+    /// <summary>
     /// Minimum width for 576p videos.
     /// </summary>
     /// <remarks>
@@ -41,9 +65,9 @@ public static class Extensions
     /// Minimum width for 720p videos.
     /// </summary>
     /// <remarks>
-    /// 950px is chosen to accomodate 4:3 videos and 10px deviation.
+    /// 1200px leaves room for cropped 1280px videos. Narrower 720p videos are caught by their height, and 1024x576 stays 576p.
     /// </remarks>
-    private const int MinWidth720P = 950;
+    private const int MinWidth720P = 1200;
 
     /// <summary>
     /// Minimum width for 1080p videos.
@@ -225,22 +249,24 @@ public static class Extensions
             return null;
         }
 
-        if (videoStream.Width.Value >= MinWidth2160P)
+        var height = videoStream.Height ?? 0;
+
+        if (videoStream.Width.Value >= MinWidth2160P || height >= MinHeight2160P)
         {
             return TraktResolution.uhd_4k;
         }
 
-        if (videoStream.Width.Value >= MinWidth1080P)
+        if (videoStream.Width.Value >= MinWidth1080P || height >= MinHeight1080P)
         {
             return videoStream.IsInterlaced ? TraktResolution.hd_1080i : TraktResolution.hd_1080p;
         }
 
-        if (videoStream.Width.Value >= MinWidth720P)
+        if (videoStream.Width.Value >= MinWidth720P || height >= MinHeight720P)
         {
             return TraktResolution.hd_720p;
         }
 
-        if (videoStream.Width.Value >= MinWidth576P && videoStream.Height.HasValue && videoStream.Height.Value >= MinHeight576P)
+        if (videoStream.Width.Value >= MinWidth576P && height >= MinHeight576P)
         {
             return videoStream.IsInterlaced ? TraktResolution.sd_576i : TraktResolution.sd_576p;
         }
