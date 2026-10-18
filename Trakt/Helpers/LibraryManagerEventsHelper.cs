@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
+using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
 using Microsoft.Extensions.Logging;
 using Trakt.Api;
@@ -19,6 +20,7 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
     private readonly List<LibraryEvent> _queuedEvents;
     private readonly ILogger<LibraryManagerEventsHelper> _logger;
     private readonly TraktApi _traktApi;
+    private readonly ILibraryManager _libraryManager;
     private Timer _queueTimer;
 
     /// <summary>
@@ -26,11 +28,13 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
     /// </summary>
     /// <param name="logger">The logger.</param>
     /// <param name="traktApi">The <see cref="TraktApi"/>.</param>
-    public LibraryManagerEventsHelper(ILogger<LibraryManagerEventsHelper> logger, TraktApi traktApi)
+    /// <param name="libraryManager">The <see cref="ILibraryManager"/>.</param>
+    public LibraryManagerEventsHelper(ILogger<LibraryManagerEventsHelper> logger, TraktApi traktApi, ILibraryManager libraryManager)
     {
         _queuedEvents = new List<LibraryEvent>();
         _logger = logger;
         _traktApi = traktApi;
+        _libraryManager = libraryManager;
     }
 
     /// <summary>
@@ -112,6 +116,8 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
             _queuedEvents.Clear();
         }
 
+        queue = ReloadQueuedItems(queue);
+
         var queuedMovieDeletes = new List<LibraryEvent>();
         var queuedMovieAdds = new List<LibraryEvent>();
         var queuedMovieUpdates = new List<LibraryEvent>();
@@ -185,6 +191,60 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
             await ProcessQueuedShowEvents(queuedShowAdds, traktUser, EventType.Add).ConfigureAwait(false);
             await ProcessQueuedShowEvents(queuedShowUpdates, traktUser, EventType.Update).ConfigureAwait(false);
         }
+    }
+
+    /// <summary>
+    /// Reloads the queued movies and episodes to add or update from the library database, once per item and user.
+    /// </summary>
+    /// <param name="queue">The queued <see cref="LibraryEvent"/> list.</param>
+    /// <returns>The events to process.</returns>
+    private List<LibraryEvent> ReloadQueuedItems(List<LibraryEvent> queue)
+    {
+        var events = new List<LibraryEvent>();
+        var queuedItems = new HashSet<(Guid ItemId, Guid UserId)>();
+
+        // Add and Update send the same request, so an item that was added and then updated is sent once, as an Add (Adds go first)
+        foreach (var ev in queue.OrderBy(e => e.EventType != EventType.Add))
+        {
+            if (ev.EventType == EventType.Remove || ev.Item is not Movie and not Episode)
+            {
+                // A removed item is no longer in the library, and shows are sent as queued
+                events.Add(ev);
+                continue;
+            }
+
+            var key = (ev.Item.Id, ev.TraktUser.LinkedMbUserId);
+            if (!queuedItems.Add(key))
+            {
+                continue;
+            }
+
+            // The item from the ItemAdded event can be the copy from before the metadata refresh (a library scan refreshes
+            // another copy): folder name as title, no imdb id and no default video stream. Read the item as last saved.
+            BaseItem item;
+            try
+            {
+                item = _libraryManager.RetrieveItem(ev.Item.Id);
+            }
+            catch (Exception ex)
+            {
+                // Rather than lose the whole batch, send this event as queued and try the item's next event again
+                _logger.LogWarning(ex, "Could not reload {Item} from the library, syncing it as queued", ev.Item.Path);
+                queuedItems.Remove(key);
+                events.Add(ev);
+                continue;
+            }
+
+            if (item == null)
+            {
+                _logger.LogDebug("Not syncing {Item}: it is no longer in the library", ev.Item.Path);
+                continue;
+            }
+
+            events.Add(new LibraryEvent { Item = item, TraktUser = ev.TraktUser, EventType = ev.EventType });
+        }
+
+        return events;
     }
 
     private async Task ProcessQueuedShowEvents(IReadOnlyCollection<LibraryEvent> events, TraktUser traktUser, EventType eventType)
