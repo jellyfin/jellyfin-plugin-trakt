@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -702,38 +703,60 @@ public class SyncLibraryTask : IScheduledTask
 
                     if (dataContract.NotFound is not null)
                     {
-                        foreach (var traktEpisode in dataContract.NotFound.Episodes)
+                        foreach (var traktEpisode in dataContract.NotFound.Episodes.Where(x => x.Seasons is null))
                         {
-                            if (traktEpisode.Seasons is null)
-                            {
-                                _logger.LogError("Episode not found on trakt.tv: {@TraktEpisode}", traktEpisode);
-                            }
-                            else
-                            {
-                                LogNotFoundShowEpisodes(traktEpisode);
-                            }
+                            _logger.LogError("Episode not found on trakt.tv: {@TraktEpisode}", traktEpisode);
                         }
+
+                        LogNotFoundShowEpisodes(dataContract.NotFound.Episodes.Where(x => x.Seasons is not null));
                     }
                 }
             }
         }
     }
 
-    private void LogNotFoundShowEpisodes(TraktEpisodeNotFound traktShow)
+    private void LogNotFoundShowEpisodes(IEnumerable<TraktEpisodeNotFound> traktShows)
     {
-        // Episodes sent by show, season and number come back as the show that was sent, with the show ids
-        foreach (var traktSeason in traktShow.Seasons)
+        // Episodes sent by show, season and number come back as the show that was sent, with the show ids.
+        // trakt.tv returns that show once for every episode it didn't find, each time with all the episodes
+        // that were sent for it, so the copies are counted per show (trakt/api-help#357).
+        foreach (var copies in traktShows.GroupBy(x => (x.Title, x.Year, x.Ids?.Trakt, x.Ids?.Slug, x.Ids?.Tvdb, x.Ids?.Imdb, x.Ids?.Tmdb, x.Ids?.Tvrage)))
         {
-            foreach (var traktEpisode in traktSeason.Episodes)
+            var traktShow = copies.First();
+            var episodes = copies
+                .SelectMany(x => x.Seasons)
+                .SelectMany(season => season.Episodes.Select(episode => (Season: season.Number ?? 0, Episode: episode.Number)))
+                .Distinct()
+                .OrderBy(x => x.Season)
+                .ThenBy(x => x.Episode)
+                .ToList();
+            var missing = copies.Count();
+            if (missing >= episodes.Count)
             {
-                if (string.IsNullOrEmpty(traktShow.Title))
+                foreach (var (season, episode) in episodes)
                 {
-                    _logger.LogError("Episode not found on trakt.tv: S{Season:D2}E{Episode:D2} of show {@ShowIds}", traktSeason.Number, traktEpisode.Number, traktShow.Ids);
+                    if (string.IsNullOrEmpty(traktShow.Title))
+                    {
+                        _logger.LogError("Episode not found on trakt.tv: S{Season:D2}E{Episode:D2} of show {@ShowIds}", season, episode, traktShow.Ids);
+                    }
+                    else
+                    {
+                        _logger.LogError("Episode not found on trakt.tv: {Show} ({Year}) S{Season:D2}E{Episode:D2}, show ids: {@ShowIds}", traktShow.Title, traktShow.Year, season, episode, traktShow.Ids);
+                    }
                 }
-                else
-                {
-                    _logger.LogError("Episode not found on trakt.tv: {Show} ({Year}) S{Season:D2}E{Episode:D2}, show ids: {@ShowIds}", traktShow.Title, traktShow.Year, traktSeason.Number, traktEpisode.Number, traktShow.Ids);
-                }
+
+                continue;
+            }
+
+            // Fewer copies than episodes: trakt.tv found some of them, and the reply doesn't say which.
+            var sent = string.Join(", ", episodes.Select(x => string.Create(CultureInfo.InvariantCulture, $"S{x.Season:D2}E{x.Episode:D2}")));
+            if (string.IsNullOrEmpty(traktShow.Title))
+            {
+                _logger.LogError("{Missing} of {Sent} episodes sent by number not found on trakt.tv (it doesn't say which): {Episodes} of show {@ShowIds}", missing, episodes.Count, sent, traktShow.Ids);
+            }
+            else
+            {
+                _logger.LogError("{Missing} of {Sent} episodes sent by number not found on trakt.tv (it doesn't say which): {Show} ({Year}) {Episodes}, show ids: {@ShowIds}", missing, episodes.Count, traktShow.Title, traktShow.Year, sent, traktShow.Ids);
             }
         }
     }
