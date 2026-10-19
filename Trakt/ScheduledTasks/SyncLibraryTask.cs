@@ -154,26 +154,18 @@ public class SyncLibraryTask : IScheduledTask
         List<Api.DataContracts.Users.Watched.TraktMovieWatched> traktWatchedMovies = new List<Api.DataContracts.Users.Watched.TraktMovieWatched>();
         List<Api.DataContracts.Users.Collection.TraktMovieCollected> traktCollectedMovies = new List<Trakt.Api.DataContracts.Users.Collection.TraktMovieCollected>();
 
-        try
+        /*
+        * In order to sync watched status to trakt.tv we need to know what's been watched on trakt.tv already. This
+        * will stop us from endlessly incrementing the watched values on the site.
+        */
+        if (traktUser.PostWatchedHistory || traktUser.PostUnwatchedHistory)
         {
-            /*
-            * In order to sync watched status to trakt.tv we need to know what's been watched on trakt.tv already. This
-            * will stop us from endlessly incrementing the watched values on the site.
-            */
-            if (traktUser.PostWatchedHistory || traktUser.PostUnwatchedHistory)
-            {
-                traktWatchedMovies.AddRange(await _traktApi.SendGetAllWatchedMoviesRequest(traktUser, cancellationToken).ConfigureAwait(false));
-            }
-
-            if (traktUser.SynchronizeCollections)
-            {
-                traktCollectedMovies.AddRange(await _traktApi.SendGetAllCollectedMoviesRequest(traktUser, cancellationToken).ConfigureAwait(false));
-            }
+            traktWatchedMovies.AddRange(await _traktApi.SendGetAllWatchedMoviesRequest(traktUser, cancellationToken).ConfigureAwait(false));
         }
-        catch (Exception ex)
+
+        if (traktUser.SynchronizeCollections)
         {
-            _logger.LogError(ex, "Exception handled in SyncMovies");
-            throw;
+            traktCollectedMovies.AddRange(await _traktApi.SendGetAllCollectedMoviesRequest(traktUser, cancellationToken).ConfigureAwait(false));
         }
 
         var baseQuery = new InternalItemsQuery(user)
@@ -396,28 +388,20 @@ public class SyncLibraryTask : IScheduledTask
 
         var watchedEpisodesFetched = false;
 
-        try
+        /*
+        * In order to sync watched status to trakt.tv we need to know what's been watched on trakt.tv already. This
+        * will stop us from endlessly incrementing the watched values on the site.
+        */
+        if (traktUser.PostWatchedHistory || traktUser.PostUnwatchedHistory)
         {
-            /*
-            * In order to sync watched status to trakt.tv we need to know what's been watched on trakt.tv already. This
-            * will stop us from endlessly incrementing the watched values on the site.
-            */
-            if (traktUser.PostWatchedHistory || traktUser.PostUnwatchedHistory)
-            {
-                // Plain watched/shows doesn't return the seasons the diff below needs, so without
-                // extended=progress it would re-post the full watched history every run.
-                traktWatchedShows.AddRange(await _traktApi.SendGetWatchedShowsProgressRequest(traktUser, cancellationToken).ConfigureAwait(false));
-            }
-
-            if (traktUser.SynchronizeCollections)
-            {
-                traktCollectedShows.AddRange(await _traktApi.SendGetCollectedShowsRequest(traktUser, cancellationToken).ConfigureAwait(false));
-            }
+            // Plain watched/shows doesn't return the seasons the diff below needs, so without
+            // extended=progress it would re-post the full watched history every run.
+            traktWatchedShows.AddRange(await _traktApi.SendGetWatchedShowsProgressRequest(traktUser, cancellationToken).ConfigureAwait(false));
         }
-        catch (Exception ex)
+
+        if (traktUser.SynchronizeCollections)
         {
-            _logger.LogError(ex, "Exception handled in SyncShows");
-            throw;
+            traktCollectedShows.AddRange(await _traktApi.SendGetCollectedShowsRequest(traktUser, cancellationToken).ConfigureAwait(false));
         }
 
         var baseQuery = new InternalItemsQuery(user)
