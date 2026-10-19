@@ -105,7 +105,7 @@ public class SyncFromTraktTask : IScheduledTask
                 currentProgress = percentPerUser * numComplete;
                 progress.Report(currentProgress);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {
                 _logger.LogError(ex, "Error syncing trakt.tv data for user {UserName}", user.Username);
             }
@@ -231,11 +231,6 @@ public class SyncFromTraktTask : IScheduledTask
         {
             _logger.LogError(ex, "Skipping sync for user {User} because their trakt.tv account is locked", user.Username);
             return;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception handled");
-            throw;
         }
 
         _logger.LogInformation("Trakt.tv watched movies for user {User}: {Count}", user.Username, traktWatchedMovies.Count);
