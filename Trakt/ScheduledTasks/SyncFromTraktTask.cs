@@ -232,11 +232,6 @@ public class SyncFromTraktTask : IScheduledTask
             _logger.LogError(ex, "Skipping sync for user {User} because their trakt.tv account is locked", user.Username);
             return;
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception handled");
-            throw;
-        }
 
         _logger.LogInformation("Trakt.tv watched movies for user {User}: {Count}", user.Username, traktWatchedMovies.Count);
         _logger.LogInformation("Trakt.tv paused movies for user {User}: {Count}", user.Username, traktPausedMovies.Count);
