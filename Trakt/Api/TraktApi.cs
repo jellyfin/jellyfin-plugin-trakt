@@ -970,14 +970,20 @@ public class TraktApi
             client_secret = TraktUris.ClientSecret
         };
 
+        // Revoking on trakt.tv is best-effort; the caller removes the local user regardless.
+        // trakt.tv answers with an empty body, and the token to revoke is the stored one, so this
+        // doesn't go through PostToTrakt<T>, which parses the body and may refresh the token first.
         try
         {
-            await PostToTrakt<object>(TraktUris.RevokeToken, deviceRevokeRequest, traktUser).ConfigureAwait(false);
+            using var response = await PostToTrakt(TraktUris.RevokeToken, deviceRevokeRequest).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Couldn't revoke the access token on trakt.tv: {StatusCode}", (int)response.StatusCode);
+            }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Revoking on trakt.tv is best-effort; the caller removes the local user
-            // regardless, and PostToTrakt already logged the underlying failure.
+            _logger.LogWarning(ex, "Couldn't revoke the access token on trakt.tv");
         }
     }
 
