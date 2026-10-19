@@ -332,13 +332,13 @@ public class TraktApi
         var chunks = episodes.Chunk(100);
         foreach (var chunk in chunks)
         {
-            responses.Add(await SendLibraryUpdateInternalAsync(chunk, traktUser, eventType, cancellationToken).ConfigureAwait(false));
+            responses.AddRange(await SendLibraryUpdateInternalAsync(chunk, traktUser, eventType, cancellationToken).ConfigureAwait(false));
         }
 
         return responses;
     }
 
-    private async Task<TraktSyncResponse> SendLibraryUpdateInternalAsync(
+    private async Task<List<TraktSyncResponse>> SendLibraryUpdateInternalAsync(
         IReadOnlyList<Episode> episodes,
         TraktUser traktUser,
         EventType eventType,
@@ -443,18 +443,23 @@ public class TraktApi
 
         var url = (eventType == EventType.Add || eventType == EventType.Update) ? TraktUris.SyncCollectionAdd : TraktUris.SyncCollectionRemove;
         var response = await PostToTrakt<TraktSyncResponse>(url, data, traktUser, cancellationToken).ConfigureAwait(false);
+        var responses = new List<TraktSyncResponse> { response };
         if (useProviderIds && response.NotFound.Episodes.Count > 0)
         {
-            // Send the Jellyfin episodes that match the not-found entries back to trakt.tv without ids, if there are any
-            var notFoundEpisodes = FindNotFoundEpisodes(episodes, response);
+            // Send the Jellyfin episodes that match the not-found entries back to trakt.tv by number, if there are any
+            var notFoundEpisodes = FindNotFoundEpisodes(episodes, response).Where(episode => episode.IndexNumber.HasValue).ToList();
             if (notFoundEpisodes.Count > 0)
             {
                 _logger.LogDebug("Resend episodes Library update, without episode ids");
-                await SendLibraryUpdateInternalAsync(notFoundEpisodes, traktUser, eventType, cancellationToken, false).ConfigureAwait(false);
+                var retryResponses = (await SendLibraryUpdateInternalAsync(notFoundEpisodes, traktUser, eventType, cancellationToken, false).ConfigureAwait(false))
+                    .Where(retryResponse => retryResponse is not null)
+                    .ToList();
+                responses.AddRange(retryResponses);
+                RemoveRetriedNotFoundEpisodes(response, notFoundEpisodes, retryResponses);
             }
         }
 
-        return response;
+        return responses;
     }
 
     /// <summary>
@@ -811,18 +816,14 @@ public class TraktApi
 
         foreach (var chunk in chunks)
         {
-            var response = await SendEpisodePlaystateUpdatesInternalAsync(chunk, traktUser, seen, cancellationToken).ConfigureAwait(false);
-
-            if (response != null)
-            {
-                traktResponses.Add(response);
-            }
+            var responses = await SendEpisodePlaystateUpdatesInternalAsync(chunk, traktUser, seen, cancellationToken).ConfigureAwait(false);
+            traktResponses.AddRange(responses.Where(response => response != null));
         }
 
         return traktResponses;
     }
 
-    private async Task<TraktSyncResponse> SendEpisodePlaystateUpdatesInternalAsync(
+    private async Task<List<TraktSyncResponse>> SendEpisodePlaystateUpdatesInternalAsync(
         IReadOnlyList<Episode> episodeChunk,
         TraktUser traktUser,
         bool seen,
@@ -833,7 +834,7 @@ public class TraktApi
         if (user is null)
         {
             _logger.LogWarning("User id ({UserId}) linked to Trakt does not exist", traktUser.LinkedMbUserId);
-            return null;
+            return new List<TraktSyncResponse>();
         }
 
         var data = new TraktSyncWatched
@@ -904,19 +905,24 @@ public class TraktApi
         var url = seen ? TraktUris.SyncWatchedHistoryAdd : TraktUris.SyncWatchedHistoryRemove;
 
         var response = await PostToTrakt<TraktSyncResponse>(url, data, traktUser, cancellationToken).ConfigureAwait(false);
+        var responses = new List<TraktSyncResponse> { response };
 
         if (useProviderIds && response.NotFound.Episodes.Count > 0)
         {
-            // Send the Jellyfin episodes that match the not-found entries back to trakt.tv without ids, if there are any
-            var notFoundEpisodes = FindNotFoundEpisodes(episodeChunk, response);
+            // Send the Jellyfin episodes that match the not-found entries back to trakt.tv by number, if there are any
+            var notFoundEpisodes = FindNotFoundEpisodes(episodeChunk, response).Where(episode => episode.IndexNumber.HasValue).ToList();
             if (notFoundEpisodes.Count > 0)
             {
                 _logger.LogDebug("Resend episodes playstate update, without episode ids");
-                await SendEpisodePlaystateUpdatesInternalAsync(notFoundEpisodes, traktUser, seen, cancellationToken, false).ConfigureAwait(false);
+                var retryResponses = (await SendEpisodePlaystateUpdatesInternalAsync(notFoundEpisodes, traktUser, seen, cancellationToken, false).ConfigureAwait(false))
+                    .Where(retryResponse => retryResponse is not null)
+                    .ToList();
+                responses.AddRange(retryResponses);
+                RemoveRetriedNotFoundEpisodes(response, notFoundEpisodes, retryResponses);
             }
         }
 
-        return response;
+        return responses;
     }
 
     private List<Episode> FindNotFoundEpisodes(IReadOnlyList<Episode> episodeChunk, TraktSyncResponse traktSyncResponse)
@@ -944,6 +950,34 @@ public class TraktApi
         }
 
         return episodes;
+    }
+
+    /// <summary>
+    /// Removes the not-found entries of the episodes that were sent again by number. The retry's response
+    /// reports on those episodes, so the first attempt's entries would log episodes the retry found as not found.
+    /// </summary>
+    /// <param name="response">The response to the first attempt, with ids.</param>
+    /// <param name="retriedEpisodes">The episodes sent again.</param>
+    /// <param name="retryResponses">The responses to the retry.</param>
+    private static void RemoveRetriedNotFoundEpisodes(TraktSyncResponse response, IReadOnlyList<Episode> retriedEpisodes, IReadOnlyList<TraktSyncResponse> retryResponses)
+    {
+        // Keep them when there is no retry response, or when trakt.tv didn't know a show: those episodes aren't reported again
+        if (retryResponses.Count == 0 || retryResponses.Any(retryResponse => retryResponse.NotFound?.Shows is { Count: > 0 }))
+        {
+            return;
+        }
+
+        response.NotFound.Episodes = response.NotFound.Episodes
+            .Where(notFound => notFound.Ids is null || !retriedEpisodes.Any(episode => HasProviderIdOf(episode, notFound.Ids)))
+            .ToList();
+    }
+
+    private static bool HasProviderIdOf(Episode episode, TraktTVId ids)
+    {
+        return (episode.TryGetProviderId(MetadataProvider.Imdb, out var imdbId) && imdbId == ids.Imdb)
+            || (episode.TryGetProviderId(MetadataProvider.Tmdb, out var tmdbId) && tmdbId == ids.Tmdb?.ToString(CultureInfo.InvariantCulture))
+            || (episode.TryGetProviderId(MetadataProvider.Tvdb, out var tvdbId) && tvdbId == ids.Tvdb)
+            || (episode.TryGetProviderId(MetadataProvider.TvRage, out var tvRageId) && tvRageId == ids.Tvrage);
     }
 
     /// <summary>
