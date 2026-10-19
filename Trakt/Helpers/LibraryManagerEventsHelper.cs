@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Data.Enums;
@@ -227,10 +229,11 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
                           && (traktUser.LocationsExcluded == null || !traktUser.LocationsExcluded.Any(directory => lev.Path.Contains(directory, StringComparison.OrdinalIgnoreCase))))
             .ToHashSet();
 
-        try
+        // One request per show, so removing a whole library sends many; each is checked right before it is sent,
+        // and a request that fails for one show doesn't stop the others
+        foreach (var show in shows)
         {
-            // One request per show, so removing a whole library sends many; each is checked right before it is sent
-            foreach (var show in shows)
+            try
             {
                 if (eventType == EventType.Remove && IsShowStillInLibrary(show))
                 {
@@ -239,10 +242,16 @@ internal sealed class LibraryManagerEventsHelper : IDisposable
 
                 await _traktApi.SendLibraryUpdateAsync(show, traktUser, eventType, CancellationToken.None).ConfigureAwait(false);
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Exception handled processing queued series events");
+            catch (Exception ex) when (ex is OperationCanceledException or HttpRequestException { StatusCode: null or HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden or HttpStatusCode.Locked or (HttpStatusCode)420 or HttpStatusCode.TooManyRequests or >= HttpStatusCode.BadGateway })
+            {
+                // trakt.tv is unreachable, times out, rejects the account or limits it, so the other shows would fail the same way
+                _logger.LogError(ex, "Not sending the remaining shows: the request for {Show} failed", show.Name);
+                return;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception handled processing queued series event for {Show}", show.Name);
+            }
         }
     }
 
