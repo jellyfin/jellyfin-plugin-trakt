@@ -593,7 +593,9 @@ public class TraktApi
 
         var response = await PostToTrakt<TraktSyncResponse>(TraktUris.SyncRatingsAdd, data, traktUser).ConfigureAwait(false);
 
-        if (item is Episode && useEpisodeProviderIds && response.NotFound.Episodes.Count > 0)
+        // Only an episode that was sent by its ids and has a number can be retried by number; otherwise the retry
+        // repeats the same request or sends nothing
+        if (item is Episode ratedEpisode && useEpisodeProviderIds && HasAnyProviderTvIds(ratedEpisode) && ratedEpisode.IndexNumber.HasValue && response.NotFound.Episodes.Count > 0)
         {
             // Try sync without ids
             _logger.LogDebug("Resend episode rating, without episode ids");
