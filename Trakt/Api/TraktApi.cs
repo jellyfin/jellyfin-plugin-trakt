@@ -26,6 +26,7 @@ using Trakt.Api.DataContracts.Sync;
 using Trakt.Api.DataContracts.Sync.Collection;
 using Trakt.Api.DataContracts.Sync.Ratings;
 using Trakt.Api.DataContracts.Sync.Watched;
+using Trakt.Helpers;
 using Trakt.Model;
 using Trakt.Model.Enums;
 using TraktEpisodeCollected = Trakt.Api.DataContracts.Sync.Collection.TraktEpisodeCollected;
@@ -47,6 +48,7 @@ public class TraktApi
     private const int MaxRetryAttempts = 3;
 
     private static readonly SemaphoreSlim _traktResourcePool = new SemaphoreSlim(1, 1);
+    private static readonly SemaphoreSlim _tokenRefreshLock = new SemaphoreSlim(1, 1);
     private static readonly TimeSpan _tooManyRequestDelay = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan _gatewayDelay = TimeSpan.FromSeconds(30);
 
@@ -1054,6 +1056,38 @@ public class TraktApi
     /// <param name="traktUser">The <see cref="TraktUser"/> to refresh the access token for.</param>
     /// <returns>Task.</returns>
     public async Task RefreshUserAccessToken(TraktUser traktUser)
+    {
+        // trakt.tv replaces the refresh token on every refresh, so a second refresh started at the
+        // same time (e.g. two scheduled tasks at startup) would send a used token and get 400 Bad Request
+        await _tokenRefreshLock.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            // Another task may already have refreshed the token. Saving the plugin settings replaces every
+            // TraktUser object, so that refresh may only be on the current one: take its tokens while valid.
+            var currentUser = UserHelper.GetTraktUser(traktUser.LinkedMbUserId);
+            if (currentUser != null
+                && !ReferenceEquals(currentUser, traktUser)
+                && DateTimeOffset.Now <= currentUser.AccessTokenExpiration)
+            {
+                traktUser.AccessToken = currentUser.AccessToken;
+                traktUser.RefreshToken = currentUser.RefreshToken;
+                traktUser.AccessTokenExpiration = currentUser.AccessTokenExpiration;
+            }
+
+            if (DateTimeOffset.Now <= traktUser.AccessTokenExpiration)
+            {
+                return;
+            }
+
+            await RefreshUserAccessTokenLocked(traktUser).ConfigureAwait(false);
+        }
+        finally
+        {
+            _tokenRefreshLock.Release();
+        }
+    }
+
+    private async Task RefreshUserAccessTokenLocked(TraktUser traktUser)
     {
         if (string.IsNullOrWhiteSpace(traktUser.RefreshToken))
         {
