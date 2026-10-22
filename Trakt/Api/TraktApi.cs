@@ -1435,7 +1435,6 @@ public class TraktApi
     {
         if (DateTimeOffset.Now > traktUser.AccessTokenExpiration)
         {
-            traktUser.AccessToken = string.Empty;
             await RefreshUserAccessToken(traktUser).ConfigureAwait(false);
         }
 
