@@ -92,8 +92,7 @@ public class TraktApi
             return false;
         }
 
-        if (traktUser.LocationsExcluded != null
-            && traktUser.LocationsExcluded.Any(directory => item.Path.Contains(directory, StringComparison.OrdinalIgnoreCase)))
+        if (Extensions.IsPathExcluded(item.Path, traktUser.LocationsExcluded))
         {
             return false;
         }
