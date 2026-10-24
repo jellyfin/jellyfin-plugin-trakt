@@ -492,9 +492,19 @@ public static class Extensions
         // Match whole folders only, so excluding /media/Movies doesn't also exclude /media/Movies 4K
         return excludedLocations.Any(location =>
         {
-            var folder = location?.TrimEnd('/', '\\');
-            return !string.IsNullOrEmpty(folder)
-                && path.StartsWith(folder, StringComparison.OrdinalIgnoreCase)
+            if (string.IsNullOrEmpty(location))
+            {
+                return false;
+            }
+
+            // A root folder such as "/" trims to nothing, but still contains every path below it
+            var folder = location.TrimEnd('/', '\\');
+            if (folder.Length == 0)
+            {
+                return path.StartsWith(location[0]);
+            }
+
+            return path.StartsWith(folder, StringComparison.OrdinalIgnoreCase)
                 && (path.Length == folder.Length || path[folder.Length] is '/' or '\\');
         });
     }
