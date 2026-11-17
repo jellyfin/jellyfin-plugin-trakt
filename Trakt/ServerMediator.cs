@@ -67,14 +67,18 @@ public class ServerMediator : IHostedService, IDisposable
     }
 
     /// <summary>
-    /// User data was saved.
+    /// Sync the watched status to Trakt when the item is marked played or unwatched.
     /// </summary>
     /// <param name="sender">The sending entity.</param>
     /// <param name="userDataSaveEventArgs">The <see cref="UserDataSaveEventArgs"/>.</param>
     private void OnUserDataSaved(object sender, UserDataSaveEventArgs userDataSaveEventArgs)
     {
-        // Ignore change events for any reason other than manually toggling played.
-        if (userDataSaveEventArgs.SaveReason != UserDataSaveReason.TogglePlayed)
+        _logger.LogDebug("User data saved for item {Item} (SaveReason: {SaveReason}, Played: {Played}).", userDataSaveEventArgs.Item?.Name, userDataSaveEventArgs.SaveReason, userDataSaveEventArgs.UserData.Played);
+
+        // Ignore change events for any reason other than manually toggling played,
+        // or playback finishing with the item auto-marked as played.
+        if (userDataSaveEventArgs.SaveReason != UserDataSaveReason.TogglePlayed &&
+            !(userDataSaveEventArgs.SaveReason == UserDataSaveReason.PlaybackFinished && userDataSaveEventArgs.UserData.Played))
         {
             return;
         }
