@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -315,7 +315,8 @@ public class ServerMediator : IHostedService, IDisposable
             {
                 if (!_playbackState.TryGetValue(traktUser.LinkedMbUserId, out state))
                 {
-                    _logger.LogWarning("Received playback progress from user {User} but initial state was never set - setting it now!", user.Username);
+                    // Jellyfin queues PlaybackStart, so progress can arrive before its handler runs.
+                    _logger.LogDebug("Received playback progress from user {User} before initial state was available - setting it now", user.Username);
                     _playbackState[traktUser.LinkedMbUserId] = new PlaybackState
                     {
                         IsPaused = false,
